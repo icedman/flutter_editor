@@ -23,7 +23,9 @@ class Document {
   }
 
   Cursor cursor() {
-    return cursors.length > 0 ? cursors[0] : Cursor(document: this)
+    return cursors.length > 0
+        ? cursors[0]
+        : Cursor(document: this, block: firstBlock())
       ..block = blocks[0];
   }
 
@@ -94,6 +96,19 @@ class Document {
     });
   }
 
+  void beginEdit() {
+    cursors.forEach((c) {
+      c.block = blockAtLine(c.line);
+      c.anchorBlock = blockAtLine(c.anchorLine);
+    });
+  }
+
+  void endEdit() {
+    cursors.forEach((c) {
+      c.validateCursor();
+    });
+  }
+
   void addCursor() {
     cursors.add(cursor().copy());
   }
@@ -105,9 +120,12 @@ class Document {
 
   Block? addBlockAtLine(int index) {
     Block block = Block('', document: this);
+    block.line = index;
     blocks.insert(index, block);
     block.previous = blockAtLine(index - 1);
     block.next = blockAtLine(index + 1);
+    block.previous?.next = block;
+    block.next?.previous = block;
     return block;
   }
 

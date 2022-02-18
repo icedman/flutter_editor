@@ -82,12 +82,12 @@ class InputListener extends StatefulWidget {
   Function? onTapDown;
   Function? onPanUpdate;
 
-  InputListener({required Widget this.child,
-    Function? this.onKeyDown,
-    Function? this.onKeyUp,
-    Function? this.onTapDown,
-    Function? this.onPanUpdate
-    });
+  InputListener(
+      {required Widget this.child,
+      Function? this.onKeyDown,
+      Function? this.onKeyUp,
+      Function? this.onTapDown,
+      Function? this.onPanUpdate});
   @override
   _InputListener createState() => _InputListener();
 }
@@ -123,9 +123,9 @@ class _InputListener extends State<InputListener> {
             onKey: (FocusNode node, RawKeyEvent event) {
               if (event.runtimeType.toString() == 'RawKeyDownEvent') {
                 widget.onKeyDown?.call(event.logicalKey.keyLabel,
-                  keyId: event.logicalKey.keyId, 
-                  shift: event.isShiftPressed,
-                  control: event.isControlPressed);
+                    keyId: event.logicalKey.keyId,
+                    shift: event.isShiftPressed,
+                    control: event.isControlPressed);
               }
               if (event.runtimeType.toString() == 'RawKeyUpEvent') {
                 widget.onKeyUp?.call();
@@ -133,10 +133,12 @@ class _InputListener extends State<InputListener> {
               return KeyEventResult.handled;
             }),
         onTapDown: (TapDownDetails details) {
-          widget.onTapDown?.call(context.findRenderObject(), details.globalPosition);
+          widget.onTapDown
+              ?.call(context.findRenderObject(), details.globalPosition);
         },
         onPanUpdate: (DragUpdateDetails details) {
-          widget.onPanUpdate?.call(context.findRenderObject(), details.globalPosition);
+          widget.onPanUpdate
+              ?.call(context.findRenderObject(), details.globalPosition);
         });
   }
 }

@@ -23,7 +23,6 @@ class _Editor extends State<Editor> {
   bool controlling = false;
 
   @override
-
   void initState() {
     highlighter = Highlighter();
     doc = DocumentProvider();
@@ -31,14 +30,14 @@ class _Editor extends State<Editor> {
     super.initState();
   }
 
-  void command()
-  {}
+  void command() {}
 
-  void onKeyDown(String key, { int keyId = 0, bool shift = false, bool control = false })
-  {
+  void onKeyDown(String key,
+      {int keyId = 0, bool shift = false, bool control = false}) {
     shifting = shift;
     controlling = control;
     Document d = doc.doc;
+    d.beginEdit();
     switch (key) {
       case 'Escape':
         d.clearCursors();
@@ -108,8 +107,8 @@ class _Editor extends State<Editor> {
                   k <= LogicalKeyboardKey.keyZ.keyId) ||
               (k + 32 >= LogicalKeyboardKey.keyA.keyId &&
                   k + 32 <= LogicalKeyboardKey.keyZ.keyId)) {
-            String ch = String.fromCharCode(
-                97 + k - LogicalKeyboardKey.keyA.keyId);
+            String ch =
+                String.fromCharCode(97 + k - LogicalKeyboardKey.keyA.keyId);
             if (control) {
               d.command('ctrl+$ch');
               break;
@@ -123,11 +122,11 @@ class _Editor extends State<Editor> {
         }
         break;
     }
+    d.endEdit();
     doc.touch();
   }
 
-  void onKeyUp()
-  {
+  void onKeyUp() {
     shifting = false;
     controlling = false;
   }
@@ -146,17 +145,20 @@ class _Editor extends State<Editor> {
     d.moveCursor(o.dy.toInt(), o.dx.toInt(), keepAnchor: true);
     doc.touch();
   }
-  
+
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(providers: [
-      ChangeNotifierProvider(create: (context) => doc),
-      Provider(create: (context) => highlighter)
-    ], child: InputListener(child: View(),
-        onKeyDown: onKeyDown,
-        onKeyUp: onKeyUp,
-        onTapDown: onTapDown,
-        onPanUpdate: onPanUpdate,
+    return MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (context) => doc),
+          Provider(create: (context) => highlighter)
+        ],
+        child: InputListener(
+          child: View(),
+          onKeyDown: onKeyDown,
+          onKeyUp: onKeyUp,
+          onTapDown: onTapDown,
+          onPanUpdate: onPanUpdate,
         ));
   }
 }

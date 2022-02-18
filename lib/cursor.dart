@@ -67,7 +67,7 @@ class Cursor {
     return line != anchorLine || column != anchorColumn;
   }
 
-  void _validateCursor(bool keepAnchor) {
+  bool _validateCursor(bool keepAnchor) {
     List<Block> blocks = document?.blocks ?? [];
     List<Cursor> cursors = document?.cursors ?? [];
     if (line >= blocks.length) {
@@ -85,6 +85,7 @@ class Cursor {
     }
     block = blocks[line];
     anchorBlock = blocks[anchorLine];
+    return true;
   }
 
   void clearSelection() {
@@ -94,6 +95,8 @@ class Cursor {
   }
 
   void moveCursor(int l, int c, {bool keepAnchor = false}) {
+    block = document?.blockAtLine(l) ?? Block('');
+    block?.line = l;
     line = l;
     column = c;
     _validateCursor(keepAnchor);
@@ -136,12 +139,24 @@ class Cursor {
   }
 
   void moveCursorUp({int count = 1, bool keepAnchor = false}) {
-    line = line - count;
+    block = block?.previous ?? block;
+    line = block?.line ?? 0;
+    if (!keepAnchor) {
+      anchorBlock = block;
+      anchorLine = line;
+    }
+    // line = line - count;
     _validateCursor(keepAnchor);
   }
 
   void moveCursorDown({int count = 1, bool keepAnchor = false}) {
-    line = line + count;
+    block = block?.next ?? block;
+    line = block?.line ?? 0;
+    if (!keepAnchor) {
+      anchorBlock = block;
+      anchorLine = line;
+    }
+    // line = line + count;
     _validateCursor(keepAnchor);
   }
 
@@ -183,7 +198,7 @@ class Cursor {
       return;
     }
 
-    String l = blocks[cur.line].text;
+    String l = block?.text ?? '';
     String left = l.substring(0, cur.column);
     l = blocks[cur.anchorLine].text;
     String right = l.substring(cur.anchorColumn);
@@ -345,7 +360,7 @@ class Cursor {
     cur.clearSelection();
     cur.moveCursorRight(count: text.length);
     for (int i = line; i < blocks.length; i++) {
-      String l = blocks[cur.line].text;
+      String l = block?.text ?? '';
       int idx = l.indexOf(text, cur.column);
       if (idx != -1) {
         cur.column = idx;

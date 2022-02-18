@@ -24,9 +24,8 @@ class DocumentProvider extends ChangeNotifier {
 }
 
 class ViewLine extends StatelessWidget {
-  ViewLine({this.lineNumber = 0, Block? this.block});
+  ViewLine({Block? this.block});
 
-  int lineNumber = 0;
   Block? block;
 
   @override
@@ -34,6 +33,9 @@ class ViewLine extends StatelessWidget {
     String text = block?.text ?? '';
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
     Highlighter hl = Provider.of<Highlighter>(context);
+
+    int lineNumber = block?.line ?? 0;
+
     List<InlineSpan> spans = hl.run(text, lineNumber, doc.doc);
 
     final gutterStyle = TextStyle(
@@ -83,8 +85,9 @@ class _View extends State<View> {
         controller: scroller,
         itemCount: doc.doc.blocks.length,
         itemBuilder: (BuildContext context, int index) {
-          doc.doc.blocks[index].line = index;
-          return ViewLine(lineNumber: index, block: doc.doc.blocks[index]);
+          Block block = doc.doc.blockAtLine(index) ?? Block('');
+          block.line = index;
+          return ViewLine(block: block);
         });
   }
 }
