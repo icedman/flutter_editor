@@ -92,6 +92,11 @@ class Cursor {
       clearSelection();
       return;
     }
+
+    if (column >= (block?.text ?? '').length) {
+      moveCursorToEndOfLine();
+    }
+
     int line = block?.line ?? 0;
     column = column - count;
     if (column < 0) {
@@ -166,6 +171,7 @@ class Cursor {
 
   void moveCursorToStartOfDocument({bool keepAnchor = false}) {
     block = document?.firstBlock();
+    column = 0;
     if (!keepAnchor) {
       anchorBlock = block;
       anchorColumn = column;
@@ -173,7 +179,7 @@ class Cursor {
   }
 
   void moveCursorToEndOfDocument({bool keepAnchor = false}) {
-    block = document?.firstBlock();
+    block = document?.lastBlock();
     column = block?.text.length ?? 0;
     if (!keepAnchor) {
       anchorBlock = block;
@@ -200,16 +206,17 @@ class Cursor {
     String left = l.substring(0, cur.column);
     String al = cur.anchorBlock?.text ?? '';
     String right = al.substring(cur.anchorColumn);
-    for (int i = 0; i < res.length - 1; i++) {
+    for (int i = 0; i < (res.length - 1); i++) {
       document?.removeBlockAtLine(blockLine + 1);
     }
     cur.block?.text = left + right;
-    clearSelection();
+    cur.clearSelection();
+    copyFrom(cur);
   }
 
   List<Block> selectedBlocks() {
     List<Block> res = <Block>[];
-    Cursor cur = normalized();
+    Cursor cur = normalized(inverse: true);
     int blockLine = cur.block?.line ?? 0;
     int anchorLine = cur.anchorBlock?.line ?? 0;
     if (blockLine == anchorLine) {
@@ -257,7 +264,7 @@ class Cursor {
       if (c.block == next) {
         cursorsToMerge.add(c);
       }
-      });
+    });
 
     String ln = next.text;
     document?.removeBlockAtLine(next.line);
@@ -268,7 +275,7 @@ class Cursor {
       c.block = block;
       c.anchorBlock = c.block;
       c.anchorColumn = c.column;
-      });
+    });
   }
 
   void deleteText({int numberOfCharacters = 1}) {
@@ -276,6 +283,7 @@ class Cursor {
 
     // handle join blocks
     if (column >= l.length) {
+      moveCursorToEndOfLine();
       mergeNextLine();
       return;
     }
@@ -317,7 +325,7 @@ class Cursor {
     String l = block?.text ?? '';
 
     if (column >= l.length) {
-      column = l.length;
+      moveCursorToEndOfLine();
     }
 
     String left = l.substring(0, column);

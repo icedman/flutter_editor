@@ -5,15 +5,24 @@ import 'editor.dart';
 import 'highlighter.dart';
 import 'theme.dart';
 
-void main() async {
+void main(List<String> args) async {
+  WidgetsFlutterBinding.ensureInitialized();
   ThemeData themeData = ThemeData(
     fontFamily: 'FiraCode',
     primaryColor: foreground,
     backgroundColor: background,
     scaffoldBackgroundColor: background,
   );
+
+  String path = './tests/tinywl.c';
+  if (args.length > 0) {
+    path = args[0];
+  }
+
   return runApp(MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: themeData,
-      home: Scaffold(body: Editor(path: './tests/tinywl.c'))));
+      home: Scaffold(
+          body:
+              Padding(padding: EdgeInsets.all(8), child: Editor(path: path)))));
 }

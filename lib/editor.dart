@@ -30,6 +30,11 @@ class _Editor extends State<Editor> {
     super.initState();
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
   void command() {}
 
   void onKeyDown(String key,
@@ -37,23 +42,23 @@ class _Editor extends State<Editor> {
     shifting = shift;
     controlling = control;
     Document d = doc.doc;
-    d.beginEdit();
+    bool doScroll = true;
     switch (key) {
       case 'Escape':
         d.clearCursors();
         break;
       case 'Home':
         if (control) {
-          d.moveCursorToStartOfDocument();
+          d.moveCursorToStartOfDocument(keepAnchor: shifting);
         } else {
-          d.moveCursorToStartOfLine();
+          d.moveCursorToStartOfLine(keepAnchor: shifting);
         }
         break;
       case 'End':
         if (control) {
-          d.moveCursorToEndOfDocument();
+          d.moveCursorToEndOfDocument(keepAnchor: shifting);
         } else {
-          d.moveCursorToEndOfLine();
+          d.moveCursorToEndOfLine(keepAnchor: shifting);
         }
         break;
       case 'Tab':
@@ -111,6 +116,7 @@ class _Editor extends State<Editor> {
                 String.fromCharCode(97 + k - LogicalKeyboardKey.keyA.keyId);
             if (control) {
               d.command('ctrl+$ch');
+              doScroll = false;
               break;
             }
             d.insertText(ch);
@@ -122,7 +128,9 @@ class _Editor extends State<Editor> {
         }
         break;
     }
-    d.endEdit();
+    if (doScroll) {
+      doc.scrollTo = d.cursor().block?.line ?? -1;
+    }
     doc.touch();
   }
 
@@ -135,6 +143,7 @@ class _Editor extends State<Editor> {
     Document d = doc.doc;
     Offset o = screenToCursor(obj, globalPosition);
     d.moveCursor(o.dy.toInt(), o.dx.toInt(), keepAnchor: shifting);
+    doc.scrollTo = d.cursor().block?.line ?? -1;
     doc.touch();
   }
 
@@ -143,6 +152,7 @@ class _Editor extends State<Editor> {
     Offset o = screenToCursor(obj, globalPosition);
     if (o.dx == -1 || o.dy == -1) return;
     d.moveCursor(o.dy.toInt(), o.dx.toInt(), keepAnchor: true);
+    doc.scrollTo = d.cursor().block?.line ?? -1;
     doc.touch();
   }
 

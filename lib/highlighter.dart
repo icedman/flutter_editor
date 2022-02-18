@@ -50,7 +50,7 @@ class Highlighter {
 
   List<InlineSpan> run(String text, int line, Document document) {
     TextStyle defaultStyle = TextStyle(
-        fontFamily: 'FiraCode', fontSize: fontSize, color: foreground);
+        fontFamily: fontFamily, fontSize: fontSize, color: foreground);
     List<InlineSpan> res = <InlineSpan>[];
     List<LineDecoration> decors = <LineDecoration>[];
 
@@ -101,9 +101,12 @@ class Highlighter {
       // is within caret
       bool inCaret = false;
       for (final c in document.cursors) {
-        if ((line == (c.block?.line ?? 0) && i == c.column)) {
-          inCaret = true;
-          break;
+        if (line == (c.block?.line ?? 0)) {
+          int l = (c.block?.text ?? '').length;
+          if (i == c.column || (i == l && c.column > l)) {
+            inCaret = true;
+            break;
+          }
         }
       }
 
