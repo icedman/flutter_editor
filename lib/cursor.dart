@@ -6,16 +6,17 @@ class Cursor {
       Block? this.anchorBlock,
       this.column = 0,
       this.anchorColumn = 0,
-      this.line = 0,
-      this.anchorLine = 0,
-      this.document});
+      this.document}) {
+    if (anchorBlock == null) {
+      anchorBlock = block;
+      anchorColumn = column;
+    }
+  }
 
   Document? document;
   Block? block;
-  int line = 0;
   int column = 0;
   Block? anchorBlock;
-  int anchorLine = 0;
   int anchorColumn = 0;
 
   bool get isNull {
@@ -26,16 +27,22 @@ class Cursor {
     return Cursor(
         document: document,
         block: block,
-        line: line,
         column: column,
         anchorBlock: anchorBlock,
-        anchorLine: anchorLine,
         anchorColumn: anchorColumn);
   }
 
+  // is anchor position before cursor position
   bool get isNormalized {
-    return !(line > anchorLine ||
-        (line == anchorLine && column > anchorColumn));
+    if (anchorBlock == null) {
+      anchorBlock = block;
+      anchorColumn = column;
+    }
+    int line = block?.line ?? 0;
+    int anchorLine = anchorBlock?.line ?? 0;
+    bool res =
+        ((block == anchorBlock && column > anchorColumn) || line > anchorLine);
+    return res;
   }
 
   Cursor normalized({bool inverse = false}) {
@@ -45,61 +52,39 @@ class Cursor {
       shouldFlip = !shouldFlip;
     }
     if (shouldFlip) {
-      res.line = anchorLine;
+      res.block = anchorBlock;
       res.column = anchorColumn;
-      res.anchorLine = line;
+      res.anchorBlock = block;
       res.anchorColumn = column;
-      return res;
     }
     return res;
   }
 
   void copyFrom(Cursor cursor, {bool keepAnchor = false}) {
     document = cursor.document;
-    line = cursor.line;
+    block = cursor.block;
     column = cursor.column;
-    anchorLine = cursor.anchorLine;
+    anchorBlock = cursor.anchorBlock;
     anchorColumn = cursor.anchorColumn;
-    _validateCursor(keepAnchor);
   }
 
   bool hasSelection() {
-    return line != anchorLine || column != anchorColumn;
-  }
-
-  bool _validateCursor(bool keepAnchor) {
-    List<Block> blocks = document?.blocks ?? [];
-    List<Cursor> cursors = document?.cursors ?? [];
-    if (line >= blocks.length) {
-      line = blocks.length - 1;
-    }
-    if (line < 0) line = 0;
-    if (column > blocks[line].text.length) {
-      column = blocks[line].text.length;
-    }
-    if (column == -1) column = blocks[line].text.length;
-    if (column < 0) column = 0;
-    if (!keepAnchor) {
-      anchorLine = line;
-      anchorColumn = column;
-    }
-    block = blocks[line];
-    anchorBlock = blocks[anchorLine];
-    return true;
+    return block != anchorBlock || column != anchorColumn;
   }
 
   void clearSelection() {
-    anchorLine = line;
+    anchorBlock = block;
     anchorColumn = column;
-    _validateCursor(false);
   }
 
   void moveCursor(int l, int c, {bool keepAnchor = false}) {
     block = document?.blockAtLine(l) ?? Block('');
     block?.line = l;
-    line = l;
     column = c;
-    _validateCursor(keepAnchor);
+    if (!keepAnchor) {
+      anchorBlock = block;
+      anchorColumn = column;
+    }
   }
 
   void moveCursorLeft({int count = 1, bool keepAnchor = false}) {
@@ -107,6 +92,7 @@ class Cursor {
       clearSelection();
       return;
     }
+    int line = block?.line ?? 0;
     column = column - count;
     if (column < 0) {
       if (line > 0) {
@@ -116,7 +102,10 @@ class Cursor {
         column = 0;
       }
     }
-    _validateCursor(keepAnchor);
+    if (!keepAnchor) {
+      anchorBlock = block;
+      anchorColumn = column;
+    }
   }
 
   void moveCursorRight({int count = 1, bool keepAnchor = false}) {
@@ -125,6 +114,7 @@ class Cursor {
       return;
     }
     List<Block> blocks = document?.blocks ?? [];
+    int line = block?.line ?? 0;
     String l = block?.text ?? '';
     column = column + count;
     if (column > l.length) {
@@ -135,182 +125,194 @@ class Cursor {
         column = l.length - 1;
       }
     }
-    _validateCursor(keepAnchor);
+    if (!keepAnchor) {
+      anchorBlock = block;
+      anchorColumn = column;
+    }
   }
 
   void moveCursorUp({int count = 1, bool keepAnchor = false}) {
     block = block?.previous ?? block;
-    line = block?.line ?? 0;
     if (!keepAnchor) {
       anchorBlock = block;
-      anchorLine = line;
+      anchorColumn = column;
     }
-    // line = line - count;
-    _validateCursor(keepAnchor);
   }
 
   void moveCursorDown({int count = 1, bool keepAnchor = false}) {
     block = block?.next ?? block;
-    line = block?.line ?? 0;
     if (!keepAnchor) {
       anchorBlock = block;
-      anchorLine = line;
+      anchorColumn = column;
     }
-    // line = line + count;
-    _validateCursor(keepAnchor);
   }
 
   void moveCursorToStartOfLine({bool keepAnchor = false}) {
     column = 0;
-    _validateCursor(keepAnchor);
+    if (!keepAnchor) {
+      anchorBlock = block;
+      anchorColumn = column;
+    }
   }
 
   void moveCursorToEndOfLine({bool keepAnchor = false}) {
-    List<Block> blocks = document?.blocks ?? [];
-    column = blocks[line].text.length;
-    _validateCursor(keepAnchor);
+    String l = block?.text ?? '';
+    column = l.length;
+    if (!keepAnchor) {
+      anchorBlock = block;
+      anchorColumn = column;
+    }
   }
 
   void moveCursorToStartOfDocument({bool keepAnchor = false}) {
-    line = 0;
-    column = 0;
-    _validateCursor(keepAnchor);
+    block = document?.firstBlock();
+    if (!keepAnchor) {
+      anchorBlock = block;
+      anchorColumn = column;
+    }
   }
 
   void moveCursorToEndOfDocument({bool keepAnchor = false}) {
-    List<Block> blocks = document?.blocks ?? [];
-    line = blocks.length - 1;
-    column = blocks[line].text.length;
-    _validateCursor(keepAnchor);
+    block = document?.firstBlock();
+    column = block?.text.length ?? 0;
+    if (!keepAnchor) {
+      anchorBlock = block;
+      anchorColumn = column;
+    }
   }
 
   void deleteSelectedText() {
-    List<Block> blocks = document?.blocks ?? [];
     if (!hasSelection()) {
       return;
     }
 
-    Cursor cur = normalized();
-    List<String> res = selectedBlocks();
+    Cursor cur = normalized(inverse: true);
+    List<Block> res = selectedBlocks();
     if (res.length == 1) {
-      deleteText(numberOfCharacters: cur.anchorColumn - cur.column);
-      clearSelection();
-      return;
-    }
-
-    String l = block?.text ?? '';
-    String left = l.substring(0, cur.column);
-    l = blocks[cur.anchorLine].text;
-    String right = l.substring(cur.anchorColumn);
-
-    copyFrom(cur);
-    blocks[cur.line].text = left + right;
-    blocks[cur.anchorLine].text =
-        blocks[cur.anchorLine].text.substring(cur.anchorColumn);
-    for (int i = 0; i < res.length - 1; i++) {
-      document?.removeBlockAtLine(cur.line + 1);
-    }
-    _validateCursor(false);
-  }
-
-  List<String> selectedBlocks() {
-    List<Block> blocks = document?.blocks ?? [];
-    List<String> res = <String>[];
-    Cursor cur = normalized();
-    if (cur.line == cur.anchorLine) {
-      String sel =
-          blocks[cur.line].text.substring(cur.column, cur.anchorColumn);
-      res.add(sel);
-      return res;
-    }
-
-    res.add(blocks[cur.line].text.substring(cur.column));
-    for (int i = cur.line + 1; i < cur.anchorLine; i++) {
-      res.add(blocks[i].text);
-    }
-    res.add(blocks[cur.anchorLine].text.substring(0, cur.anchorColumn));
-    return res;
-  }
-
-  String selectedText() {
-    return selectedBlocks().join('\n');
-  }
-
-  void deleteText({int numberOfCharacters = 1}) {
-    List<Cursor> cursors = document?.cursors ?? [];
-    List<Cursor> cursorsToUpdate = [];
-    List<Block> blocks = document?.blocks ?? [];
-    String l = blocks[line].text;
-
-    cursors.forEach((c) {
-      if (c.line == line && c.column > column) {
-        cursorsToUpdate.add(c);
-      }
-    });
-
-    // handle join blocks
-    if (column >= l.length) {
-      Cursor cur = copy();
-      int offset = blocks[line].text.length;
-      blocks[line].text += blocks[line + 1].text;
-      cursors.forEach((c) {
-        if (c.line == line + 1) {
-          c.column += offset;
-          c.line = line;
-        } else if (c.line > line + 1) {
-          c.line--;
-        }
-        c._validateCursor(false);
-      });
-      document?.removeBlockAtLine(line + 1);
+      cur.deleteText(numberOfCharacters: cur.anchorColumn - cur.column);
+      cur.clearSelection();
       copyFrom(cur);
       return;
     }
 
-    Cursor cur = normalized();
+    int blockLine = cur.block?.line ?? 0;
+    String l = cur.block?.text ?? '';
     String left = l.substring(0, cur.column);
-    String right = l.substring(cur.column + numberOfCharacters);
-    copyFrom(cur);
+    String al = cur.anchorBlock?.text ?? '';
+    String right = al.substring(cur.anchorColumn);
+    for (int i = 0; i < res.length - 1; i++) {
+      document?.removeBlockAtLine(blockLine + 1);
+    }
+    cur.block?.text = left + right;
+    clearSelection();
+  }
 
-    // handle erase entire line
-    if (blocks.length > 1 && (left + right).length == 0) {
-      blocks.removeAt(cur.line);
-      moveCursorUp();
-      moveCursorToStartOfLine();
-      cursors.forEach((c) {
-        if (c.line > line) {
-          c.line--;
-          c.anchorLine = c.line;
-          c.anchorColumn = c.column;
-          c._validateCursor(true);
-        }
-      });
+  List<Block> selectedBlocks() {
+    List<Block> res = <Block>[];
+    Cursor cur = normalized();
+    int blockLine = cur.block?.line ?? 0;
+    int anchorLine = cur.anchorBlock?.line ?? 0;
+    if (blockLine == anchorLine) {
+      res.add(block ?? Block(''));
+      return res;
+    }
+    res.add(block ?? Block(''));
+    Block? b = block?.next;
+    for (int i = blockLine + 1; b != null && i < anchorLine; i++) {
+      res.add(b);
+      b = b.next;
+    }
+    res.add(anchorBlock ?? Block(''));
+    return res;
+  }
+
+  String selectedText() {
+    List<String> res = [];
+    Cursor cur = normalized(inverse: true);
+    int blockLine = cur.block?.line ?? 0;
+    int anchorLine = cur.anchorBlock?.line ?? 0;
+    if (blockLine == anchorLine) {
+      return (block?.text ?? '').substring(cur.column, cur.anchorColumn);
+    }
+    res.add((block?.text ?? '').substring(cur.column));
+    Block? b = block?.next;
+    for (int i = blockLine + 1; b != null && i < anchorLine; i++) {
+      res.add(b.text);
+      b = b.next;
+    }
+    res.add((anchorBlock?.text ?? '').substring(0, cur.anchorColumn));
+    return res.join('\n');
+  }
+
+  void mergeNextLine() {
+    String l = block?.text ?? '';
+    Block? next = block?.next;
+    if (next == null) {
       return;
     }
 
-    blocks[line].text = left + right;
-    cursorsToUpdate.forEach((c) {
-      c.column -= numberOfCharacters;
-      c.anchorColumn -= numberOfCharacters;
-      c._validateCursor(true);
-    });
+    List<Cursor> cursorsToMerge = [];
+    List<Cursor> cursors = document?.cursors ?? [];
+    cursors.forEach((c) {
+      if (c.block == next) {
+        cursorsToMerge.add(c);
+      }
+      });
+
+    String ln = next.text;
+    document?.removeBlockAtLine(next.line);
+    block?.text = l + ln;
+
+    cursorsToMerge.forEach((c) {
+      c.column += l.length;
+      c.block = block;
+      c.anchorBlock = c.block;
+      c.anchorColumn = c.column;
+      });
+  }
+
+  void deleteText({int numberOfCharacters = 1}) {
+    String l = block?.text ?? '';
+
+    // handle join blocks
+    if (column >= l.length) {
+      mergeNextLine();
+      return;
+    }
+
+    String left = l.substring(0, column);
+    String right = l.substring(column + numberOfCharacters);
+    block?.text = left + right;
+    advanceBlockCursors(-numberOfCharacters);
   }
 
   // void deleteLine({int numberOfBlocks = 1}) {
   //   for(int i=0; i<numberOfBlocks; i++) {
   //     document?.removeBlockAtLine(line);
   //   }
-  //   _validateCursor(false);
   // }
 
   void insertNewLine() {
     deleteSelectedText();
-    insertText('\n');
+    int line = block?.line ?? 0;
+    String l = block?.text ?? '';
+
+    if (column >= l.length) {
+      column = l.length;
+    }
+
+    String left = l.substring(0, column);
+    String right = l.substring(column);
+
+    // handle new line
+    block?.text = left;
+    Block? newBlock = document?.addBlockAtLine(line + 1);
+    newBlock?.text = right;
+    moveCursorDown();
+    moveCursorToStartOfLine();
   }
 
   void insertText(String text) {
-    List<Cursor> cursors = document?.cursors ?? [];
-    List<Cursor> cursorsToUpdate = [];
     deleteSelectedText();
     String l = block?.text ?? '';
 
@@ -321,62 +323,41 @@ class Cursor {
     String left = l.substring(0, column);
     String right = l.substring(column);
 
-    cursors.forEach((c) {
-      if (c.line == line && c.column > column) {
-        cursorsToUpdate.add(c);
-      }
-    });
-
-    // handle new line
-    if (text == '\n') {
-      block?.text = left;
-      Block? newBlock = document?.addBlockAtLine(line + 1);
-      newBlock?.text = right;
-      moveCursorDown();
-      moveCursorToStartOfLine();
-      cursors.forEach((c) {
-        if (c.line >= line && c != this) {
-          c.line++;
-          c.anchorLine++;
-          c._validateCursor(true);
-        }
-      });
-      return;
-    }
-
     block?.text = left + text + right;
     moveCursorRight(count: text.length);
-
-    cursorsToUpdate.forEach((c) {
-      c.column += text.length;
-      c.anchorColumn += text.length;
-      c._validateCursor(true);
-    });
+    advanceBlockCursors(text.length);
   }
 
   Cursor findText(String text) {
-    List<Block> blocks = document?.blocks ?? [];
     Cursor cur = normalized();
     cur.clearSelection();
-    cur.moveCursorRight(count: text.length);
-    for (int i = line; i < blocks.length; i++) {
-      String l = block?.text ?? '';
+    cur.moveCursorRight();
+    Block? b = cur.block;
+    while (b != null) {
+      String l = b.text;
       int idx = l.indexOf(text, cur.column);
       if (idx != -1) {
         cur.column = idx;
         cur.anchorColumn = idx + text.length;
-        cur._validateCursor(true);
         return cur.normalized(inverse: !isNormalized);
       } else {
         cur.moveCursorDown();
         cur.moveCursorToStartOfLine();
       }
+      b = b.next;
     }
-
     return Cursor();
   }
 
-  void validateCursor() {
-    _validateCursor(hasSelection());
+  void advanceBlockCursors(int count) {
+    List<Cursor> cursors = document?.cursors ?? [];
+    cursors.forEach((c) {
+      if (c.block != block) return;
+      if (c.column <= column) return;
+      c.column += count;
+      c.anchorColumn += count;
+    });
   }
+
+  void validateCursor() {}
 }

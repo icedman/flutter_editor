@@ -23,16 +23,18 @@ class Document {
   }
 
   Cursor cursor() {
-    return cursors.length > 0
-        ? cursors[0]
-        : Cursor(document: this, block: firstBlock())
-      ..block = blocks[0];
+    if (cursors.length == 0) {
+      cursors.add(Cursor(document: this, block: firstBlock()));
+    }
+    return cursors[0];
   }
 
   List<Cursor> cursorsSorted({bool inverse: false}) {
     List<Cursor> curs = [...cursors];
     curs.sort((a, b) {
-      return ((a.line > b.line || (a.line == b.line && a.column > b.column))
+      int aLine = a.block?.line ?? 0;
+      int bLine = b.block?.line ?? 0;
+      return ((aLine > bLine || (aLine == bLine && a.column > b.column))
               ? 1
               : -1) *
           (inverse ? -1 : 1);
@@ -42,18 +44,18 @@ class Document {
 
   List<Cursor> cursorsUniqued() {
     List<Cursor> _cursors = [];
-    cursors.forEach((c) {
-      bool skip = false;
-      for (final _c in _cursors) {
-        if (c != _c && _c.line == c.line && _c.column == c.column) {
-          skip = true;
-          break;
-        }
-      }
-      if (!skip) {
-        _cursors.add(c);
-      }
-    });
+    // cursors.forEach((c) {
+    //   bool skip = false;
+    //   for (final _c in _cursors) {
+    //     if (c != _c && _c.block == c.block && _c.column == c.column) {
+    //       skip = true;
+    //       break;
+    //     }
+    //   }
+    //   if (!skip) {
+    //     _cursors.add(c);
+    //   }
+    // });
     return _cursors;
   }
 
@@ -80,7 +82,8 @@ class Document {
   }
 
   void clear() {
-    blocks = <Block>[];
+    cursors.clear();
+    blocks.clear();
     addBlockAtLine(0);
     clearCursors();
   }
@@ -96,18 +99,9 @@ class Document {
     });
   }
 
-  void beginEdit() {
-    cursors.forEach((c) {
-      c.block = blockAtLine(c.line);
-      c.anchorBlock = blockAtLine(c.anchorLine);
-    });
-  }
+  void beginEdit() {}
 
-  void endEdit() {
-    cursors.forEach((c) {
-      c.validateCursor();
-    });
-  }
+  void endEdit() {}
 
   void addCursor() {
     cursors.add(cursor().copy());
@@ -126,6 +120,9 @@ class Document {
     block.next = blockAtLine(index + 1);
     block.previous?.next = block;
     block.next?.previous = block;
+    for (int i = index; i < blocks.length; i++) {
+      blocks[i].line = i;
+    }
     return block;
   }
 
@@ -136,6 +133,9 @@ class Document {
     blocks.removeAt(index);
     previous?.next = next;
     next?.previous = previous;
+    for (int i = index; i < blocks.length; i++) {
+      blocks[i].line = i;
+    }
     return block;
   }
 
@@ -204,7 +204,6 @@ class Document {
   void insertNewLine() {
     cursorsSorted(inverse: true).forEach((c) {
       c.insertNewLine();
-      c.validateCursor();
     });
   }
 
@@ -212,25 +211,21 @@ class Document {
     cursorsSorted(inverse: true).forEach((c) {
       c.insertText(text);
     });
-    cursors.forEach((c) => c.validateCursor());
   }
 
   void deleteText({int numberOfCharacters = 1}) {
-    cursorsSorted().forEach((c) {
-      c.deleteText(numberOfCharacters: 1);
+    cursorsSorted(inverse: true).forEach((c) {
+      c.deleteText(numberOfCharacters: numberOfCharacters);
     });
-    cursors.forEach((c) => c.validateCursor());
-    cursors = cursorsUniqued();
   }
 
   // void deleteLine({int numberOfBlocks = 1}) {
   //   cursorsSorted().forEach((c) {
   //     c.deleteLine(numberOfBlocks: 1);
   //   });
-  //   cursors.forEach((c) => c.validateCursor());
   // }
 
-  List<String> selectedBlocks() {
+  List<Block> selectedBlocks() {
     return cursor().selectedBlocks();
   }
 
@@ -276,6 +271,7 @@ class Document {
       case 'ctrl+d':
         {
           if (cursor().hasSelection()) {
+            print(cursor().selectedText());
             Cursor cur = cursor().findText(cursor().selectedText());
             if (!cur.isNull) {
               addCursor();

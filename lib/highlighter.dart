@@ -82,12 +82,14 @@ class Highlighter {
 
       // is within selection
       for (final c in document.cursors) {
-        Cursor cur = c.normalized();
-        if (cur.hasSelection()) {
-          if (line < cur.line ||
-              (line == cur.line && i < cur.column) ||
-              line > cur.anchorLine ||
-              (line == cur.anchorLine && i + 1 > cur.anchorColumn)) {
+        if (c.hasSelection()) {
+          Cursor cur = c.normalized();
+          int blockLine = cur.block?.line ?? 0;
+          int anchorLine = cur.anchorBlock?.line ?? 0;
+          if (line > blockLine ||
+              (line == blockLine && i + 1 > cur.column) ||
+              line < anchorLine ||
+              (line == anchorLine && i < cur.anchorColumn)) {
           } else {
             style =
                 style.copyWith(backgroundColor: selection.withOpacity(0.75));
@@ -99,7 +101,7 @@ class Highlighter {
       // is within caret
       bool inCaret = false;
       for (final c in document.cursors) {
-        if ((line == c.line && i == c.column)) {
+        if ((line == (c.block?.line ?? 0) && i == c.column)) {
           inCaret = true;
           break;
         }
