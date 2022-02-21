@@ -133,6 +133,7 @@ class _InputListener extends State<InputListener> {
               return KeyEventResult.handled;
             }),
         onTapDown: (TapDownDetails details) {
+          print(details.globalPosition);
           widget.onTapDown
               ?.call(context.findRenderObject(), details.globalPosition);
         },

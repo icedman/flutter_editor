@@ -78,8 +78,10 @@ class Cursor {
   }
 
   void moveCursor(int l, int c, {bool keepAnchor = false}) {
+    block?.spans = null;
     block = document?.blockAtLine(l) ?? Block('');
     block?.line = l;
+    block?.spans = null;
     column = c;
     if (!keepAnchor) {
       anchorBlock = block;
@@ -88,6 +90,7 @@ class Cursor {
   }
 
   void moveCursorLeft({int count = 1, bool keepAnchor = false}) {
+    block?.spans = null;
     if (hasSelection() && !keepAnchor) {
       clearSelection();
       return;
@@ -111,9 +114,11 @@ class Cursor {
       anchorBlock = block;
       anchorColumn = column;
     }
+    block?.spans = null;
   }
 
   void moveCursorRight({int count = 1, bool keepAnchor = false}) {
+    block?.spans = null;
     if (hasSelection() && !keepAnchor) {
       clearSelection();
       return;
@@ -134,25 +139,31 @@ class Cursor {
       anchorBlock = block;
       anchorColumn = column;
     }
+    block?.spans = null;
   }
 
   void moveCursorUp({int count = 1, bool keepAnchor = false}) {
+    block?.spans = null;
     block = block?.previous ?? block;
     if (!keepAnchor) {
       anchorBlock = block;
       anchorColumn = column;
     }
+    block?.spans = null;
   }
 
   void moveCursorDown({int count = 1, bool keepAnchor = false}) {
+    block?.spans = null;
     block = block?.next ?? block;
     if (!keepAnchor) {
       anchorBlock = block;
       anchorColumn = column;
     }
+    block?.spans = null;
   }
 
   void moveCursorToStartOfLine({bool keepAnchor = false}) {
+    block?.spans = null;
     column = 0;
     if (!keepAnchor) {
       anchorBlock = block;
@@ -161,6 +172,7 @@ class Cursor {
   }
 
   void moveCursorToEndOfLine({bool keepAnchor = false}) {
+    block?.spans = null;
     String l = block?.text ?? '';
     column = l.length;
     if (!keepAnchor) {
@@ -170,21 +182,25 @@ class Cursor {
   }
 
   void moveCursorToStartOfDocument({bool keepAnchor = false}) {
+    block?.spans = null;
     block = document?.firstBlock();
     column = 0;
     if (!keepAnchor) {
       anchorBlock = block;
       anchorColumn = column;
     }
+    block?.spans = null;
   }
 
   void moveCursorToEndOfDocument({bool keepAnchor = false}) {
+    block?.spans = null;
     block = document?.lastBlock();
     column = block?.text.length ?? 0;
     if (!keepAnchor) {
       anchorBlock = block;
       anchorColumn = column;
     }
+    block?.spans = null;
   }
 
   void deleteSelectedText() {
@@ -197,6 +213,7 @@ class Cursor {
     if (res.length == 1) {
       cur.deleteText(numberOfCharacters: cur.anchorColumn - cur.column);
       cur.clearSelection();
+      cur.block?.spans = null;
       copyFrom(cur);
       return;
     }
@@ -211,6 +228,7 @@ class Cursor {
     }
     cur.block?.text = left + right;
     cur.clearSelection();
+    cur.block?.spans = null;
     copyFrom(cur);
   }
 
@@ -227,6 +245,7 @@ class Cursor {
     Block? b = block?.next;
     for (int i = blockLine + 1; b != null && i < anchorLine; i++) {
       res.add(b);
+      b.spans = null;
       b = b.next;
     }
     res.add(anchorBlock ?? Block(''));
@@ -291,6 +310,7 @@ class Cursor {
     String left = l.substring(0, column);
     String right = l.substring(column + numberOfCharacters);
     block?.text = left + right;
+    block?.spans = null;
     advanceBlockCursors(-numberOfCharacters);
   }
 
@@ -314,6 +334,7 @@ class Cursor {
 
     // handle new line
     block?.text = left;
+    block?.spans = null;
     Block? newBlock = document?.addBlockAtLine(line + 1);
     newBlock?.text = right;
     moveCursorDown();
@@ -332,6 +353,7 @@ class Cursor {
     String right = l.substring(column);
 
     block?.text = left + text + right;
+    block?.spans = null;
     moveCursorRight(count: text.length);
     advanceBlockCursors(text.length);
   }

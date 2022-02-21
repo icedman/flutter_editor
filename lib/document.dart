@@ -11,6 +11,9 @@ class Block {
   Document? document;
   Block? previous;
   Block? next;
+
+  List<InlineSpan>? spans;
+  int lineCount = 0;
 }
 
 class Document {
@@ -149,6 +152,9 @@ class Document {
   }
 
   void moveCursor(int line, int column, {bool keepAnchor = false}) {
+    if (!keepAnchor) {
+      clearCursors();
+    }
     cursors.forEach((c) {
       c.moveCursor(line, column, keepAnchor: keepAnchor);
     });

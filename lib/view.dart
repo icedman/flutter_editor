@@ -7,7 +7,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:math';
 
-import 'scroller.dart';
+import 'timer.dart';
 import 'input.dart';
 import 'document.dart';
 import 'highlighter.dart';
@@ -30,24 +30,56 @@ class DocumentProvider extends ChangeNotifier {
 }
 
 class ViewLine extends StatelessWidget {
-  ViewLine({Block? this.block, bool this.softWrap = true});
+  ViewLine(
+      {Key? key,
+      Block? this.block,
+      bool this.softWrap = false,
+      double this.gutterWidth = 0,
+      TextStyle? this.gutterStyle,
+      double this.width = 0})
+      : super(key: key);
 
   Block? block;
   bool softWrap = false;
+  double width = 0;
+  double gutterWidth = 0;
+  TextStyle? gutterStyle;
 
   @override
   Widget build(BuildContext context) {
     String text = block?.text ?? '';
+
+    // print('build ${block?.line}');
+
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
     Highlighter hl = Provider.of<Highlighter>(context);
 
     int lineNumber = block?.line ?? 0;
-    List<InlineSpan> spans = hl.run(text, lineNumber, doc.doc);
+    List<InlineSpan> spans = hl.run(block, lineNumber, doc.doc);
 
-    final gutterStyle = TextStyle(
-        fontFamily: fontFamily, fontSize: gutterFontSize, color: comment);
-    double gutterWidth =
-        getTextExtents(' ${doc.doc.blocks.length} ', gutterStyle).width;
+    // if (spans.length > 0 && spans[0] is TextSpan) {
+    //   TextSpan ts = spans[0] as TextSpan;
+
+    //   Size singleLine = getTextExtents('X', ts.style ?? TextStyle());
+    //   Size sz = getTextExtents(block?.text ?? '', ts.style ?? TextStyle(),
+    //       maxWidth: width > 0 ? width : double.infinity, maxLines: 100);
+    //   block?.lineCount = (sz.height / singleLine.height).toInt();
+    //   // block?.lineCount = 1;
+    //   // print('${block?.line} $width $sz');
+    // }
+
+    // return Stack(children: [
+    //   Padding(
+    //       padding: EdgeInsets.only(left: gutterWidth),
+    //       child: Container(
+    //           // width: width,
+    //           child: RichText(
+    //               text: TextSpan(children: spans), softWrap: softWrap))),
+    //   Container(
+    //       width: gutterWidth,
+    //       alignment: Alignment.centerRight,
+    //       child: Text('${lineNumber + 1} ', style: gutterStyle)),
+    // ]);
 
     return Stack(children: [
       Padding(
@@ -72,21 +104,53 @@ class View extends StatefulWidget {
 
 class _View extends State<View> {
   late ScrollController scroller;
-  late Scroller scrollTo;
+  late PeriodicTimer scrollTo;
 
   int visibleStart = -1;
   int visibleEnd = -1;
+  bool softWrap = false;
+  bool largeDoc = false;
+
+  int lastVisibleLine = 0;
+  int visibleLine = 0;
+  double fontHeight = 0;
+
+  int lastRenderedLine = 0;
+  int renderDirection = 1;
 
   @override
   void initState() {
     scroller = ScrollController();
-    scrollTo = Scroller();
+    scrollTo = PeriodicTimer();
+
+    scroller.addListener(() {
+      DocumentProvider doc =
+          Provider.of<DocumentProvider>(context, listen: false);
+
+      int docSize = doc.doc.blocks.length;
+      double totalHeight = docSize * fontHeight;
+
+      if (!scroller.positions.isEmpty) {
+        double p = scroller.position.pixels / scroller.position.maxScrollExtent;
+        int line = (p * docSize).toInt();
+        updateVisibleRange(context);
+        if (visibleLine != line) {
+          setState(() {
+            visibleLine = line;
+            // print('!$visibleLine');
+          });
+        } else {
+          // print('---$line');
+        }
+      }
+    });
     super.initState();
   }
 
   @override
   void dispose() {
     scroller.dispose();
+    scrollTo.cancel();
     super.dispose();
   }
 
@@ -103,7 +167,7 @@ class _View extends State<View> {
     int min = -1;
     int max = -1;
 
-    pars.forEach((p) {
+    for (final p in pars) {
       RenderBox? pBox = p as RenderBox;
       Offset pOffset = pBox.localToGlobal(Offset(0, 0));
       Rect globalPBox = pOffset & pBox.size;
@@ -125,84 +189,229 @@ class _View extends State<View> {
         visibleStart = min;
         visibleEnd = max;
       }
-    });
+    }
   }
 
   bool isLineVisible(int line) {
-    int start = visibleStart;
-    int end = visibleEnd;
-    return (line >= visibleStart && line <= visibleEnd);
+    bool res = (line >= visibleStart && line <= visibleEnd);
+    // print('$line $visibleStart $visibleEnd $res');
+    return res;
+  }
+
+  void scrollToLine(int line) {
+    DocumentProvider doc =
+        Provider.of<DocumentProvider>(context, listen: false);
+    updateVisibleRange(context);
+    double speedScale = 1.0;
+    if (!isLineVisible(line)) {
+      scrollTo.start(
+          scale: speedScale,
+          onUpdate: () {
+            updateVisibleRange(context);
+            int docSize = doc.doc.blocks.length;
+            double position = scroller.position.pixels;
+            double max = scroller.position.maxScrollExtent;
+
+            double speed = 10;
+            double estimatedExtents = max / docSize;
+            double estimateTarget = line * estimatedExtents;
+
+            double dv = estimateTarget - position;
+            double ds = sqrt(dv * dv);
+            if (ds > 500) {
+              speed = (ds / 10);
+            }
+            if (ds > 1000) {
+              speed = (ds / 4);
+            }
+            if (ds > 5000) {
+              speed = (ds / 2);
+            }
+            if (speed > 1000 && !largeDoc) {
+              speed = 1000;
+            }
+            speed *= speedScale;
+
+            double target = -1;
+            if (visibleStart + 2 >= line) {
+              target = position - speed;
+            }
+            if (visibleEnd - 2 <= line) {
+              target = position + speed;
+            }
+            if (target != -1) {
+              if (target < 0) {
+                target = 0;
+              }
+              if (target > max) target = max;
+              scroller.jumpTo(target);
+              double dst = target - position;
+              if (dst * dst < 25) {
+                return false;
+              }
+            }
+
+            // print('${line} $visibleStart $visibleEnd');
+            return !(isLineVisible(line));
+          },
+          onDone: () {
+            print('done');
+          });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
 
-    if (doc.scrollTo != -1) {
-      updateVisibleRange(context);
-      if (!isLineVisible(doc.scrollTo)) {
-        scrollTo.start(
-            scrollController: scroller,
-            onUpdate: () {
-              updateVisibleRange(context);
-              int docSize = doc.doc.blocks.length;
-              double position = scroller.position.pixels;
-              double max = scroller.position.maxScrollExtent;
+    final TextStyle style = TextStyle(
+        fontFamily: fontFamily, fontSize: fontSize, color: Colors.white);
+    final TextStyle gutterStyle = TextStyle(
+        fontFamily: fontFamily, fontSize: gutterFontSize, color: comment);
 
-              double speed = 10;
-              double estimatedExtents = max / docSize;
-              double estimateTarget = doc.scrollTo * estimatedExtents;
+    double gutterWidth =
+        getTextExtents(' ${doc.doc.blocks.length} ', gutterStyle).width;
 
-              double dv = estimateTarget - position;
-              double ds = sqrt(dv * dv);
-              if (ds > 100) {
-                speed = (ds / 4);
-              }
-              if (ds > 5000) {
-                speed = (ds / 2);
-              }
-
-              double target = -1;
-              if (visibleStart + 2 >= doc.scrollTo) {
-                target = position - speed;
-              }
-              if (visibleEnd - 2 <= doc.scrollTo) {
-                target = position + speed;
-              }
-              if (target != -1) {
-                if (target < 0) {
-                  target = 0;
-                }
-                if (target > max) target = max;
-                scroller.jumpTo(target);
-              }
-
-              // print('${doc.scrollTo} $visibleStart $visibleEnd');
-              return !(isLineVisible(doc.scrollTo));
-            },
-            onDone: () {
-              doc.scrollTo = -1;
-            });
-      }
+    if (fontHeight == 0) {
+      fontHeight = getTextExtents(
+              'X', TextStyle(fontFamily: fontFamily, fontSize: fontSize))
+          .height;
     }
+
     double? extent;
-
-    bool softWrap = true;
-    if (doc.doc.blocks.length > 10000) {
-      softWrap = false;
-    }
+    largeDoc = (doc.doc.blocks.length > 10000);
     if (!softWrap) {
-      extent = getTextExtents('X', TextStyle(fontFamily: fontFamily, fontSize: fontSize)).height;
+      extent = fontHeight;
     }
 
-    return ListView.builder(
+    if (doc.scrollTo != -1) {
+      scrollToLine(doc.scrollTo);
+      doc.scrollTo = -1;
+    }
+
+    RenderObject? obj = context.findRenderObject();
+    Size? size;
+    if (obj != null) {
+      RenderBox? box = obj as RenderBox;
+      size = box.size;
+    }
+
+    int count = 100;
+    if (size != null && size.height > fontHeight * 4) {
+      count = ((size.height / fontHeight) * 2.0).toInt();
+    }
+
+    int docSize = doc.doc.blocks.length;
+    double totalHeight = docSize * fontHeight;
+
+    int pageLines = 32;
+    double top = fontHeight * visibleLine;
+    top -= (fontHeight * pageLines);
+    if (top < 0) top = 0;
+
+    List<Widget> children = [];
+    double offset = top;
+    for (int i = 0; i < count; i++) {
+      int line = visibleLine + i;
+      if (line > docSize) {
+        break;
+      }
+      Block block = doc.doc.blockAtLine(line) ?? Block('');
+      block.line = line;
+      // children.add(Positioned(
+      //     top: top,
+      //     child: ViewLine(
+      //         width: (size?.width ?? 0) - gutterWidth,
+      //         block: block,
+      //         softWrap: softWrap,
+      //         gutterWidth: gutterWidth,
+      //         gutterStyle: gutterStyle)));
+      // top += ((block.lineCount > 0 ? block.lineCount : 1) * fontHeight);
+
+      children.add(ViewLine(
+          block: block,
+          softWrap: softWrap,
+          width: (size?.width ?? 0) - gutterWidth,
+          gutterWidth: gutterWidth,
+          gutterStyle: gutterStyle));
+
+      // children.add(Text('${block.line} ${block.text}', softWrap: softWrap, style: style));
+
+      // children.add(Container(height:fontHeight,
+      //   // color: Colors.yellow
+      //   child: Text('${block.line} ${block.text}', style: style),
+      //   decoration: BoxDecoration(border: Border.all(width: 1, color: Colors.yellow))
+      //   ));
+    }
+
+    Widget viewLines = Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [Container(height: top), ...children]);
+
+    Widget horizontalScrollWrapper = softWrap
+        ? viewLines
+        : SingleChildScrollView(
+            scrollDirection: Axis.horizontal, child: viewLines);
+
+    return SingleChildScrollView(
+        scrollDirection: Axis.vertical,
         controller: scroller,
-        itemCount: doc.doc.blocks.length,
-        itemExtent: extent,
-        itemBuilder: (BuildContext context, int index) {
-          Block block = doc.doc.blockAtLine(index) ?? Block('');
-          block.line = index;
-          return ViewLine(block: block, softWrap: softWrap);
-        });
+        child: Stack(children: [
+          Container(height: totalHeight),
+          horizontalScrollWrapper
+        ]));
+
+    /*
+    return ListView.builder(
+      controller: scroller,
+      // itemExtent: fontHeight,
+      itemCount: doc.doc.blocks.length,
+      itemBuilder: (BuildContext context, int index) {
+        // renderDirection = (lastRenderedLine < index) ? 1 : -1;
+        // lastRenderedLine = index;
+
+        int line = index;
+        int idx = 0;
+        for(int i=0; i<32; i++) {
+          Block block = doc.doc.blockAtLine(visibleLine + i) ?? Block('');
+          for(int j=0; j<block.lineCount; j++) {
+            if (idx == index) {
+              line = i;
+              i = 32;
+              break;
+            }
+            idx++;
+          }
+        }
+
+        Block block = doc.doc.blockAtLine(line) ?? Block('');
+        block.line = line;
+
+        // print('$visibleLine $lastRenderedLine $renderDirection');
+        return ViewLine(block: block, softWrap: softWrap,
+          width: size?.width ?? 0,
+          gutterWidth: gutterWidth,
+          gutterStyle: gutterStyle);
+      });
+    */
+
+    /*
+    return ListView.builder(
+      controller: scroller,
+      itemExtent: fontHeight,
+      itemCount: doc.doc.blocks.length,
+      itemBuilder: (BuildContext context, int index) {
+        int line = index;
+        Block block = doc.doc.blockAtLine(line) ?? Block('');
+        block.line = line;
+        // print('$visibleLine $lastRenderedLine $renderDirection');
+        return ViewLine(block: block, softWrap: softWrap,
+          width: size?.width ?? 0,
+          gutterWidth: gutterWidth,
+          gutterStyle: gutterStyle);
+      });
+    */
   }
 }

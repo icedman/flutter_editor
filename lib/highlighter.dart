@@ -8,12 +8,23 @@ import 'document.dart';
 import 'view.dart';
 import 'theme.dart';
 
-Size getTextExtents(String text, TextStyle style) {
+import 'package:highlight/highlight_core.dart' show highlight;
+import 'package:highlight/languages/cpp.dart';
+import 'package:highlight/languages/json.dart';
+// import 'package:flutter_highlight/themes/github.dart';
+import 'package:flutter_highlight/themes/dracula.dart';
+
+final theTheme = draculaTheme;
+
+Size getTextExtents(String text, TextStyle style,
+    {double minWidth = 0,
+    double maxWidth: double.infinity,
+    int? maxLines = 1}) {
   final TextPainter textPainter = TextPainter(
       text: TextSpan(text: text, style: style),
-      maxLines: 1,
+      maxLines: maxLines,
       textDirection: TextDirection.ltr)
-    ..layout(minWidth: 0, maxWidth: double.infinity);
+    ..layout(minWidth: minWidth, maxWidth: maxWidth);
   return textPainter.size;
 }
 
@@ -33,52 +44,76 @@ class CustomWidgetSpan extends WidgetSpan {
 }
 
 class Highlighter {
-  HashMap<String, Color> colorMap = HashMap<String, Color>();
-
   Highlighter() {
-    colorMap.clear();
-    colorMap['\\b(class|struct)\\b'] = function;
-    colorMap['("|<){1}\\b(.*)\\b("|>){1}'] = string;
-    // keywords and meta-keywords list is copied from flutter_highlight
-    colorMap[
-            '\\b(if|else|elif|endif|define|undef|warning|error|line|pragma|_Pragma|ifdef|ifndef|include)\\b'] =
-        function;
-    colorMap[
-            '\\b(keyword|int|float|while|private|char|char8_t|char16_t|char32_t|catch|import|module|export|virtual|operator|sizeof|dynamic_cast|10|typedef|const_cast|10|const|for|static_cast|10|union|namespace|unsigned|long|volatile|static|protected|bool|template|mutable|if|public|friend|do|goto|auto|void|enum|else|break|extern|using|asm|case|typeid|wchar_tshort|reinterpret_cast|10|default|double|register|explicit|signed|typename|try|this|switch|continue|inline|delete|alignas|alignof|constexpr|consteval|constinit|decltype|concept|co_await|co_return|co_yield|requires|noexcept|static_assert|thread_local|restrict|final|override|atomic_bool|atomic_char|atomic_schar|atomic_uchar|atomic_short|atomic_ushort|atomic_int|atomic_uint|atomic_long|atomic_ulong|atomic_llong|atomic_ullong|new|throw|return|and|and_eq|bitand|bitor|compl|not|not_eq|or|or_eq|xor|xor_eq)\\b'] =
-        keyword;
+    highlight.registerLanguage('cpp', cpp);
+    highlight.registerLanguage('json', json);
   }
 
-  List<InlineSpan> run(String text, int line, Document document) {
+  List<InlineSpan> run(Block? block, int line, Document document) {
     TextStyle defaultStyle = TextStyle(
         fontFamily: fontFamily, fontSize: fontSize, color: foreground);
     List<InlineSpan> res = <InlineSpan>[];
     List<LineDecoration> decors = <LineDecoration>[];
 
-    for (var exp in colorMap.keys) {
-      RegExp regExp = new RegExp(exp, caseSensitive: false, multiLine: false);
-      var matches = regExp.allMatches(text);
-      matches.forEach((m) {
-        if (m.start == m.end) return;
-        LineDecoration d = LineDecoration();
-        d.start = m.start;
-        d.end = m.end - 1;
-        d.color = colorMap[exp] ?? foreground;
-        decors.add(d);
-      });
+    String text = block?.text ?? '';
+    bool cache = true;
+    if (block?.spans != null) {
+      return block?.spans ?? [];
     }
 
+    int idx = 0;
+    void _traverse(var node) {
+      int start = idx;
+      final shouldAddSpan = node.className != null &&
+          ((node.value != null && node.value!.isNotEmpty) ||
+              (node.children != null && node.children!.isNotEmpty));
+
+      if (shouldAddSpan) {
+        //
+      }
+
+      if (node.value != null) {
+        int l = (node.value ?? '').length;
+        idx = idx + l;
+      } else if (node.children != null) {
+        node.children!.forEach(_traverse);
+      }
+
+      if (shouldAddSpan) {
+        LineDecoration d = LineDecoration();
+        d.start = start;
+        d.end = idx - 1;
+        String className = node.className;
+        className = className.replaceAll('meta-', '');
+        TextStyle? style = theTheme[className];
+        d.color = style?.color ?? foreground;
+        decors.add(d);
+      }
+    }
+
+    var result = highlight.parse(text, language: 'cpp');
+    result.nodes?.forEach(_traverse);
+
     text += ' ';
+    document.selectedBlocks();
+
+    // res.add(TextSpan(
+    //           text: text,
+    //           style: defaultStyle,
+    //           mouseCursor: MaterialStateMouseCursor.textable));
+
     String prevText = '';
     for (int i = 0; i < text.length; i++) {
       String ch = text[i];
       TextStyle style = defaultStyle.copyWith();
 
       // decorate
-      decors.forEach((d) {
+      for (final d in decors) {
         if (i >= d.start && i <= d.end) {
           style = style.copyWith(color: d.color);
+          break;
         }
-      });
+      }
 
       // is within selection
       for (final c in document.cursors) {
@@ -93,6 +128,7 @@ class Highlighter {
           } else {
             style =
                 style.copyWith(backgroundColor: selection.withOpacity(0.75));
+            cache = false;
             break;
           }
         }
@@ -111,6 +147,7 @@ class Highlighter {
       }
 
       if (inCaret) {
+        cache = false;
         res.add(WidgetSpan(
             alignment: ui.PlaceholderAlignment.baseline,
             baseline: TextBaseline.alphabetic,
@@ -139,11 +176,16 @@ class Highlighter {
           text: ch,
           style: style,
           mouseCursor: MaterialStateMouseCursor.textable));
+
       prevText = ch;
     }
 
     res.add(
-        CustomWidgetSpan(child: Container(height: 1, width: 8), line: line));
+        CustomWidgetSpan(child: Container(height: 1, width: 1), line: line));
+
+    if (cache) {
+      block?.spans = res;
+    }
     return res;
   }
 }
