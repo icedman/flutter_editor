@@ -36,12 +36,14 @@ class ViewLine extends StatelessWidget {
       bool this.softWrap = false,
       double this.gutterWidth = 0,
       TextStyle? this.gutterStyle,
-      double this.width = 0})
+      double this.width = 0,
+      double this.height = 0})
       : super(key: key);
 
   Block? block;
   bool softWrap = false;
   double width = 0;
+  double height = 0;
   double gutterWidth = 0;
   TextStyle? gutterStyle;
 
@@ -68,27 +70,16 @@ class ViewLine extends StatelessWidget {
     //   // print('${block?.line} $width $sz');
     // }
 
-    // return Stack(children: [
-    //   Padding(
-    //       padding: EdgeInsets.only(left: gutterWidth),
-    //       child: Container(
-    //           // width: width,
-    //           child: RichText(
-    //               text: TextSpan(children: spans), softWrap: softWrap))),
-    //   Container(
-    //       width: gutterWidth,
-    //       alignment: Alignment.centerRight,
-    //       child: Text('${lineNumber + 1} ', style: gutterStyle)),
-    // ]);
-
     return Stack(children: [
       Padding(
           padding: EdgeInsets.only(left: gutterWidth),
           child: RichText(text: TextSpan(children: spans), softWrap: softWrap)),
       Container(
+          height: height,
           width: gutterWidth,
           alignment: Alignment.centerRight,
-          child: Text('${lineNumber + 1} ', style: gutterStyle)),
+          child:
+              softWrap ? Text('${lineNumber + 1} ', style: gutterStyle) : null),
     ]);
   }
 }
@@ -104,6 +95,7 @@ class View extends StatefulWidget {
 
 class _View extends State<View> {
   late ScrollController scroller;
+  late ScrollController hscroller;
   late PeriodicTimer scrollTo;
 
   int visibleStart = -1;
@@ -111,16 +103,13 @@ class _View extends State<View> {
   bool softWrap = false;
   bool largeDoc = false;
 
-  int lastVisibleLine = 0;
   int visibleLine = 0;
   double fontHeight = 0;
-
-  int lastRenderedLine = 0;
-  int renderDirection = 1;
 
   @override
   void initState() {
     scroller = ScrollController();
+    hscroller = ScrollController();
     scrollTo = PeriodicTimer();
 
     scroller.addListener(() {
@@ -144,12 +133,14 @@ class _View extends State<View> {
         }
       }
     });
+
     super.initState();
   }
 
   @override
   void dispose() {
     scroller.dispose();
+    hscroller.dispose();
     scrollTo.cancel();
     super.dispose();
   }
@@ -309,6 +300,7 @@ class _View extends State<View> {
     top -= (fontHeight * pageLines);
     if (top < 0) top = 0;
 
+    List<Widget> gutters = [];
     List<Widget> children = [];
     double offset = top;
     for (int i = 0; i < count; i++) {
@@ -318,30 +310,21 @@ class _View extends State<View> {
       }
       Block block = doc.doc.blockAtLine(line) ?? Block('');
       block.line = line;
-      // children.add(Positioned(
-      //     top: top,
-      //     child: ViewLine(
-      //         width: (size?.width ?? 0) - gutterWidth,
-      //         block: block,
-      //         softWrap: softWrap,
-      //         gutterWidth: gutterWidth,
-      //         gutterStyle: gutterStyle)));
-      // top += ((block.lineCount > 0 ? block.lineCount : 1) * fontHeight);
 
       children.add(ViewLine(
           block: block,
           softWrap: softWrap,
           width: (size?.width ?? 0) - gutterWidth,
+          height: fontHeight,
           gutterWidth: gutterWidth,
           gutterStyle: gutterStyle));
 
-      // children.add(Text('${block.line} ${block.text}', softWrap: softWrap, style: style));
-
-      // children.add(Container(height:fontHeight,
-      //   // color: Colors.yellow
-      //   child: Text('${block.line} ${block.text}', style: style),
-      //   decoration: BoxDecoration(border: Border.all(width: 1, color: Colors.yellow))
-      //   ));
+      gutters.add(Container(
+          color: background,
+          height: fontHeight,
+          width: gutterWidth,
+          alignment: Alignment.centerRight,
+          child: Text('${block.line + 1} ', style: gutterStyle)));
     }
 
     Widget viewLines = Column(
@@ -350,68 +333,26 @@ class _View extends State<View> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [Container(height: top), ...children]);
 
-    Widget horizontalScrollWrapper = softWrap
+    Widget gutterLines = Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [Container(height: top), ...gutters]);
+
+    Widget viewLinesContainer = softWrap
         ? viewLines
         : SingleChildScrollView(
-            scrollDirection: Axis.horizontal, child: viewLines);
+            controller: hscroller,
+            scrollDirection: Axis.horizontal,
+            child: viewLines);
 
     return SingleChildScrollView(
         scrollDirection: Axis.vertical,
         controller: scroller,
         child: Stack(children: [
           Container(height: totalHeight),
-          horizontalScrollWrapper
+          viewLinesContainer,
+          if (gutterWidth > 0) ...[gutterLines]
         ]));
-
-    /*
-    return ListView.builder(
-      controller: scroller,
-      // itemExtent: fontHeight,
-      itemCount: doc.doc.blocks.length,
-      itemBuilder: (BuildContext context, int index) {
-        // renderDirection = (lastRenderedLine < index) ? 1 : -1;
-        // lastRenderedLine = index;
-
-        int line = index;
-        int idx = 0;
-        for(int i=0; i<32; i++) {
-          Block block = doc.doc.blockAtLine(visibleLine + i) ?? Block('');
-          for(int j=0; j<block.lineCount; j++) {
-            if (idx == index) {
-              line = i;
-              i = 32;
-              break;
-            }
-            idx++;
-          }
-        }
-
-        Block block = doc.doc.blockAtLine(line) ?? Block('');
-        block.line = line;
-
-        // print('$visibleLine $lastRenderedLine $renderDirection');
-        return ViewLine(block: block, softWrap: softWrap,
-          width: size?.width ?? 0,
-          gutterWidth: gutterWidth,
-          gutterStyle: gutterStyle);
-      });
-    */
-
-    /*
-    return ListView.builder(
-      controller: scroller,
-      itemExtent: fontHeight,
-      itemCount: doc.doc.blocks.length,
-      itemBuilder: (BuildContext context, int index) {
-        int line = index;
-        Block block = doc.doc.blockAtLine(line) ?? Block('');
-        block.line = line;
-        // print('$visibleLine $lastRenderedLine $renderDirection');
-        return ViewLine(block: block, softWrap: softWrap,
-          width: size?.width ?? 0,
-          gutterWidth: gutterWidth,
-          gutterStyle: gutterStyle);
-      });
-    */
   }
 }

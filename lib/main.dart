@@ -23,6 +23,12 @@ void main(List<String> args) async {
       debugShowCheckedModeBanner: false,
       theme: themeData,
       home: Scaffold(
-          body:
-              Padding(padding: EdgeInsets.all(8), child: Editor(path: path)))));
+          body: Row(children: [
+        Expanded(
+            child:
+                Padding(padding: EdgeInsets.all(8), child: Editor(path: path))),
+        Expanded(
+            child:
+                Padding(padding: EdgeInsets.all(8), child: Editor(path: path))),
+      ]))));
 }

@@ -55,6 +55,11 @@ class Highlighter {
     List<InlineSpan> res = <InlineSpan>[];
     List<LineDecoration> decors = <LineDecoration>[];
 
+    List<Block> sel = document.selectedBlocks();
+    for (final s in sel) {
+      s.spans = null;
+    }
+
     String text = block?.text ?? '';
     bool cache = true;
     if (block?.spans != null) {
@@ -95,7 +100,6 @@ class Highlighter {
     result.nodes?.forEach(_traverse);
 
     text += ' ';
-    document.selectedBlocks();
 
     // res.add(TextSpan(
     //           text: text,

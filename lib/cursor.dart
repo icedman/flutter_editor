@@ -234,6 +234,7 @@ class Cursor {
 
   List<Block> selectedBlocks() {
     List<Block> res = <Block>[];
+    if (!hasSelection()) return res;
     Cursor cur = normalized(inverse: true);
     int blockLine = cur.block?.line ?? 0;
     int anchorLine = cur.anchorBlock?.line ?? 0;
