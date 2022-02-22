@@ -26,9 +26,9 @@ void main(List<String> args) async {
           body: Row(children: [
         Expanded(
             child:
-                Padding(padding: EdgeInsets.all(8), child: Editor(path: path))),
+                Padding(padding: EdgeInsets.all(0), child: Editor(path: path))),
         Expanded(
             child:
-                Padding(padding: EdgeInsets.all(8), child: Editor(path: path))),
+                Padding(padding: EdgeInsets.all(0), child: Editor(path: path))),
       ]))));
 }

@@ -261,13 +261,13 @@ class Cursor {
     if (blockLine == anchorLine) {
       return (block?.text ?? '').substring(cur.column, cur.anchorColumn);
     }
-    res.add((block?.text ?? '').substring(cur.column));
-    Block? b = block?.next;
+    res.add((cur.block?.text ?? '').substring(cur.column));
+    Block? b = cur.block?.next;
     for (int i = blockLine + 1; b != null && i < anchorLine; i++) {
       res.add(b.text);
       b = b.next;
     }
-    res.add((anchorBlock?.text ?? '').substring(0, cur.anchorColumn));
+    res.add((cur.anchorBlock?.text ?? '').substring(0, cur.anchorColumn));
     return res.join('\n');
   }
 

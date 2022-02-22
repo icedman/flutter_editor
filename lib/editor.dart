@@ -145,6 +145,11 @@ class _Editor extends State<Editor> {
     d.moveCursor(o.dy.toInt(), o.dx.toInt(), keepAnchor: shifting);
     doc.scrollTo = d.cursor().block?.line ?? -1;
     doc.touch();
+
+    List<Block> blocks = d.selectedBlocks();
+    for (final b in blocks) {
+      b.spans = null;
+    }
   }
 
   void onPanUpdate(RenderObject? obj, Offset globalPosition) {
@@ -154,6 +159,11 @@ class _Editor extends State<Editor> {
     d.moveCursor(o.dy.toInt(), o.dx.toInt(), keepAnchor: true);
     doc.scrollTo = d.cursor().block?.line ?? -1;
     doc.touch();
+
+    List<Block> blocks = d.selectedBlocks();
+    for (final b in blocks) {
+      b.spans = null;
+    }
   }
 
   @override

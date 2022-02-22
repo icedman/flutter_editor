@@ -319,12 +319,14 @@ class _View extends State<View> {
           gutterWidth: gutterWidth,
           gutterStyle: gutterStyle));
 
-      gutters.add(Container(
-          color: background,
-          height: fontHeight,
-          width: gutterWidth,
-          alignment: Alignment.centerRight,
-          child: Text('${block.line + 1} ', style: gutterStyle)));
+      if (!softWrap) {
+        gutters.add(Container(
+            color: background,
+            height: fontHeight,
+            width: gutterWidth,
+            alignment: Alignment.centerRight,
+            child: Text('${block.line + 1} ', style: gutterStyle)));
+      }
     }
 
     Widget viewLines = Column(
@@ -333,11 +335,13 @@ class _View extends State<View> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [Container(height: top), ...children]);
 
-    Widget gutterLines = Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [Container(height: top), ...gutters]);
+    Widget gutterLines = softWrap
+        ? Container()
+        : Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [Container(height: top), ...gutters]);
 
     Widget viewLinesContainer = softWrap
         ? viewLines

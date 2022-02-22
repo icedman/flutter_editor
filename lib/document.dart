@@ -1,6 +1,8 @@
 import 'dart:io';
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'cursor.dart';
 
@@ -20,7 +22,6 @@ class Document {
   String docPath = '';
   List<Block> blocks = [];
   List<Cursor> cursors = [];
-  String clipboardText = '';
 
   Document() {
     clear();
@@ -156,7 +157,7 @@ class Document {
       clearCursors();
     }
     cursors.forEach((c) {
-      c.moveCursor(line, column, keepAnchor: keepAnchor);
+      cursor().moveCursor(line, column, keepAnchor: keepAnchor);
     });
   }
 
@@ -250,18 +251,20 @@ class Document {
     });
   }
 
-  void command(String cmd) {
+  void command(String cmd) async {
     switch (cmd) {
       case 'ctrl+c':
-        clipboardText = selectedText();
+        Clipboard.setData(ClipboardData(text: selectedText()));
         break;
       case 'ctrl+x':
-        clipboardText = selectedText();
+        Clipboard.setData(ClipboardData(text: selectedText()));
         deleteSelectedText();
         break;
       case 'ctrl+v':
         {
-          List<String> lines = clipboardText.split('\n');
+          ClipboardData? data = await Clipboard.getData('text/plain');
+          if (data == null) return;
+          List<String> lines = (data.text ?? '').split('\n');
           int idx = 0;
           lines.forEach((l) {
             if (idx++ > 0) {
@@ -269,7 +272,6 @@ class Document {
             }
             insertText(l);
           });
-
           break;
         }
       case 'ctrl+s':
@@ -278,7 +280,6 @@ class Document {
       case 'ctrl+d':
         {
           if (cursor().hasSelection()) {
-            print(cursor().selectedText());
             Cursor cur = cursor().findText(cursor().selectedText());
             if (!cur.isNull) {
               addCursor();
