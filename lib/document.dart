@@ -250,44 +250,4 @@ class Document {
       c.deleteSelectedText();
     });
   }
-
-  void command(String cmd) async {
-    switch (cmd) {
-      case 'ctrl+c':
-        Clipboard.setData(ClipboardData(text: selectedText()));
-        break;
-      case 'ctrl+x':
-        Clipboard.setData(ClipboardData(text: selectedText()));
-        deleteSelectedText();
-        break;
-      case 'ctrl+v':
-        {
-          ClipboardData? data = await Clipboard.getData('text/plain');
-          if (data == null) return;
-          List<String> lines = (data.text ?? '').split('\n');
-          int idx = 0;
-          lines.forEach((l) {
-            if (idx++ > 0) {
-              insertNewLine();
-            }
-            insertText(l);
-          });
-          break;
-        }
-      case 'ctrl+s':
-        saveFile();
-        break;
-      case 'ctrl+d':
-        {
-          if (cursor().hasSelection()) {
-            Cursor cur = cursor().findText(cursor().selectedText());
-            if (!cur.isNull) {
-              addCursor();
-              cursor().copyFrom(cur, keepAnchor: true);
-            }
-          }
-          break;
-        }
-    }
-  }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import 'cursor.dart';
 import 'document.dart';
 import 'view.dart';
 import 'input.dart';
@@ -35,7 +36,46 @@ class _Editor extends State<Editor> {
     super.dispose();
   }
 
-  void command() {}
+  void command(String cmd) async {
+    Document d = doc.doc;
+    switch (cmd) {
+      case 'ctrl+c':
+        Clipboard.setData(ClipboardData(text: d.selectedText()));
+        break;
+      case 'ctrl+x':
+        Clipboard.setData(ClipboardData(text: d.selectedText()));
+        d.deleteSelectedText();
+        break;
+      case 'ctrl+v':
+        {
+          ClipboardData? data = await Clipboard.getData('text/plain');
+          if (data == null) return;
+          List<String> lines = (data.text ?? '').split('\n');
+          int idx = 0;
+          lines.forEach((l) {
+            if (idx++ > 0) {
+              d.insertNewLine();
+            }
+            d.insertText(l);
+          });
+          break;
+        }
+      case 'ctrl+s':
+        d.saveFile();
+        break;
+      case 'ctrl+d':
+        {
+          if (d.cursor().hasSelection()) {
+            Cursor cur = d.cursor().findText(d.cursor().selectedText());
+            if (!cur.isNull) {
+              d.addCursor();
+              d.cursor().copyFrom(cur, keepAnchor: true);
+            }
+          }
+          break;
+        }
+    }
+  }
 
   void onKeyDown(String key,
       {int keyId = 0, bool shift = false, bool control = false}) {
@@ -115,7 +155,7 @@ class _Editor extends State<Editor> {
             String ch =
                 String.fromCharCode(97 + k - LogicalKeyboardKey.keyA.keyId);
             if (control) {
-              d.command('ctrl+$ch');
+              command('ctrl+$ch');
               doScroll = false;
               break;
             }
