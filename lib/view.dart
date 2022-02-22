@@ -17,6 +17,7 @@ class DocumentProvider extends ChangeNotifier {
   Document doc = Document();
 
   int scrollTo = -1;
+  bool softWrap = true;
 
   Future<bool> openFile(String path) async {
     bool res = await doc.openFile(path);
@@ -33,7 +34,6 @@ class ViewLine extends StatelessWidget {
   ViewLine(
       {Key? key,
       Block? this.block,
-      bool this.softWrap = false,
       double this.gutterWidth = 0,
       TextStyle? this.gutterStyle,
       double this.width = 0,
@@ -41,7 +41,6 @@ class ViewLine extends StatelessWidget {
       : super(key: key);
 
   Block? block;
-  bool softWrap = false;
   double width = 0;
   double height = 0;
   double gutterWidth = 0;
@@ -69,6 +68,8 @@ class ViewLine extends StatelessWidget {
     //   // block?.lineCount = 1;
     //   // print('${block?.line} $width $sz');
     // }
+
+    bool softWrap = doc.softWrap;
 
     return Stack(children: [
       Padding(
@@ -100,7 +101,6 @@ class _View extends State<View> {
 
   int visibleStart = -1;
   int visibleEnd = -1;
-  bool softWrap = false;
   bool largeDoc = false;
 
   int visibleLine = 0;
@@ -269,6 +269,8 @@ class _View extends State<View> {
           .height;
     }
 
+    bool softWrap = doc.softWrap;
+
     double? extent;
     largeDoc = (doc.doc.blocks.length > 10000);
     if (!softWrap) {
@@ -313,7 +315,6 @@ class _View extends State<View> {
 
       children.add(ViewLine(
           block: block,
-          softWrap: softWrap,
           width: (size?.width ?? 0) - gutterWidth,
           height: fontHeight,
           gutterWidth: gutterWidth,

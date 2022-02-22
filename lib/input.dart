@@ -139,6 +139,10 @@ class _InputListener extends State<InputListener> {
         onPanUpdate: (DragUpdateDetails details) {
           widget.onPanUpdate
               ?.call(context.findRenderObject(), details.globalPosition);
+        },
+        onLongPressMoveUpdate: (LongPressMoveUpdateDetails details) {
+          widget.onPanUpdate
+              ?.call(context.findRenderObject(), details.globalPosition);
         });
   }
 }
