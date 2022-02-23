@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:collection';
 import 'dart:ui' as ui;
+import 'dart:ffi';
+import 'package:ffi/ffi.dart';
 
 import 'cursor.dart';
 import 'document.dart';
 import 'view.dart';
 import 'theme.dart';
+import 'native.dart';
 
 import 'package:highlight/highlight_core.dart' show highlight;
 import 'package:highlight/languages/cpp.dart';
@@ -98,8 +101,35 @@ class Highlighter {
       }
     }
 
-    var result = highlight.parse(text, language: 'cpp');
-    result.nodes?.forEach(_traverse);
+    // var result = highlight.parse(text, language: 'cpp');
+    // result.nodes?.forEach(_traverse);
+
+    final nspans = runHighlighter(text, 0, 0, 0, 0, 0);
+    while (idx < (2048 * 4)) {
+      final spn = nspans[idx++];
+      if (spn.start == 0 && spn.length == 0) break;
+      int s = spn.start;
+      int l = spn.length;
+
+      // todo... cleanup these checks
+      if (s < 0) continue;
+      if (s - 1 >= text.length) continue;
+      if (s + l >= text.length) {
+        l = text.length - s;
+      }
+      if (l <= 0) continue;
+
+      Color fg = Color.fromRGBO(spn.r, spn.g, spn.b, 1);
+      bool hasBg = (spn.bg_r + spn.bg_g + spn.bg_b != 0);
+
+      LineDecoration d = LineDecoration();
+        d.start = s;
+        d.end = s + l - 1;
+        d.color = fg;
+        decors.add(d);
+    }
+
+    print('!>$line $text');
 
     text += ' ';
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 String fontFamily = 'FiraCode';
-double fontSize = 18;
+double fontSize = 20;
 double gutterFontSize = 16;
 Color foreground = Color(0xfff8f8f2);
 Color background = Color(0xff272822);

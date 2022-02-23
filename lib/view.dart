@@ -47,6 +47,7 @@ class ViewLine extends StatelessWidget {
   double gutterWidth = 0;
   TextStyle? gutterStyle;
 
+
   @override
   Widget build(BuildContext context) {
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
@@ -56,7 +57,11 @@ class ViewLine extends StatelessWidget {
     int lineNumber = block?.line ?? 0;
 
     // print('build ${block?.line}');
-    List<InlineSpan> spans = hl.run(block, lineNumber, doc.doc);
+    List<InlineSpan> spans = block?.spans ?? [];
+    
+    Future.delayed(Duration(milliseconds: 0), () {
+      hl.run(block, lineNumber, doc.doc);
+      });
 
     bool softWrap = doc.softWrap;
 
@@ -301,6 +306,29 @@ class _View extends State<View> {
       size = box.size;
     }
 
+    int count = 100;
+    if (size != null) {
+      count = ((size.height / fontHeight) * 2.0).toInt();
+    }
+
+    int docSize = doc.doc.blocks.length;
+
+    // highlight run
+    // Highlighter hl = Provider.of<Highlighter>(context);
+    // for (int i = 0; i < count; i++) {
+    //   int line = visibleLine + i;
+    //   if (line >= docSize) {
+    //     break;
+    //   }
+    //   Block block = doc.doc.blockAtLine(line) ?? Block('');
+    //   block.line = line;
+    //   String text = block.text;
+    //   int lineNumber = block.line;
+
+    //   // print('build ${block?.line}');
+    //   List<InlineSpan> spans = hl.run(block, lineNumber, doc.doc);
+    // }
+
     if ((!largeDoc && softWrap)) {
       return ListView.builder(
           controller: scroller,
@@ -323,25 +351,20 @@ class _View extends State<View> {
     // 2. not softWrap - vertical + horizontal scroller is not available
     // drawback - slow scrolling has a jerkiness effect when softWrap is on
 
-    int count = 100;
-    if (size != null && size.height > fontHeight * 4) {
-      count = ((size.height / fontHeight) * 2.0).toInt();
-    }
-
-    int docSize = doc.doc.blocks.length;
     double totalHeight = docSize * fontHeight;
 
-    int pageLines = 32;
     double top = fontHeight * visibleLine;
-    top -= (fontHeight * pageLines);
+    top -= (fontHeight * count/2);
     if (top < 0) top = 0;
+
+    // print('count: $count top: $top visible: $visibleLine');
 
     List<Widget> gutters = [];
     List<Widget> children = [];
     double offset = top;
     for (int i = 0; i < count; i++) {
       int line = visibleLine + i;
-      if (line > docSize) {
+      if (line >= docSize) {
         break;
       }
       Block block = doc.doc.blockAtLine(line) ?? Block('');

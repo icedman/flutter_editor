@@ -38,7 +38,7 @@ Offset screenToCursor(RenderObject? obj, Offset pos) {
   bool found = false;
 
   int nearestOffset = 0;
-  double nearest = 0;
+  double nearest = -1;
 
   for (var span in children) {
     if (found) break;
@@ -55,6 +55,12 @@ Offset screenToCursor(RenderObject? obj, Offset pos) {
       Offset offsetForCaret = targetPar.localToGlobal(targetPar
           .getOffsetForCaret(TextPosition(offset: textOffset), bounds));
 
+      Rect charBounds = offsetForCaret & fontCharSize;
+      if (charBounds.inflate(2).contains(Offset(pos.dx + 1, pos.dy + 1))) {
+        found = true;
+        break;
+      }
+
       double dx = offsetForCaret.dx - pos.dx;
       double dy = offsetForCaret.dy - (pos.dy - 4);
       double dst = sqrt((dx * dx) + (dy * dy));
@@ -63,7 +69,7 @@ Offset screenToCursor(RenderObject? obj, Offset pos) {
         dst += 1000;
       }
 
-      if (nearest > dst || nearest == 0) {
+      if (nearest > dst || nearest == -1) {
         nearest = dst;
         nearestOffset = textOffset;
       }
@@ -75,7 +81,9 @@ Offset screenToCursor(RenderObject? obj, Offset pos) {
     line = (children.last as CustomWidgetSpan).line;
   }
 
-  textOffset = nearestOffset;
+  if (!found) {
+    textOffset = nearestOffset;
+  }
 
   return Offset(textOffset.toDouble(), line.toDouble());
 }

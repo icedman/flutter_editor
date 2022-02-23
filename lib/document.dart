@@ -6,8 +6,14 @@ import 'package:flutter/services.dart';
 
 import 'cursor.dart';
 
+int _blockId = 0xffff;
+
 class Block {
-  Block(String this.text, {int this.line = 0, Document? this.document});
+  Block(String this.text, {int this.line = 0, Document? this.document}) {
+        blockId = _blockId ++;
+  }
+
+  int blockId = 0;
   int line = 0;
   String text = '';
   Document? document;
