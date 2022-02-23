@@ -49,18 +49,18 @@ class Document {
 
   List<Cursor> cursorsUniqued() {
     List<Cursor> _cursors = [];
-    // cursors.forEach((c) {
-    //   bool skip = false;
-    //   for (final _c in _cursors) {
-    //     if (c != _c && _c.block == c.block && _c.column == c.column) {
-    //       skip = true;
-    //       break;
-    //     }
-    //   }
-    //   if (!skip) {
-    //     _cursors.add(c);
-    //   }
-    // });
+    cursors.forEach((c) {
+      bool skip = false;
+      for (final _c in _cursors) {
+        if (c != _c && _c.block == c.block && _c.column == c.column) {
+          skip = true;
+          break;
+        }
+      }
+      if (!skip) {
+        _cursors.add(c);
+      }
+    });
     return _cursors;
   }
 

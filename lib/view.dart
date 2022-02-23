@@ -59,17 +59,6 @@ class ViewLine extends StatelessWidget {
     int lineNumber = block?.line ?? 0;
     List<InlineSpan> spans = hl.run(block, lineNumber, doc.doc);
 
-    // if (spans.length > 0 && spans[0] is TextSpan) {
-    //   TextSpan ts = spans[0] as TextSpan;
-
-    //   Size singleLine = getTextExtents('X', ts.style ?? TextStyle());
-    //   Size sz = getTextExtents(block?.text ?? '', ts.style ?? TextStyle(),
-    //       maxWidth: width > 0 ? width : double.infinity, maxLines: 100);
-    //   block?.lineCount = (sz.height / singleLine.height).toInt();
-    //   // block?.lineCount = 1;
-    //   // print('${block?.line} $width $sz');
-    // }
-
     return Stack(children: [
       Padding(
           padding: EdgeInsets.only(left: gutterWidth),
@@ -126,10 +115,7 @@ class _View extends State<View> {
         if (visibleLine != line) {
           setState(() {
             visibleLine = line;
-            // print('!$visibleLine');
           });
-        } else {
-          // print('---$line');
         }
       }
     });
@@ -185,7 +171,6 @@ class _View extends State<View> {
 
   bool isLineVisible(int line) {
     bool res = (line >= visibleStart && line <= visibleEnd);
-    // print('$line $visibleStart $visibleEnd $res');
     return res;
   }
 
@@ -242,7 +227,6 @@ class _View extends State<View> {
               }
             }
 
-            // print('${line} $visibleStart $visibleEnd');
             return !(isLineVisible(line));
           },
           onDone: () {
@@ -286,6 +270,30 @@ class _View extends State<View> {
       RenderBox? box = obj as RenderBox;
       size = box.size;
     }
+
+    if ((!largeDoc && softWrap)) {
+      return ListView.builder(
+        controller: scroller,
+          itemCount: doc.doc.blocks.length,
+          itemExtent: softWrap ? null : fontHeight,
+          itemBuilder: (BuildContext context, int line) {
+            Block block = doc.doc.blockAtLine(line) ?? Block('');
+            block.line = line;
+            return ViewLine(
+                block: block,
+                softWrap: softWrap,
+                width: (size?.width ?? 0) - gutterWidth,
+                height: fontHeight,
+                gutterWidth: gutterWidth,
+                gutterStyle: gutterStyle);
+          }
+        );
+    }
+
+    // use a custom ListView - default ListView.builder doesn't work well where:
+    // 1. document is large - thumbscrolling is too slow
+    // 2. not softWrap - vertical + horizontal scroller is not available
+    // drawback - slow scrolling has a jerkiness effect when softWrap is on
 
     int count = 100;
     if (size != null && size.height > fontHeight * 4) {
