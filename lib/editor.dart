@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import 'caret.dart';
 import 'cursor.dart';
 import 'document.dart';
 import 'view.dart';
@@ -39,6 +40,10 @@ class _Editor extends State<Editor> {
   void command(String cmd) async {
     Document d = doc.doc;
     switch (cmd) {
+      case 'ctrl+w':
+        doc.softWrap = !doc.softWrap;
+        doc.notifyListeners();
+        break;
       case 'ctrl+c':
         Clipboard.setData(ClipboardData(text: d.selectedText()));
         break;
@@ -211,7 +216,8 @@ class _Editor extends State<Editor> {
     return MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (context) => doc),
-          Provider(create: (context) => highlighter)
+          ChangeNotifierProvider(create: (context) => CaretPulse()),
+          Provider(create: (context) => highlighter),
         ],
         child: InputListener(
           child: View(),

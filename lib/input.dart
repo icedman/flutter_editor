@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
@@ -35,6 +36,10 @@ Offset screenToCursor(RenderObject? obj, Offset pos) {
   Size fontCharSize = Size(0, 0);
   int textOffset = 0;
   bool found = false;
+
+  int nearestOffset = 0;
+  double nearest = 0;
+
   for (var span in children) {
     if (found) break;
     if (!(span is TextSpan)) {
@@ -46,13 +51,21 @@ Offset screenToCursor(RenderObject? obj, Offset pos) {
     }
 
     String txt = (span as TextSpan).text ?? '';
-    for (int i = 0; i < txt.length; i++) {
+    for (int i = 0; i < txt.length + 1; i++) {
       Offset offsetForCaret = targetPar.localToGlobal(targetPar
           .getOffsetForCaret(TextPosition(offset: textOffset), bounds));
-      Rect charBounds = offsetForCaret & fontCharSize;
-      if (charBounds.inflate(2).contains(Offset(pos.dx + 1, pos.dy + 1))) {
-        found = true;
-        break;
+
+      double dx = offsetForCaret.dx - pos.dx;
+      double dy = offsetForCaret.dy - (pos.dy - 4);
+      double dst = sqrt((dx * dx) + (dy * dy));
+
+      if (sqrt(dy * dy) > fontCharSize.height) {
+        dst += 1000;
+      }
+
+      if (nearest > dst || nearest == 0) {
+        nearest = dst;
+        nearestOffset = textOffset;
       }
       textOffset++;
     }
@@ -61,6 +74,8 @@ Offset screenToCursor(RenderObject? obj, Offset pos) {
   if (children.length > 0 && children.last is CustomWidgetSpan) {
     line = (children.last as CustomWidgetSpan).line;
   }
+
+  textOffset = nearestOffset;
 
   return Offset(textOffset.toDouble(), line.toDouble());
 }
@@ -137,6 +152,10 @@ class _InputListener extends State<InputListener> {
               ?.call(context.findRenderObject(), details.globalPosition);
         },
         onPanUpdate: (DragUpdateDetails details) {
+          widget.onPanUpdate
+              ?.call(context.findRenderObject(), details.globalPosition);
+        },
+        onLongPressMoveUpdate: (LongPressMoveUpdateDetails details) {
           widget.onPanUpdate
               ?.call(context.findRenderObject(), details.globalPosition);
         });

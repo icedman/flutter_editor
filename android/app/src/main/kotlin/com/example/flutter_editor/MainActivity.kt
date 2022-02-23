@@ -1,4 +1,4 @@
-package com.example.editor_from_scratch
+package com.example.flutter_editor
 
 import io.flutter.embedding.android.FlutterActivity
 

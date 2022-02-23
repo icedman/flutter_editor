@@ -14,7 +14,7 @@ void main(List<String> args) async {
     scaffoldBackgroundColor: background,
   );
 
-  String path = './tests/tinywl.c';
+  String path = '/sdcard/Developer/tests/tinywl.c';
   if (args.length > 0) {
     path = args[0];
   }
@@ -27,8 +27,8 @@ void main(List<String> args) async {
         Expanded(
             child:
                 Padding(padding: EdgeInsets.all(0), child: Editor(path: path))),
-        Expanded(
-            child:
-                Padding(padding: EdgeInsets.all(0), child: Editor(path: path))),
+        //Expanded(
+        //    child:
+        //        Padding(padding: EdgeInsets.all(0), child: Editor(path: path))),
       ]))));
 }

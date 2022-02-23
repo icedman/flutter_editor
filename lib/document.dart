@@ -15,6 +15,7 @@ class Block {
   Block? next;
 
   List<InlineSpan>? spans;
+  List<int> carets = [];
   int lineCount = 0;
 }
 

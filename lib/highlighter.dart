@@ -60,6 +60,8 @@ class Highlighter {
       s.spans = null;
     }
 
+    block?.carets.clear();
+
     String text = block?.text ?? '';
     bool cache = true;
     if (block?.spans != null) {
@@ -151,17 +153,18 @@ class Highlighter {
       }
 
       if (inCaret) {
-        cache = false;
-        res.add(WidgetSpan(
-            alignment: ui.PlaceholderAlignment.baseline,
-            baseline: TextBaseline.alphabetic,
-            child: Container(
-                decoration: BoxDecoration(
-                    border: Border(
-                        left: BorderSide(
-                            width: 1.2, color: style.color ?? Colors.yellow))),
-                child: Text(ch, style: style.copyWith(letterSpacing: -1.5)))));
-        continue;
+        block?.carets.add(i);
+        // cache = false;
+        // res.add(WidgetSpan(
+        //     alignment: ui.PlaceholderAlignment.baseline,
+        //     baseline: TextBaseline.alphabetic,
+        //     child: Container(
+        //         decoration: BoxDecoration(
+        //             border: Border(
+        //                 left: BorderSide(
+        //                     width: 1.2, color: style.color ?? Colors.yellow))),
+        //         child: Text(ch, style: style.copyWith(letterSpacing: -1.5)))));
+        // continue;
       }
 
       if (res.length != 0 && !(res[res.length - 1] is WidgetSpan)) {

@@ -7,6 +7,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:math';
 
+import 'caret.dart';
 import 'timer.dart';
 import 'input.dart';
 import 'document.dart';
@@ -17,6 +18,7 @@ class DocumentProvider extends ChangeNotifier {
   Document doc = Document();
 
   int scrollTo = -1;
+  bool softWrap = true;
 
   Future<bool> openFile(String path) async {
     bool res = await doc.openFile(path);
@@ -33,7 +35,6 @@ class ViewLine extends StatelessWidget {
   ViewLine(
       {Key? key,
       Block? this.block,
-      bool this.softWrap = false,
       double this.gutterWidth = 0,
       TextStyle? this.gutterStyle,
       double this.width = 0,
@@ -41,7 +42,6 @@ class ViewLine extends StatelessWidget {
       : super(key: key);
 
   Block? block;
-  bool softWrap = false;
   double width = 0;
   double height = 0;
   double gutterWidth = 0;
@@ -49,15 +49,43 @@ class ViewLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String text = block?.text ?? '';
-
-    // print('build ${block?.line}');
-
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
     Highlighter hl = Provider.of<Highlighter>(context);
 
+    String text = block?.text ?? '';
     int lineNumber = block?.line ?? 0;
+
+    // print('build ${block?.line}');
     List<InlineSpan> spans = hl.run(block, lineNumber, doc.doc);
+
+    bool softWrap = doc.softWrap;
+
+    // render carets
+    List<Widget> carets = [];
+    if ((block?.carets ?? []).length > 0) {
+      RenderObject? obj = context.findRenderObject();
+      Size size = Size(0, 0);
+      if (obj != null) {
+        RenderBox? box = obj as RenderBox;
+        size = box.size;
+      }
+      if (size.width > 0 && spans.length > 0 && spans[0] is TextSpan) {
+        TextSpan ts = spans[0] as TextSpan;
+        Size sz = getTextExtents('|', ts.style ?? TextStyle());
+        final TextPainter textPainter = TextPainter(
+            text: TextSpan(text: block?.text ?? '', style: ts.style),
+            textDirection: TextDirection.ltr)
+          ..layout(minWidth: 0, maxWidth: size.width - gutterWidth);
+        for(final col in block?.carets ?? []) {
+          Offset offsetForCaret = textPainter.getOffsetForCaret(
+              TextPosition(offset: col), Offset(0, 0) & Size(0,0));
+          carets.add(Positioned(
+              left: gutterWidth + offsetForCaret.dx,
+              top: offsetForCaret.dy,
+              child: AnimatedCaret(width: 2, height: sz.height, color: Colors.yellow)));
+        }
+      }
+    }
 
     return Stack(children: [
       Padding(
@@ -69,6 +97,7 @@ class ViewLine extends StatelessWidget {
           alignment: Alignment.centerRight,
           child:
               softWrap ? Text('${lineNumber + 1} ', style: gutterStyle) : null),
+      ...carets,
     ]);
   }
 }
@@ -89,7 +118,6 @@ class _View extends State<View> {
 
   int visibleStart = -1;
   int visibleEnd = -1;
-  bool softWrap = false;
   bool largeDoc = false;
 
   int visibleLine = 0;
@@ -253,6 +281,8 @@ class _View extends State<View> {
           .height;
     }
 
+    bool softWrap = doc.softWrap;
+
     double? extent;
     largeDoc = (doc.doc.blocks.length > 10000);
     if (!softWrap) {
@@ -265,7 +295,7 @@ class _View extends State<View> {
     }
 
     RenderObject? obj = context.findRenderObject();
-    Size? size;
+    Size size = Size(0,0);
     if (obj != null) {
       RenderBox? box = obj as RenderBox;
       size = box.size;
@@ -273,7 +303,7 @@ class _View extends State<View> {
 
     if ((!largeDoc && softWrap)) {
       return ListView.builder(
-        controller: scroller,
+          controller: scroller,
           itemCount: doc.doc.blocks.length,
           itemExtent: softWrap ? null : fontHeight,
           itemBuilder: (BuildContext context, int line) {
@@ -281,13 +311,11 @@ class _View extends State<View> {
             block.line = line;
             return ViewLine(
                 block: block,
-                softWrap: softWrap,
-                width: (size?.width ?? 0) - gutterWidth,
+                width: size.width - gutterWidth,
                 height: fontHeight,
                 gutterWidth: gutterWidth,
                 gutterStyle: gutterStyle);
-          }
-        );
+          });
     }
 
     // use a custom ListView - default ListView.builder doesn't work well where:
@@ -321,8 +349,7 @@ class _View extends State<View> {
 
       children.add(ViewLine(
           block: block,
-          softWrap: softWrap,
-          width: (size?.width ?? 0) - gutterWidth,
+          width: size.width - gutterWidth,
           height: fontHeight,
           gutterWidth: gutterWidth,
           gutterStyle: gutterStyle));
