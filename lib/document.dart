@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'cursor.dart';
+import 'highlighter.dart';
 
 int _blockId = 0xffff;
 
@@ -20,6 +21,9 @@ class Block {
   Block? previous;
   Block? next;
 
+  bool waiting = false;
+  
+  List<LineDecoration> decors = [];
   List<InlineSpan>? spans;
   List<int> carets = [];
   int lineCount = 0;

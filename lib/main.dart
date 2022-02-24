@@ -14,7 +14,7 @@ void main(List<String> args) async {
   // int theme = loadTheme("/home/iceman/.editor/extensions/theme-monokai-dimmed/themes/dimmed-monokai-color-theme.json");
   int theme = loadTheme("/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.0/theme/dracula-soft.json");
   int lang = loadLanguage("test.cpp");
-  runHighlighter("int main(int argc, char** argv)", lang, theme, 0, 0, 0);
+  // runHighlighter("int main(int argc, char** argv)", lang, theme, 0, 0, 0);
   
   ThemeData themeData = ThemeData(
     fontFamily: 'FiraCode',

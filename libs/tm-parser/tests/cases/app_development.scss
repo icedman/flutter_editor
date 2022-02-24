@@ -1,0 +1,503 @@
+/* development css ... transfer to app.scss when final */
+$primary-color: #c0c0c0;
+
+.app-page,
+.app-page > div {
+  padding: 1em;
+  position: relative;
+}
+
+.app-sidebar {
+  color: #fff;
+  padding: 0 2em;
+}
+
+.cyan-bg {
+  background: #00ffff;
+}
+
+.bs-billing-detail-page {
+  background: yellow;
+}
+
+.app-menu-item-container {
+  margin: 0;
+}
+
+.app-menu-item {
+  width: calc(48vw - 2em);
+  height: calc(48vw - 2em);
+}
+
+.app-menu-item button {
+  width: 100%;
+  height: 100%;
+  color: #000;
+  background: #f7f7f7;
+  padding: 0;
+  border-radius: 0;
+}
+
+.app-menu-item button:hover,
+.app-menu-item button:focus {
+  color: #fff;
+  background: $primary-color;
+}
+
+// @media only screen and (min-width: 1150px) {
+//   .app-menu-item {
+//     width: 49vw;
+//     height: 49vw;
+//   }
+// }
+
+@media only screen and (min-width: 838px) {
+  .app-menu-item {
+    width: calc(49vw - 2em);
+    height: calc(49vw - 2em);
+  }
+}
+
+@media only screen and (min-width: 1280px) {
+  .app-menu-item-container {
+    width: calc(49vw - 120px - 2em);
+    height: calc(49vw - 120px -2em);
+  }
+}
+
+.btn-white button {
+  color: #000;
+  background-color: #fff;
+  box-shadow: none;
+}
+
+.btn-white button:hover,
+.btn-white button:focus {
+  color: #fff;
+  background: $primary-color;
+  box-shadow: none;
+}
+
+.app-menu-logo {
+  position: absolute;
+  top: -40px;
+  right: 1em;
+}
+
+.app-menu-item button:hover .inner-button object,
+.app-menu-item button:focus .inner-button object {
+  filter: invert(100%) sepia(100%) saturate(0%) hue-rotate(33deg)
+    brightness(107%) contrast(102%);
+}
+
+.app-menu-item .MuiButton-label,
+.inner-button {
+  width: 100%;
+  height: 100%;
+}
+
+.inner-content-button object {
+  margin-bottom: 0.5em;
+  height: 40%;
+  pointer-events: none;
+}
+
+.app-menu-item button .inner-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.inner-content-button {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.justify-content-center {
+  justify-content: center;
+}
+
+.align-items-center {
+  align-items: center;
+}
+
+.bite-homeowner-sidebar .MuiListItemText-root span {
+  color: #fff;
+}
+
+.MuiDrawer-paper {
+  background-color: $primary-color !important;
+}
+
+.bite-homeowner-sidebar .MuiListItem-button {
+  margin-bottom: 0.5em;
+  border-bottom: 1px solid rgba($color: #fff, $alpha: 0.6);
+}
+
+.app-sidebar-close {
+  cursor: pointer;
+  display: inline-block;
+  padding: 0.25em;
+  position: absolute;
+  top: 0.75em;
+  left: 0.75em;
+}
+
+.app-sidebar-close svg {
+  margin: auto;
+  vertical-align: top;
+}
+
+.app-sidebar-close:hover {
+  background-color: rgba($color: #000, $alpha: 0.04);
+}
+
+.app-sidebar .bite-homeowner-sidebar {
+  margin-top: 3.5em;
+}
+
+@media only screen and (min-width: 1280px) {
+  .app-sidebar .bite-homeowner-sidebar {
+    margin-top: 0;
+  }
+  .app-sidebar-close {
+    display: none;
+  }
+}
+
+.bite-select .MuiTypography-root {
+  color: $primary-color;
+  font-size: 1.3em;
+  font-weight: 600;
+  padding-bottom: 1em;
+}
+
+.bite-label {
+  color: $primary-color;
+  font-size: 1.3em;
+  font-weight: 600;
+  padding: 1em 0;
+}
+
+.login-form-input {
+  margin-left: 1.8em;
+}
+
+.login-icons {
+  position: absolute;
+  top: 12px;
+  height: 20px;
+  width: 20px;
+}
+
+.forgot-password-container p {
+  margin-left: auto;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.drawer-dashboard-sidebar .MuiDrawer-paper {
+  background-color: transparent !important;
+}
+
+.app-dashboard-sidebar {
+  background: transparent;
+  padding: 0;
+  border-right: 1px solid #000;
+}
+
+.bite-dashboard-sidebar .MuiList-padding {
+  padding-top: 0px;
+}
+
+.bite-dashboard-sidebar .MuiListItem-button {
+  background: #969696;
+  padding-right: 20px;
+  border-bottom: 1px solid #fff;
+  text-align: right;
+}
+
+.bite-dashboard-sidebar .MuiListItem-button:hover,
+.bite-dashboard-sidebar .MuiListItem-button:active {
+  background: #8f271e;
+}
+
+.bite-dashboard-sidebar .MuiTypography-body1 {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.node-container .dashboard-table th {
+  color: #939393;
+  font-weight: 400;
+  font-size: 18px;
+}
+
+.node-container .dashboard-table td {
+  color: #717171;
+  font-weight: 400;
+  font-size: 14px;
+  $primary-color: #8f271e;
+}
+$primary-color: #8f271e;
+
+.app-page,
+.app-page > div {
+  padding: 1em;
+  position: relative;
+}
+
+.app-sidebar {
+  color: #fff;
+  padding: 0 0;
+}
+
+.app-sidebar [role=button] {
+  padding: 0.4em 2em;
+}
+
+.cyan-bg {
+  background: #00ffff;
+}
+
+.bs-billing-detail-page {
+  background: yellow;
+}
+
+.app-menu-item-container {
+  margin: 0;
+}
+
+.app-menu-item {
+  width: calc(48vw - 2em);
+  height: calc(48vw - 2em);
+}
+
+.app-menu-item button {
+  width: 100%;
+  height: 100%;
+  color: #000;
+  background: #f7f7f7;
+  padding: 0;
+  border-radius: 0;
+}
+
+.app-menu-item button:hover,
+.app-menu-item button:focus {
+  color: #fff;
+  background: $primary-color;
+}
+
+// @media only screen and (min-width: 1150px) {
+//   .app-menu-item {
+//     width: 49vw;
+//     height: 49vw;
+//   }
+// }
+
+@media only screen and (min-width: 838px) {
+  .app-menu-item {
+    width: calc(49vw - 2em);
+    height: calc(49vw - 2em);
+  }
+}
+
+@media only screen and (min-width: 1280px) {
+  .app-menu-item-container {
+    width: calc(49vw - 120px - 2em);
+    height: calc(49vw - 120px -2em);
+  }
+}
+
+.btn-white button {
+  color: #000;
+  background-color: #fff;
+  box-shadow: none;
+}
+
+.btn-white button:hover,
+.btn-white button:focus {
+  color: #fff;
+  background: $primary-color;
+  box-shadow: none;
+}
+
+.app-menu-logo {
+  position: absolute;
+  top: -40px;
+  right: 1em;
+}
+
+.app-menu-item button:hover .inner-button object,
+.app-menu-item button:focus .inner-button object {
+  filter: invert(100%) sepia(100%) saturate(0%) hue-rotate(33deg)
+    brightness(107%) contrast(102%);
+}
+
+.app-menu-item .MuiButton-label,
+.inner-button {
+  width: 100%;
+  height: 100%;
+}
+
+.inner-content-button object {
+  margin-bottom: 0.5em;
+  height: 40%;
+  pointer-events: none;
+}
+
+.app-menu-item button .inner-button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.inner-content-button {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+.justify-content-center {
+  justify-content: center;
+}
+
+.align-items-center {
+  align-items: center;
+}
+
+.bite-homeowner-sidebar .MuiListItemText-root span {
+  color: #fff;
+}
+
+.MuiDrawer-paper {
+  background-color: $primary-color !important;
+}
+
+.bite-homeowner-sidebar .MuiListItem-button {
+  margin-bottom: 0.5em;
+  border-bottom: 1px solid rgba($color: #fff, $alpha: 0.6);
+}
+
+.app-sidebar-close {
+  cursor: pointer;
+  display: inline-block;
+  padding: 0.25em;
+  position: absolute;
+  top: 0.75em;
+  left: 0.75em;
+}
+
+.app-sidebar-close svg {
+  margin: auto;
+  vertical-align: top;
+}
+
+.app-sidebar-close:hover {
+  background-color: rgba($color: #000, $alpha: 0.04);
+}
+
+.app-sidebar .bite-homeowner-sidebar {
+  margin-top: 3.5em;
+}
+
+@media only screen and (min-width: 1280px) {
+  .app-sidebar .bite-homeowner-sidebar {
+    margin-top: 0;
+  }
+  .app-sidebar-close {
+    display: none;
+  }
+}
+
+.bite-select .MuiTypography-root {
+  color: $primary-color;
+  font-size: 1.3em;
+  font-weight: 600;
+  padding-bottom: 1em;
+}
+
+.bite-label {
+  color: $primary-color;
+  font-size: 1.3em;
+  font-weight: 600;
+  padding: 1em 0;
+}
+
+.login-form-input {
+  margin-left: 1.8em;
+}
+
+.login-icons {
+  position: absolute;
+  top: 12px;
+  height: 20px;
+  width: 20px;
+}
+
+.forgot-password-container p {
+  margin-left: auto;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.drawer-dashboard-sidebar .MuiDrawer-paper {
+  background-color: transparent !important;
+}
+
+.app-dashboard-sidebar {
+  background: transparent;
+  padding: 0;
+  border-right: 1px solid #000;
+}
+
+.bite-dashboard-sidebar .MuiList-padding {
+  padding-top: 0px;
+}
+
+.bite-dashboard-sidebar .MuiListItem-button {
+  background: #969696;
+  padding-right: 20px;
+  border-bottom: 1px solid #fff;
+  text-align: right;
+}
+
+.bite-dashboard-sidebar .MuiListItem-button:hover,
+.bite-dashboard-sidebar .MuiListItem-button:active {
+  background: #8f271e;
+}
+
+.bite-dashboard-sidebar .MuiTypography-body1 {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.node-container .dashboard-table th {
+  color: #939393;
+  font-weight: 400;
+  font-size: 18px;
+}
+
+.node-container .dashboard-table td {
+  color: #717171;
+  font-weight: 400;
+  font-size: 14px;
+  $primary-color: #8f271e;
+}

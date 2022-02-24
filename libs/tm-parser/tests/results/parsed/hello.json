@@ -1,0 +1,29 @@
+{
+	"fileTypes" : 
+	[
+		"world"
+	],
+	"foldingStartMarker" : "",
+	"foldingStopMarker" : "",
+	"name" : "hello",
+	"patterns" : 
+	[
+		{
+			"match" : "hello",
+			"name" : "prefix.hello"
+		},
+		{
+			"captures" : 
+			{
+				"1" : 
+				{
+					"name" : "emphasis.hello"
+				}
+			},
+			"match" : "world(!?)",
+			"name" : "suffix.hello"
+		}
+	],
+	"repository" : null,
+	"scopeName" : "source.hello"
+}

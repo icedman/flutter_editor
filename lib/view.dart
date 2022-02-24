@@ -3,6 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
+import 'dart:ffi';
+import 'dart:convert';
+import 'package:ffi/ffi.dart';
+
+import 'dart:isolate';
 import 'dart:io';
 import 'dart:convert';
 import 'dart:math';
@@ -13,6 +18,7 @@ import 'input.dart';
 import 'document.dart';
 import 'highlighter.dart';
 import 'theme.dart';
+import 'native.dart';
 
 class DocumentProvider extends ChangeNotifier {
   Document doc = Document();
@@ -47,9 +53,24 @@ class ViewLine extends StatelessWidget {
   double gutterWidth = 0;
   TextStyle? gutterStyle;
 
+  Future<List<InlineSpan>> _getSpans(Block block, Highlighter hl) async {
+    return Future.delayed(Duration(milliseconds: 0), () {
+      return hl.run(block, block.line, block.document ?? Document());
+      });
+    return hl.run(block, block.line, block.document ?? Document());
+  }
 
   @override
   Widget build(BuildContext context) {
+    // Highlighter hl = Provider.of<Highlighter>(context);
+    // return FutureBuilder<List<InlineSpan>>(
+    //   future: _getSpans(block ?? Block(''), hl),
+    //   builder: _build
+    //   );
+    return _build(context, null);
+  }
+
+  Widget _build(BuildContext context, snapshot) {
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
     Highlighter hl = Provider.of<Highlighter>(context);
 
@@ -57,11 +78,11 @@ class ViewLine extends StatelessWidget {
     int lineNumber = block?.line ?? 0;
 
     // print('build ${block?.line}');
-    List<InlineSpan> spans = block?.spans ?? [];
-    
-    Future.delayed(Duration(milliseconds: 0), () {
-      hl.run(block, lineNumber, doc.doc);
-      });
+    List<InlineSpan> spans = block?.spans ?? []; // snapshot.hasData ? snapshot.data : [];
+    // if (text.length > 0 && spans.length == 0) {
+    //   spans.add(WidgetSpan(child: Text(block?.text ?? '', 
+    //     style: TextStyle(fontSize: fontSize, fontFamily: fontFamily, color: Colors.white))));
+    // }
 
     bool softWrap = doc.softWrap;
 
@@ -127,9 +148,126 @@ class _View extends State<View> {
 
   int visibleLine = 0;
   double fontHeight = 0;
+  
+  ReceivePort? _receivePort;
+  Isolate? _isolate;
+  SendPort? _isolateSendPort;
+
+  static void remoteIsolate(SendPort sendPort) {
+    init_highlighter();
+    int theme = loadTheme("/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.0/theme/dracula-soft.json");
+    int lang = loadLanguage("test.cpp");
+    ReceivePort _isolateReceivePort = ReceivePort();
+    sendPort.send(_isolateReceivePort.sendPort);
+    _isolateReceivePort.listen((message) {
+      if (message == '?') {
+        // return
+      } else {
+        List<String> res = [];
+        List<String> s = message.split(']::[');
+        if (s.length != 2) return;
+        if (s[1].length == 0 || s[1][s[1].length-1] != ']') {
+          return;
+        }
+        if (s[0].length == 0 || s[0][0] != '[') {
+          return;
+        }
+        int line = int.parse(s[0].substring(1));
+
+        String text = s[1].substring(0, s[1].length-1);
+        
+        final nspans = runHighlighter(text, lang, theme, 0, 0, 0);
+        print('at isolate: $line');
+
+        JsonMap jm = JsonMap();
+
+        int idx = 0;
+        while (idx < (2048 * 4)) {
+          final spn = nspans[idx++];
+          if (spn.start == 0 && spn.length == 0) break;
+          int s = spn.start;
+          int l = spn.length;
+
+          // todo... cleanup these checks
+          if (s < 0) continue;
+          if (s - 1 >= text.length) continue;
+          if (s + l >= text.length) {
+            l = text.length - s;
+          }
+          if (l <= 0) continue;
+
+          Color fg = Color.fromRGBO(spn.r, spn.g, spn.b, 1);
+          bool hasBg = (spn.bg_r + spn.bg_g + spn.bg_b != 0);
+
+          LineDecoration d = LineDecoration();
+            d.start = s;
+            d.end = s + l - 1;
+            d.color = fg;
+            jm.map['${d.start}_${d.end}'] = '${d.color.red},${d.color.green},${d.color.blue}';
+        }
+
+        jm.map['line'] = '$line';
+        sendPort.send(jm.encode());
+        // print(jm.encode());
+      }
+    });
+  }
+
+  Future spawnIsolate() async {
+    _receivePort = ReceivePort();
+    _isolate = await Isolate.spawn(remoteIsolate, _receivePort!.sendPort,
+        debugName: "remoteIsolate");
+
+    _receivePort?.listen((msg) {
+      if (msg is SendPort) {
+              _isolateSendPort = msg;
+            } else{
+
+      DocumentProvider doc =
+          Provider.of<DocumentProvider>(context, listen: false);
+
+              JsonMap jm = JsonMap();
+              jm.decode(msg);
+
+              List<LineDecoration> decors = [];
+
+              int line = int.parse(jm.map['line'] ?? '0');
+              Block block = doc.doc.blockAtLine(line) ?? Block('');
+              if (block.spans != null) return;
+
+              jm.map.forEach((k,v) {
+                List<String> s = k.split('_');
+                List<String> rgb = v.split(',');
+                if (s.length != 2 && rgb.length != 3) return;
+
+                LineDecoration d = LineDecoration();
+                d.start = int.parse(s[0]);
+                d.end = int.parse(s[1]);
+                int r = int.parse(rgb[0]);
+                int g = int.parse(rgb[1]);
+                int b = int.parse(rgb[2]);
+                d.color = Color.fromRGBO(r,g,b,1);
+                decors.add(d);
+                });
+
+      Highlighter hl =
+          Provider.of<Highlighter>(context, listen: false);
+
+              block.decors = decors;
+
+              hl.run(block, block.line, block.document ?? Document());
+              setState(() {
+                block.waiting = false;
+                // pulse
+                });
+            }
+      });
+  }
 
   @override
   void initState() {
+    spawnIsolate();
+
     scroller = ScrollController();
     hscroller = ScrollController();
     scrollTo = PeriodicTimer();
@@ -158,6 +296,9 @@ class _View extends State<View> {
 
   @override
   void dispose() {
+    if (_isolate != null) {
+      _isolate!.kill();
+    }
     scroller.dispose();
     hscroller.dispose();
     scrollTo.cancel();
@@ -321,12 +462,16 @@ class _View extends State<View> {
     //     break;
     //   }
     //   Block block = doc.doc.blockAtLine(line) ?? Block('');
-    //   block.line = line;
-    //   String text = block.text;
-    //   int lineNumber = block.line;
+    //   // block.line = line;
+    //   // String text = block.text;
+    //   // int lineNumber = block.line;
 
     //   // print('build ${block?.line}');
-    //   List<InlineSpan> spans = hl.run(block, lineNumber, doc.doc);
+    //   // List<InlineSpan> spans = hl.run(block, lineNumber, doc.doc);
+    //   if (_isolateSendPort != null)
+    //   if (block.spans == null) {
+    //     _isolateSendPort!.send('[$line]::[${block.text}]');
+    //   }
     // }
 
     if ((!largeDoc && softWrap)) {
@@ -337,6 +482,14 @@ class _View extends State<View> {
           itemBuilder: (BuildContext context, int line) {
             Block block = doc.doc.blockAtLine(line) ?? Block('');
             block.line = line;
+
+            if (_isolateSendPort != null) {
+              if (block.spans == null && !block.waiting) {
+                block.waiting = true;
+                _isolateSendPort!.send('[$line]::[${block.text}]');
+              }
+            }
+
             return ViewLine(
                 block: block,
                 width: size.width - gutterWidth,

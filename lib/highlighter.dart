@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'dart:collection';
 import 'dart:ui' as ui;
 import 'dart:ffi';
+import 'dart:convert';
 import 'package:ffi/ffi.dart';
 
 import 'cursor.dart';
@@ -31,6 +32,31 @@ Size getTextExtents(String text, TextStyle style,
   return textPainter.size;
 }
 
+class JsonMap {
+  Map<String, String> map = <String, String>{};
+
+  String encode() {
+    String res = '';
+    for (final n in map.keys) {
+      if (res != '') {
+        res += ', ';
+      }
+      res += '"$n": "${map[n]}"';
+    }
+    res = '{ $res }';
+    return res;
+  }
+
+  Map<String, String> decode(String s) {
+    map.clear();
+    final json = jsonDecode(s);
+    for (final k in json.keys) {
+      map[k] = json[k];
+    }
+    return map;
+  }
+}
+
 class LineDecoration {
   int start = 0;
   int end = 0;
@@ -38,6 +64,22 @@ class LineDecoration {
   Color background = Colors.white;
   bool underline = false;
   bool italic = false;
+
+  String encode() {
+    JsonMap jm = JsonMap();
+    jm.map['start'] = '$start';
+    jm.map['end'] = '$end';
+    jm.map['color'] = '${color.red},${color.green},${color.blue}';
+    return jm.encode();
+  }
+
+  void decode(String str) {
+    JsonMap jm = JsonMap();
+    jm.decode(str);
+    start = int.parse(jm.map['start'] ?? '0');
+    end = int.parse(jm.map['end'] ?? '0');
+    color = Colors.red;
+  }
 }
 
 class CustomWidgetSpan extends WidgetSpan {
@@ -56,7 +98,7 @@ class Highlighter {
     TextStyle defaultStyle = TextStyle(
         fontFamily: fontFamily, fontSize: fontSize, color: foreground);
     List<InlineSpan> res = <InlineSpan>[];
-    List<LineDecoration> decors = <LineDecoration>[];
+    List<LineDecoration> decors = block?.decors ?? [];
 
     List<Block> sel = document.selectedBlocks();
     for (final s in sel) {
@@ -104,6 +146,7 @@ class Highlighter {
     // var result = highlight.parse(text, language: 'cpp');
     // result.nodes?.forEach(_traverse);
 
+    /*
     final nspans = runHighlighter(text, 0, 0, 0, 0, 0);
     while (idx < (2048 * 4)) {
       final spn = nspans[idx++];
@@ -128,8 +171,7 @@ class Highlighter {
         d.color = fg;
         decors.add(d);
     }
-
-    print('!>$line $text');
+    */
 
     text += ' ';
 
@@ -223,6 +265,7 @@ class Highlighter {
     if (cache) {
       block?.spans = res;
     }
+
     return res;
   }
 }
