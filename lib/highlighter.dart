@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:collection';
 import 'dart:ui' as ui;
-import 'dart:ffi';
+import 'dart:ffi' hide Size;
 import 'dart:convert';
 import 'package:ffi/ffi.dart';
 

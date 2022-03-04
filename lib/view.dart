@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
-import 'dart:ffi';
+import 'dart:ffi' hide Size;
 import 'dart:convert';
 import 'package:ffi/ffi.dart';
 
@@ -474,7 +474,7 @@ class _View extends State<View> {
     //   }
     // }
 
-    if ((!largeDoc && softWrap)) {
+    if ((!largeDoc && softWrap) || !softWrap) {
       return ListView.builder(
           controller: scroller,
           itemCount: doc.doc.blocks.length,
