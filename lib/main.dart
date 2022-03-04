@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -14,8 +15,8 @@ void main(List<String> args) async {
     scaffoldBackgroundColor: background,
   );
 
-  // String path = '/sdcard/Developer/tests/tinywl.c';
   String path = './tests/tinywl.c';
+  if (Platform.isAndroid) path = '/sdcard/Developer/tests/tinywl.c';
   // String path = './tests/sqlite3.c';
   if (args.length > 0) {
     path = args[0];
@@ -29,8 +30,8 @@ void main(List<String> args) async {
         Expanded(
             child:
                 Padding(padding: EdgeInsets.all(0), child: Editor(path: path))),
-        //Expanded(
-        //    child:
-        //        Padding(padding: EdgeInsets.all(0), child: Editor(path: path))),
+        // Expanded(
+        //     child:
+        //         Padding(padding: EdgeInsets.all(0), child: Editor(path: path))),
       ]))));
 }

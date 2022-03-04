@@ -14,32 +14,15 @@ import 'document.dart';
 import 'highlighter.dart';
 import 'theme.dart';
 
-class DocumentProvider extends ChangeNotifier {
-  Document doc = Document();
-
-  int scrollTo = -1;
-  bool softWrap = true;
-
-  Future<bool> openFile(String path) async {
-    bool res = await doc.openFile(path);
-    touch();
-    return res;
-  }
-
-  void touch() {
-    notifyListeners();
-  }
-}
-
 class ViewLine extends StatelessWidget {
-  ViewLine(
-      {Key? key,
-      Block? this.block,
-      double this.gutterWidth = 0,
-      TextStyle? this.gutterStyle,
-      double this.width = 0,
-      double this.height = 0})
-      : super(key: key);
+  ViewLine({
+    Key? key,
+    Block? this.block,
+    double this.gutterWidth = 0,
+    TextStyle? this.gutterStyle,
+    double this.width = 0,
+    double this.height = 0,
+  }) : super(key: key);
 
   Block? block;
   double width = 0;
@@ -78,12 +61,12 @@ class ViewLine extends StatelessWidget {
           ..layout(minWidth: 0, maxWidth: size.width - gutterWidth);
         for (final col in block?.carets ?? []) {
           Offset offsetForCaret = textPainter.getOffsetForCaret(
-              TextPosition(offset: col), Offset(0, 0) & Size(0, 0));
+              TextPosition(offset: col.position), Offset(0, 0) & Size(0, 0));
           carets.add(Positioned(
               left: gutterWidth + offsetForCaret.dx,
               top: offsetForCaret.dy,
               child: AnimatedCaret(
-                  width: 2, height: sz.height, color: Colors.yellow)));
+                  width: 2, height: sz.height, color: col.color)));
         }
       }
     }
@@ -104,9 +87,7 @@ class ViewLine extends StatelessWidget {
 }
 
 class View extends StatefulWidget {
-  View({Key? key, String this.path = ''}) : super(key: key);
-
-  String path = '';
+  View({Key? key}) : super(key: key);
 
   @override
   _View createState() => _View();
@@ -258,9 +239,7 @@ class _View extends State<View> {
 
             return !(isLineVisible(line));
           },
-          onDone: () {
-            print('done');
-          });
+          onDone: () {});
     }
   }
 
@@ -273,8 +252,11 @@ class _View extends State<View> {
     final TextStyle gutterStyle = TextStyle(
         fontFamily: fontFamily, fontSize: gutterFontSize, color: comment);
 
-    double gutterWidth =
-        getTextExtents(' ${doc.doc.blocks.length} ', gutterStyle).width;
+    double gutterWidth = 0;
+    if (doc.showGutters) {
+      gutterWidth =
+          getTextExtents(' ${doc.doc.blocks.length} ', gutterStyle).width;
+    }
 
     if (fontHeight == 0) {
       fontHeight = getTextExtents(
@@ -355,7 +337,7 @@ class _View extends State<View> {
           gutterWidth: gutterWidth,
           gutterStyle: gutterStyle));
 
-      if (!softWrap) {
+      if (!softWrap && gutterWidth > 0) {
         gutters.add(Container(
             color: background,
             height: fontHeight,

@@ -37,20 +37,34 @@ class _Editor extends State<Editor> {
     super.dispose();
   }
 
-  void command(String cmd) async {
+  void command(String cmd, {List<String> params = const <String>[]}) async {
+    bool doScroll = false;
     Document d = doc.doc;
     switch (cmd) {
       case 'ctrl+w':
         doc.softWrap = !doc.softWrap;
         doc.notifyListeners();
         break;
+      case 'ctrl+e':
+        doc.showGutters = !doc.showGutters;
+        doc.notifyListeners();
+        break;
       case 'ctrl+c':
         Clipboard.setData(ClipboardData(text: d.selectedText()));
         break;
       case 'ctrl+x':
-        Clipboard.setData(ClipboardData(text: d.selectedText()));
-        d.deleteSelectedText();
-        break;
+        {
+          if (!d.hasSelection()) {
+            d.selectLine();
+            Clipboard.setData(ClipboardData(text: d.selectedText()));
+            d.deleteSelectedText();
+            d.deleteText();
+            break;
+          }
+          Clipboard.setData(ClipboardData(text: d.selectedText()));
+          d.deleteSelectedText();
+          break;
+        }
       case 'ctrl+v':
         {
           ClipboardData? data = await Clipboard.getData('text/plain');
@@ -68,6 +82,11 @@ class _Editor extends State<Editor> {
       case 'ctrl+s':
         d.saveFile();
         break;
+      case 'ctrl+a':
+        d.moveCursorToStartOfDocument();
+        d.moveCursorToEndOfDocument(keepAnchor: true);
+        doScroll = true;
+        break;
       case 'ctrl+d':
         {
           if (d.cursor().hasSelection()) {
@@ -75,11 +94,19 @@ class _Editor extends State<Editor> {
             if (!cur.isNull) {
               d.addCursor();
               d.cursor().copyFrom(cur, keepAnchor: true);
+              doScroll = true;
             }
+          } else {
+            d.selectWord();
           }
           break;
         }
     }
+
+    if (doScroll) {
+      doc.scrollTo = d.cursor().block?.line ?? -1;
+    }
+    doc.touch();
   }
 
   void onKeyDown(String key,
@@ -88,6 +115,7 @@ class _Editor extends State<Editor> {
     controlling = control;
     Document d = doc.doc;
     bool doScroll = true;
+
     switch (key) {
       case 'Escape':
         d.clearCursors();
@@ -109,6 +137,7 @@ class _Editor extends State<Editor> {
       case 'Tab':
         d.insertText('    ');
         break;
+      case '\n':
       case 'Enter':
         d.deleteSelectedText();
         d.insertNewLine();

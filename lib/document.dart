@@ -7,6 +7,12 @@ import 'package:flutter/services.dart';
 import 'package:highlight/src/mode.dart';
 import 'cursor.dart';
 
+class BlockCaret {
+  BlockCaret({int this.position = 0, Color this.color = Colors.white});
+  int position = 0;
+  Color color = Colors.white;
+}
+
 class Block {
   Block(String this.text, {int this.line = 0, Document? this.document});
   int line = 0;
@@ -16,7 +22,7 @@ class Block {
   Block? next;
 
   List<InlineSpan>? spans;
-  List<int> carets = [];
+  List<BlockCaret> carets = [];
   int lineCount = 0;
 
   Mode? mode;
@@ -80,10 +86,18 @@ class Document {
     clear();
     docPath = path;
     File f = await File(docPath);
-    await f.openRead().map(utf8.decode).transform(LineSplitter()).forEach((l) {
-      insertText(l);
-      insertNewLine();
-    });
+    try {
+      await f
+          .openRead()
+          .map(utf8.decode)
+          .transform(LineSplitter())
+          .forEach((l) {
+        insertText(l);
+        insertNewLine();
+      });
+    } catch (err, msg) {
+      //
+    }
     moveCursorToStartOfDocument();
     return true;
   }
@@ -224,7 +238,7 @@ class Document {
   void backspace() {
     cursors.forEach((c) {
       // print('${c.block?.line} ${c.column}');
-      if ((c.block?.previous != null) || c.column > 1) {
+      if ((c.block?.previous != null) || c.column > 0) {
         c.moveCursorLeft();
         c.deleteText();
       }
@@ -259,6 +273,18 @@ class Document {
     return cursor().selectedBlocks();
   }
 
+  void selectLine() {
+    cursors.forEach((c) {
+      c.selectLine();
+    });
+  }
+
+  void selectWord() {
+    cursors.forEach((c) {
+      c.selectWord();
+    });
+  }
+
   String selectedText() {
     String res = '';
     cursors.forEach((c) {
@@ -271,5 +297,32 @@ class Document {
     cursors.forEach((c) {
       c.deleteSelectedText();
     });
+  }
+
+  bool hasSelection() {
+    for (final c in cursors) {
+      if (c.hasSelection()) {
+        return true;
+      }
+    }
+    return false;
+  }
+}
+
+class DocumentProvider extends ChangeNotifier {
+  Document doc = Document();
+
+  int scrollTo = -1;
+  bool softWrap = true;
+  bool showGutters = false;
+
+  Future<bool> openFile(String path) async {
+    bool res = await doc.openFile(path);
+    touch();
+    return res;
+  }
+
+  void touch() {
+    notifyListeners();
   }
 }

@@ -85,7 +85,7 @@ class Cursor {
     column = c;
 
     int len = (block?.text ?? '').length;
-    if (column > len) {
+    if (column > len || column == -1) {
       column = len;
     }
 
@@ -103,7 +103,7 @@ class Cursor {
     }
 
     if (column >= (block?.text ?? '').length) {
-      moveCursorToEndOfLine();
+      moveCursorToEndOfLine(keepAnchor: keepAnchor);
     }
 
     int line = block?.line ?? 0;
@@ -276,6 +276,34 @@ class Cursor {
     }
     res.add((cur.anchorBlock?.text ?? '').substring(0, cur.anchorColumn));
     return res.join('\n');
+  }
+
+  void selectLine() {
+    moveCursorToStartOfLine();
+    moveCursorToEndOfLine(keepAnchor: true);
+  }
+
+  void selectWord() {
+    RegExp regExp = new RegExp(
+      r'[a-z_\-0-9]*',
+      caseSensitive: false,
+      multiLine: false,
+    );
+    String l = block?.text ?? '';
+    var matches = regExp.allMatches(l);
+    for (final m in matches) {
+      var g = m.groups([0]);
+      String t = g[0] ?? '';
+      if (t.length > 0) {
+        // print('${m.start} >> ${g[0]}');
+        if (column >= m.start && column < m.start + t.length) {
+          anchorColumn = m.start;
+          column = anchorColumn + t.length;
+          break;
+        }
+      }
+    }
+    ;
   }
 
   void mergeNextLine() {

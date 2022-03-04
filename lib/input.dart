@@ -12,10 +12,12 @@ Offset screenToCursor(RenderObject? obj, Offset pos) {
   List<RenderParagraph> pars = <RenderParagraph>[];
   findRenderParagraphs(obj, pars);
 
+  RenderParagraph? lastPar;
   RenderParagraph? targetPar;
   int line = -1;
 
   for (final par in pars) {
+    if (((par.text as TextSpan).children?.length ?? 0) > 0) lastPar = par;
     TextSpan t = par.text as TextSpan;
     Rect bounds = const Offset(0, 0) & par.size;
     Offset offsetForCaret = par.localToGlobal(
@@ -28,6 +30,15 @@ Offset screenToCursor(RenderObject? obj, Offset pos) {
     }
   }
 
+  if (targetPar == null && lastPar != null) {
+    List<InlineSpan> children =
+        (lastPar.text as TextSpan).children ?? <InlineSpan>[];
+    if (children.length > 0 && children.last is CustomWidgetSpan) {
+      line = (children.last as CustomWidgetSpan).line;
+    }
+    int textOffset = -1;
+    return Offset(textOffset.toDouble(), line.toDouble());
+  }
   if (targetPar == null) return Offset(-1, -1);
 
   Rect bounds = const Offset(0, 0) & targetPar.size;
@@ -85,8 +96,7 @@ Offset screenToCursor(RenderObject? obj, Offset pos) {
     textOffset = nearestOffset;
   }
 
-  Offset res = Offset(textOffset.toDouble(), line.toDouble());
-  return res;
+  return Offset(textOffset.toDouble(), line.toDouble());
 }
 
 void findRenderParagraphs(RenderObject? obj, List<RenderParagraph> res) {
@@ -164,11 +174,22 @@ class _InputListener extends State<InputListener> {
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
     Document d = doc.doc;
     return Focus(
+        // onFocusChange: (focused) {
+        //   if (focused && !textFocusNode.hasFocus) {
+        //     textFocusNode.requestFocus();
+        //   }
+        // },
         child: Column(children: [
           Expanded(
               child: GestureDetector(
                   child: widget.child,
                   onTapDown: (TapDownDetails details) {
+                    if (!focusNode.hasFocus) {
+                      focusNode.requestFocus();
+                    }
+                    if (!textFocusNode.hasFocus) {
+                      textFocusNode.requestFocus();
+                    }
                     widget.onTapDown?.call(
                         context.findRenderObject(), details.globalPosition);
                   },
@@ -186,8 +207,8 @@ class _InputListener extends State<InputListener> {
           // enableInteractiveSelection: false,)
 
           Container(
-              // width: 1,
-              // height: 1,
+              width: 1,
+              height: 1,
               child: TextField(
                   focusNode: textFocusNode,
                   autofocus: true,

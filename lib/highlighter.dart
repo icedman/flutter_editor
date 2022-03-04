@@ -165,7 +165,8 @@ class Highlighter {
       }
 
       if (inCaret) {
-        block?.carets.add(i);
+        block?.carets
+            .add(BlockCaret(position: i, color: style.color ?? Colors.white));
       }
 
       if (res.length != 0 && !(res[res.length - 1] is WidgetSpan)) {

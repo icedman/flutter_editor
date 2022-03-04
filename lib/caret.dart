@@ -37,7 +37,10 @@ class AnimatedCaret extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     CaretPulse pulse = Provider.of<CaretPulse>(context);
+    FocusNode focus = Focus.of(context);
     return Container(
-        height: height, width: width, color: !pulse.show ? null : color);
+        height: height,
+        width: width,
+        color: (!focus.hasFocus || !pulse.show) ? null : color);
   }
 }

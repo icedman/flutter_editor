@@ -11,7 +11,7 @@ abc 123 */
 #include <wlr/backend.h>
 #include <wlr/render/wlr_renderer.h>
 #include <wlr/types/wlr_compositor.h>
-#include <wlr/typRes/wlr_cursor.h>
+#include <wlr/types/wlr_cursor.h>
 #include <wlr/types/wlr_data_device.h>
 #include <wlr/types/wlr_input_device.h>
 #include <wlr/types/wlr_keyboard.h>
@@ -995,6 +995,8 @@ int main(int argc, char* argv[])
     wl_display_destroy(server.wl_display);
     return 0;
 }
+
+
 
 
 
