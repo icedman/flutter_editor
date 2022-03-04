@@ -14,7 +14,9 @@ void main(List<String> args) async {
     scaffoldBackgroundColor: background,
   );
 
-  String path = '/sdcard/Developer/tests/tinywl.c';
+  // String path = '/sdcard/Developer/tests/tinywl.c';
+  String path = './tests/tinywl.c';
+  // String path = './tests/sqlite3.c';
   if (args.length > 0) {
     path = args[0];
   }

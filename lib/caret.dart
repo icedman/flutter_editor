@@ -16,7 +16,9 @@ class CaretPulse extends ChangeNotifier {
 
   void flipCaret() {
     timer.cancel();
-    timer = Timer(Duration(milliseconds: show ? caretShowInterval : caretHideInterval), () {
+    timer = Timer(
+        Duration(milliseconds: show ? caretShowInterval : caretHideInterval),
+        () {
       show = !show;
       notifyListeners();
       flipCaret();
@@ -36,8 +38,6 @@ class AnimatedCaret extends StatelessWidget {
   Widget build(BuildContext context) {
     CaretPulse pulse = Provider.of<CaretPulse>(context);
     return Container(
-        height: height,
-        width: width,
-        color: !pulse.show ? null : color);
+        height: height, width: width, color: !pulse.show ? null : color);
   }
 }

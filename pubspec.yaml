@@ -37,6 +37,10 @@ dependencies:
   provider: ^6.0.2
   flutter_highlight: ^0.7.0
 
+dependency_overrides:
+  highlight:
+    path: ../highlight.dart/highlight
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

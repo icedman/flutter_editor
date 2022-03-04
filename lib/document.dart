@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:highlight/src/mode.dart';
 import 'cursor.dart';
 
 class Block {
@@ -17,6 +18,16 @@ class Block {
   List<InlineSpan>? spans;
   List<int> carets = [];
   int lineCount = 0;
+
+  Mode? mode;
+  String prevBlockClass = '';
+
+  void makeDirty() {
+    prevBlockClass = '';
+    mode = null;
+    spans = null;
+    carets = [];
+  }
 }
 
 class Document {
@@ -158,7 +169,7 @@ class Document {
       clearCursors();
     }
     cursors.forEach((c) {
-      cursor().moveCursor(line, column, keepAnchor: keepAnchor);
+      c.moveCursor(line, column, keepAnchor: keepAnchor);
     });
   }
 
@@ -207,6 +218,16 @@ class Document {
   void moveCursorToEndOfDocument({bool keepAnchor = false}) {
     cursors.forEach((c) {
       c.moveCursorToEndOfDocument(keepAnchor: keepAnchor);
+    });
+  }
+
+  void backspace() {
+    cursors.forEach((c) {
+      // print('${c.block?.line} ${c.column}');
+      if ((c.block?.previous != null) || c.column > 1) {
+        c.moveCursorLeft();
+        c.deleteText();
+      }
     });
   }
 

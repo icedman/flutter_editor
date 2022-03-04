@@ -55,6 +55,12 @@ Offset screenToCursor(RenderObject? obj, Offset pos) {
       Offset offsetForCaret = targetPar.localToGlobal(targetPar
           .getOffsetForCaret(TextPosition(offset: textOffset), bounds));
 
+      Rect charBounds = offsetForCaret & fontCharSize;
+      if (charBounds.inflate(2).contains(Offset(pos.dx + 2, pos.dy + 1))) {
+        found = true;
+        break;
+      }
+
       double dx = offsetForCaret.dx - pos.dx;
       double dy = offsetForCaret.dy - (pos.dy - 4);
       double dst = sqrt((dx * dx) + (dy * dy));
@@ -75,9 +81,12 @@ Offset screenToCursor(RenderObject? obj, Offset pos) {
     line = (children.last as CustomWidgetSpan).line;
   }
 
-  textOffset = nearestOffset;
+  if (!found) {
+    textOffset = nearestOffset;
+  }
 
-  return Offset(textOffset.toDouble(), line.toDouble());
+  Offset res = Offset(textOffset.toDouble(), line.toDouble());
+  return res;
 }
 
 void findRenderParagraphs(RenderObject? obj, List<RenderParagraph> res) {
@@ -88,6 +97,16 @@ void findRenderParagraphs(RenderObject? obj, List<RenderParagraph> res) {
   obj?.visitChildren((child) {
     findRenderParagraphs(child, res);
   });
+}
+
+class CustomEditingController extends TextEditingController {
+  @override
+  TextSpan buildTextSpan(
+      {required BuildContext context,
+      TextStyle? style,
+      required bool withComposing}) {
+    return const TextSpan();
+  }
 }
 
 class InputListener extends StatefulWidget {
@@ -109,17 +128,31 @@ class InputListener extends StatefulWidget {
 
 class _InputListener extends State<InputListener> {
   late FocusNode focusNode;
+  late FocusNode textFocusNode;
+  late TextEditingController controller;
 
   @override
   void initState() {
     super.initState();
     focusNode = FocusNode();
+    textFocusNode = FocusNode();
+    controller = CustomEditingController();
+
+    controller.addListener(() {
+      final t = controller.text;
+      if (t.isNotEmpty) {
+        widget.onKeyDown?.call(t, keyId: 0, shift: false, control: false);
+      }
+      controller.text = '';
+    });
   }
 
   @override
   void dispose() {
     super.dispose();
     focusNode.dispose();
+    textFocusNode.dispose();
+    controller.dispose();
   }
 
   @override
@@ -130,34 +163,55 @@ class _InputListener extends State<InputListener> {
 
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
     Document d = doc.doc;
-    return GestureDetector(
-        child: Focus(
-            child: widget.child,
-            focusNode: focusNode,
-            autofocus: true,
-            onKey: (FocusNode node, RawKeyEvent event) {
-              if (event.runtimeType.toString() == 'RawKeyDownEvent') {
-                widget.onKeyDown?.call(event.logicalKey.keyLabel,
-                    keyId: event.logicalKey.keyId,
-                    shift: event.isShiftPressed,
-                    control: event.isControlPressed);
-              }
-              if (event.runtimeType.toString() == 'RawKeyUpEvent') {
-                widget.onKeyUp?.call();
-              }
-              return KeyEventResult.handled;
-            }),
-        onTapDown: (TapDownDetails details) {
-          widget.onTapDown
-              ?.call(context.findRenderObject(), details.globalPosition);
-        },
-        onPanUpdate: (DragUpdateDetails details) {
-          widget.onPanUpdate
-              ?.call(context.findRenderObject(), details.globalPosition);
-        },
-        onLongPressMoveUpdate: (LongPressMoveUpdateDetails details) {
-          widget.onPanUpdate
-              ?.call(context.findRenderObject(), details.globalPosition);
+    return Focus(
+        child: Column(children: [
+          Expanded(
+              child: GestureDetector(
+                  child: widget.child,
+                  onTapDown: (TapDownDetails details) {
+                    widget.onTapDown?.call(
+                        context.findRenderObject(), details.globalPosition);
+                  },
+                  onPanUpdate: (DragUpdateDetails details) {
+                    widget.onPanUpdate?.call(
+                        context.findRenderObject(), details.globalPosition);
+                  },
+                  onLongPressMoveUpdate: (LongPressMoveUpdateDetails details) {
+                    widget.onPanUpdate?.call(
+                        context.findRenderObject(), details.globalPosition);
+                  })),
+
+          // TextField(focusNode: textFocusNode, controller: controller, autofocus: true,
+          // maxLines: null,
+          // enableInteractiveSelection: false,)
+
+          Container(
+              // width: 1,
+              // height: 1,
+              child: TextField(
+                  focusNode: textFocusNode,
+                  autofocus: true,
+                  maxLines: null,
+                  enableInteractiveSelection: false,
+                  decoration: const InputDecoration(border: InputBorder.none),
+                  controller: controller))
+        ]),
+        focusNode: focusNode,
+        autofocus: true,
+        onKey: (FocusNode node, RawKeyEvent event) {
+          // if (textFocusNode.hasFocus) {
+          //   return KeyEventResult.ignored;
+          // }
+          if (event.runtimeType.toString() == 'RawKeyDownEvent') {
+            widget.onKeyDown?.call(event.logicalKey.keyLabel,
+                keyId: event.logicalKey.keyId,
+                shift: event.isShiftPressed,
+                control: event.isControlPressed);
+          }
+          if (event.runtimeType.toString() == 'RawKeyUpEvent') {
+            widget.onKeyUp?.call();
+          }
+          return KeyEventResult.handled;
         });
   }
 }

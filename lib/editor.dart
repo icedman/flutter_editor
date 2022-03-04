@@ -117,8 +117,7 @@ class _Editor extends State<Editor> {
         if (d.cursor().hasSelection()) {
           d.deleteSelectedText();
         } else {
-          d.moveCursorLeft();
-          d.deleteText();
+          d.backspace();
         }
         break;
       case 'Delete':

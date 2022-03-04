@@ -11,7 +11,6 @@ import 'theme.dart';
 import 'package:highlight/highlight_core.dart' show highlight;
 import 'package:highlight/languages/cpp.dart';
 import 'package:highlight/languages/json.dart';
-// import 'package:flutter_highlight/themes/github.dart';
 import 'package:flutter_highlight/themes/dracula.dart';
 
 final theTheme = draculaTheme;
@@ -57,7 +56,7 @@ class Highlighter {
 
     List<Block> sel = document.selectedBlocks();
     for (final s in sel) {
-      s.spans = null;
+      s.makeDirty();
     }
 
     block?.carets.clear();
@@ -98,7 +97,20 @@ class Highlighter {
       }
     }
 
-    var result = highlight.parse(text, language: 'cpp');
+    Block? prev = block?.previous;
+    var continuation = prev?.mode ?? null;
+    block?.prevBlockClass = prev?.mode?.className ?? '';
+    var result =
+        highlight.parse(text, language: 'cpp', continuation: continuation);
+    block?.mode = highlight.lastContinuation;
+
+    Block? next = block?.next;
+    if (next != null && block?.mode != null) {
+      if (next.prevBlockClass != block?.mode?.className) {
+        next.makeDirty();
+      }
+    }
+
     result.nodes?.forEach(_traverse);
 
     text += ' ';
@@ -154,17 +166,6 @@ class Highlighter {
 
       if (inCaret) {
         block?.carets.add(i);
-        // cache = false;
-        // res.add(WidgetSpan(
-        //     alignment: ui.PlaceholderAlignment.baseline,
-        //     baseline: TextBaseline.alphabetic,
-        //     child: Container(
-        //         decoration: BoxDecoration(
-        //             border: Border(
-        //                 left: BorderSide(
-        //                     width: 1.2, color: style.color ?? Colors.yellow))),
-        //         child: Text(ch, style: style.copyWith(letterSpacing: -1.5)))));
-        // continue;
       }
 
       if (res.length != 0 && !(res[res.length - 1] is WidgetSpan)) {

@@ -1,3 +1,5 @@
+/* hello world
+abc 123 */
 #define _POSIX_C_SOURCE 200112
 #include <getopt.h>
 #include <stdbool.h>
@@ -993,6 +995,7 @@ int main(int argc, char* argv[])
     wl_display_destroy(server.wl_display);
     return 0;
 }
+
 
 
 

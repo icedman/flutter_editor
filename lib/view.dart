@@ -76,13 +76,14 @@ class ViewLine extends StatelessWidget {
             text: TextSpan(text: block?.text ?? '', style: ts.style),
             textDirection: TextDirection.ltr)
           ..layout(minWidth: 0, maxWidth: size.width - gutterWidth);
-        for(final col in block?.carets ?? []) {
+        for (final col in block?.carets ?? []) {
           Offset offsetForCaret = textPainter.getOffsetForCaret(
-              TextPosition(offset: col), Offset(0, 0) & Size(0,0));
+              TextPosition(offset: col), Offset(0, 0) & Size(0, 0));
           carets.add(Positioned(
               left: gutterWidth + offsetForCaret.dx,
               top: offsetForCaret.dy,
-              child: AnimatedCaret(width: 2, height: sz.height, color: Colors.yellow)));
+              child: AnimatedCaret(
+                  width: 2, height: sz.height, color: Colors.yellow)));
         }
       }
     }
@@ -295,7 +296,7 @@ class _View extends State<View> {
     }
 
     RenderObject? obj = context.findRenderObject();
-    Size size = Size(0,0);
+    Size size = Size(0, 0);
     if (obj != null) {
       RenderBox? box = obj as RenderBox;
       size = box.size;
