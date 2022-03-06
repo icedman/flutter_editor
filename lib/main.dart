@@ -26,7 +26,7 @@ void main(List<String> args) async {
       debugShowCheckedModeBanner: false,
       theme: themeData,
       home: Scaffold(
-          body: Row(children: [
+          body: Column(children: [
         Expanded(
             child:
                 Padding(padding: EdgeInsets.all(0), child: Editor(path: path))),

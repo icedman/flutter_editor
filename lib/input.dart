@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'document.dart';
 import 'view.dart';
 import 'highlighter.dart';
+import 'theme.dart';
 
 Offset screenToCursor(RenderObject? obj, Offset pos) {
   List<RenderParagraph> pars = <RenderParagraph>[];
@@ -124,6 +125,7 @@ class InputListener extends StatefulWidget {
   Function? onKeyDown;
   Function? onKeyUp;
   Function? onTapDown;
+  Function? onDoubleTapDown;
   Function? onPanUpdate;
 
   InputListener(
@@ -131,6 +133,7 @@ class InputListener extends StatefulWidget {
       Function? this.onKeyDown,
       Function? this.onKeyUp,
       Function? this.onTapDown,
+      Function? this.onDoubleTapDown,
       Function? this.onPanUpdate});
   @override
   _InputListener createState() => _InputListener();
@@ -140,6 +143,8 @@ class _InputListener extends State<InputListener> {
   late FocusNode focusNode;
   late FocusNode textFocusNode;
   late TextEditingController controller;
+
+  bool showKeyboard = true;
 
   @override
   void initState() {
@@ -151,7 +156,7 @@ class _InputListener extends State<InputListener> {
     controller.addListener(() {
       final t = controller.text;
       if (t.isNotEmpty) {
-        widget.onKeyDown?.call(t, keyId: 0, shift: false, control: false);
+        widget.onKeyDown?.call(t, keyId: 0, shift: false, control: false, softKeyboard: true);
       }
       controller.text = '';
     });
@@ -167,18 +172,14 @@ class _InputListener extends State<InputListener> {
 
   @override
   Widget build(BuildContext context) {
-    if (!focusNode.hasFocus) {
-      focusNode.requestFocus();
-    }
-
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
     Document d = doc.doc;
     return Focus(
-        // onFocusChange: (focused) {
-        //   if (focused && !textFocusNode.hasFocus) {
-        //     textFocusNode.requestFocus();
-        //   }
-        // },
+        onFocusChange: (focused) {
+          // if (focused && !textFocusNode.hasFocus) {
+          //   textFocusNode.requestFocus();
+          // }
+        },
         child: Column(children: [
           Expanded(
               child: GestureDetector(
@@ -186,6 +187,8 @@ class _InputListener extends State<InputListener> {
                   onTapDown: (TapDownDetails details) {
                     if (!focusNode.hasFocus) {
                       focusNode.requestFocus();
+                      textFocusNode.unfocus();
+                      FocusScope.of(context).unfocus();
                     }
                     if (!textFocusNode.hasFocus) {
                       textFocusNode.requestFocus();
@@ -193,6 +196,10 @@ class _InputListener extends State<InputListener> {
                     widget.onTapDown?.call(
                         context.findRenderObject(), details.globalPosition);
                   },
+                  onDoubleTap: () {
+                    widget.onDoubleTapDown?.call(
+                        context.findRenderObject(), const Offset(0,0));
+                    },
                   onPanUpdate: (DragUpdateDetails details) {
                     widget.onPanUpdate?.call(
                         context.findRenderObject(), details.globalPosition);
@@ -206,10 +213,22 @@ class _InputListener extends State<InputListener> {
           // maxLines: null,
           // enableInteractiveSelection: false,)
 
+          Container(child: Row(children: [
+              IconButton(icon: Icon(Icons.keyboard, color: Colors.white), onPressed: () {
+                setState(() {
+                  showKeyboard = !showKeyboard;
+                  if (showKeyboard) {
+                    Future.delayed(Duration(milliseconds:50), () {
+                      textFocusNode.requestFocus();
+                      });
+                  }
+                  });
+                }),
+            ])), // toolbar
           Container(
               width: 1,
               height: 1,
-              child: TextField(
+              child: !showKeyboard ? null : TextField(
                   focusNode: textFocusNode,
                   autofocus: true,
                   maxLines: null,

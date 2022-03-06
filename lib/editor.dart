@@ -110,7 +110,7 @@ class _Editor extends State<Editor> {
   }
 
   void onKeyDown(String key,
-      {int keyId = 0, bool shift = false, bool control = false}) {
+      {int keyId = 0, bool shift = false, bool control = false, bool softKeyboard = false}) {
     shifting = shift;
     controlling = control;
     Document d = doc.doc;
@@ -196,7 +196,7 @@ class _Editor extends State<Editor> {
             break;
           }
         }
-        if (key.length == 1) {
+        if (key.length == 1 || softKeyboard) {
           d.insertText(key);
         }
         break;
@@ -223,6 +223,12 @@ class _Editor extends State<Editor> {
     for (final b in blocks) {
       b.spans = null;
     }
+  }
+
+  void onDoubleTapDown(RenderObject? obj, Offset globalPosition) {
+    Document d = doc.doc;
+    d.selectWord();
+    doc.touch();
   }
 
   void onPanUpdate(RenderObject? obj, Offset globalPosition) {
@@ -252,6 +258,7 @@ class _Editor extends State<Editor> {
           onKeyDown: onKeyDown,
           onKeyUp: onKeyUp,
           onTapDown: onTapDown,
+          onDoubleTapDown: onDoubleTapDown,
           onPanUpdate: onPanUpdate,
         ));
   }

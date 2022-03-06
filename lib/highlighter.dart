@@ -59,13 +59,13 @@ class Highlighter {
       s.makeDirty();
     }
 
-    block?.carets.clear();
-
     String text = block?.text ?? '';
     bool cache = true;
     if (block?.spans != null) {
       return block?.spans ?? [];
     }
+
+    block?.carets.clear();
 
     int idx = 0;
     void _traverse(var node) {
@@ -98,11 +98,11 @@ class Highlighter {
     }
 
     Block? prev = block?.previous;
-    var continuation = prev?.mode ?? null;
+    var continuation = prev?.mode;
     block?.prevBlockClass = prev?.mode?.className ?? '';
     var result =
         highlight.parse(text, language: 'cpp', continuation: continuation);
-    block?.mode = highlight.lastContinuation;
+    block?.mode = result.top;
 
     Block? next = block?.next;
     if (next != null && block?.mode != null) {
