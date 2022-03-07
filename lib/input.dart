@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -214,7 +215,7 @@ class _InputListener extends State<InputListener> {
           // enableInteractiveSelection: false,)
 
           Container(child: Row(children: [
-              IconButton(icon: Icon(Icons.keyboard, color: Colors.white), onPressed: () {
+              if (Platform.isAndroid) ... [ IconButton(icon: Icon(Icons.keyboard, color: Colors.white), onPressed: () {
                 setState(() {
                   showKeyboard = !showKeyboard;
                   if (showKeyboard) {
@@ -223,7 +224,7 @@ class _InputListener extends State<InputListener> {
                       });
                   }
                   });
-                }),
+                }) ],
             ])), // toolbar
           Container(
               width: 1,

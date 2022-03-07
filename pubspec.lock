@@ -82,11 +82,11 @@ packages:
     source: sdk
     version: "0.0.0"
   highlight:
-    dependency: "direct overridden"
+    dependency: transitive
     description:
-      path: "../highlight.dart/highlight"
-      relative: true
-    source: path
+      name: highlight
+      url: "https://pub.dartlang.org"
+    source: hosted
     version: "0.7.0"
   lints:
     dependency: transitive
