@@ -15,6 +15,13 @@ import 'package:flutter_highlight/themes/dracula.dart';
 
 final theTheme = draculaTheme;
 
+Color colorCombine(Color a, Color b, {int aw = 1, int bw = 1}) {
+  int red = (a.red * aw + b.red * bw) ~/ (aw + bw);
+  int green = (a.green * aw + b.green * bw) ~/ (aw + bw);
+  int blue = (a.blue * aw + b.blue * bw) ~/ (aw + bw);
+  return Color.fromRGBO(red, green, blue, 1);
+}
+
 Size getTextExtents(String text, TextStyle style,
     {double minWidth = 0,
     double maxWidth: double.infinity,

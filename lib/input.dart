@@ -157,7 +157,8 @@ class _InputListener extends State<InputListener> {
     controller.addListener(() {
       final t = controller.text;
       if (t.isNotEmpty) {
-        widget.onKeyDown?.call(t, keyId: 0, shift: false, control: false, softKeyboard: true);
+        widget.onKeyDown?.call(t,
+            keyId: 0, shift: false, control: false, softKeyboard: true);
       }
       controller.text = '';
     });
@@ -187,7 +188,7 @@ class _InputListener extends State<InputListener> {
                   child: widget.child,
                   onTapUp: (TapUpDetails details) {
                     lastTap = details.globalPosition;
-                    },
+                  },
                   onTapDown: (TapDownDetails details) {
                     if (!focusNode.hasFocus) {
                       focusNode.requestFocus();
@@ -201,9 +202,9 @@ class _InputListener extends State<InputListener> {
                         context.findRenderObject(), details.globalPosition);
                   },
                   onDoubleTap: () {
-                    widget.onDoubleTapDown?.call(
-                        context.findRenderObject(), lastTap);
-                    },
+                    widget.onDoubleTapDown
+                        ?.call(context.findRenderObject(), lastTap);
+                  },
                   onPanUpdate: (DragUpdateDetails details) {
                     widget.onPanUpdate?.call(
                         context.findRenderObject(), details.globalPosition);
@@ -217,28 +218,34 @@ class _InputListener extends State<InputListener> {
           // maxLines: null,
           // enableInteractiveSelection: false,)
 
-          Container(child: Row(children: [
-              IconButton(icon: Icon(Icons.keyboard, color: Colors.white), onPressed: () {
-                setState(() {
-                  showKeyboard = !showKeyboard;
-                  if (showKeyboard) {
-                    Future.delayed(Duration(milliseconds:50), () {
-                      textFocusNode.requestFocus();
+          Container(
+              child: Row(children: [
+            IconButton(
+                icon: Icon(Icons.keyboard, color: Colors.white),
+                onPressed: () {
+                  setState(() {
+                    showKeyboard = !showKeyboard;
+                    if (showKeyboard) {
+                      Future.delayed(Duration(milliseconds: 50), () {
+                        textFocusNode.requestFocus();
                       });
-                  }
+                    }
                   });
                 }),
-            ])), // toolbar
+          ])), // toolbar
           Container(
               width: 1,
               height: 1,
-              child: !showKeyboard ? null : TextField(
-                  focusNode: textFocusNode,
-                  autofocus: true,
-                  maxLines: null,
-                  enableInteractiveSelection: false,
-                  decoration: const InputDecoration(border: InputBorder.none),
-                  controller: controller))
+              child: !showKeyboard
+                  ? null
+                  : TextField(
+                      focusNode: textFocusNode,
+                      autofocus: true,
+                      maxLines: null,
+                      enableInteractiveSelection: false,
+                      decoration:
+                          const InputDecoration(border: InputBorder.none),
+                      controller: controller))
         ]),
         focusNode: focusNode,
         autofocus: true,

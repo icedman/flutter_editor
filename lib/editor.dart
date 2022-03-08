@@ -9,6 +9,7 @@ import 'document.dart';
 import 'view.dart';
 import 'input.dart';
 import 'highlighter.dart';
+import 'minimap.dart';
 
 class Editor extends StatefulWidget {
   Editor({Key? key, String this.path = ''}) : super(key: key);
@@ -110,7 +111,10 @@ class _Editor extends State<Editor> {
   }
 
   void onKeyDown(String key,
-      {int keyId = 0, bool shift = false, bool control = false, bool softKeyboard = false}) {
+      {int keyId = 0,
+      bool shift = false,
+      bool control = false,
+      bool softKeyboard = false}) {
     shifting = shift;
     controlling = control;
     Document d = doc.doc;
@@ -256,7 +260,10 @@ class _Editor extends State<Editor> {
           Provider(create: (context) => highlighter),
         ],
         child: InputListener(
-          child: View(),
+          child: Row(children: [
+            Expanded(child: View()),
+            Container(width: 100, child: Minimap())
+          ]),
           onKeyDown: onKeyDown,
           onKeyUp: onKeyUp,
           onTapDown: onTapDown,
