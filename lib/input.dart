@@ -145,6 +145,7 @@ class _InputListener extends State<InputListener> {
   late TextEditingController controller;
 
   bool showKeyboard = true;
+  Offset lastTap = const Offset(0, 0);
 
   @override
   void initState() {
@@ -184,6 +185,9 @@ class _InputListener extends State<InputListener> {
           Expanded(
               child: GestureDetector(
                   child: widget.child,
+                  onTapUp: (TapUpDetails details) {
+                    lastTap = details.globalPosition;
+                    },
                   onTapDown: (TapDownDetails details) {
                     if (!focusNode.hasFocus) {
                       focusNode.requestFocus();
@@ -198,7 +202,7 @@ class _InputListener extends State<InputListener> {
                   },
                   onDoubleTap: () {
                     widget.onDoubleTapDown?.call(
-                        context.findRenderObject(), const Offset(0,0));
+                        context.findRenderObject(), lastTap);
                     },
                   onPanUpdate: (DragUpdateDetails details) {
                     widget.onPanUpdate?.call(
