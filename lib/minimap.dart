@@ -7,6 +7,7 @@ import 'highlighter.dart';
 
 int minimapLineSpacing = 3;
 int minimapSkipX = 1;
+double minimapScaleX = 0.5;
 
 class MapPainter extends CustomPainter {
   MapPainter(
@@ -27,7 +28,7 @@ class MapPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     canvas.save();
 
-    canvas.scale(0.5, 1);
+    canvas.scale(minimapScaleX, 1);
 
     var paint = Paint()
       ..color = Colors.white
@@ -90,14 +91,51 @@ class MinimapPage extends StatelessWidget {
   Widget build(BuildContext context) {
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
     Highlighter hl = Provider.of<Highlighter>(context);
-    return CustomPaint(
-        painter: MapPainter(
-            doc: doc.doc, hl: hl, start: start, perPage: perPage, hash: hash),
-        child: Container());
+    return GestureDetector(
+        child: CustomPaint(
+            painter: MapPainter(
+                doc: doc.doc,
+                hl: hl,
+                start: start,
+                perPage: perPage,
+                hash: hash),
+            child: Container()),
+        onTapDown: (TapDownDetails details) {
+          RenderObject? obj = context.findRenderObject();
+          RenderBox box = obj as RenderBox;
+          Offset pos = box.localToGlobal(const Offset(0, 0));
+          double dy = details.globalPosition.dy - pos.dy;
+          double p = dy * 100 / (box.size.height + 0.001);
+          int lead = p > 50 ? 8 : -8;
+          int l = p.toInt() + (start * perPage);
+          // print(l);
+
+          doc.scrollTo = l + lead;
+          doc.touch();
+        });
   }
 }
 
-class Minimap extends StatelessWidget {
+class Minimap extends StatefulWidget {
+  @override
+  _Minimap createState() => _Minimap();
+}
+
+class _Minimap extends State<Minimap> {
+  late ScrollController scroller;
+  
+  @override
+  void initState() {
+    scroller = ScrollController();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    scroller.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
@@ -107,6 +145,7 @@ class Minimap extends StatelessWidget {
     if (pages <= 0) pages = 1;
 
     return ListView.builder(
+        controller: scroller,
         itemCount: pages,
         itemExtent: (perPage * minimapLineSpacing).toDouble(),
         itemBuilder: (context, index) {

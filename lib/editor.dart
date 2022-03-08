@@ -254,21 +254,23 @@ class _Editor extends State<Editor> {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (context) => doc),
-          ChangeNotifierProvider(create: (context) => CaretPulse()),
-          Provider(create: (context) => highlighter),
-        ],
-        child: InputListener(
-          child: Row(children: [
-            Expanded(child: View()),
-            Container(width: 100, child: Minimap())
-          ]),
+      providers: [
+        ChangeNotifierProvider(create: (context) => doc),
+        ChangeNotifierProvider(create: (context) => CaretPulse()),
+        Provider(create: (context) => highlighter),
+      ],
+      child: Row(children: [
+        Expanded(
+            child: InputListener(
+          child: View(),
           onKeyDown: onKeyDown,
           onKeyUp: onKeyUp,
           onTapDown: onTapDown,
           onDoubleTapDown: onDoubleTapDown,
           onPanUpdate: onPanUpdate,
-        ));
+        )),
+        Container(width: 100, child: Minimap())
+      ]),
+    );
   }
 }

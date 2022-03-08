@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
@@ -218,21 +219,24 @@ class _InputListener extends State<InputListener> {
           // maxLines: null,
           // enableInteractiveSelection: false,)
 
-          Container(
-              child: Row(children: [
-            IconButton(
-                icon: Icon(Icons.keyboard, color: Colors.white),
-                onPressed: () {
-                  setState(() {
-                    showKeyboard = !showKeyboard;
-                    if (showKeyboard) {
-                      Future.delayed(Duration(milliseconds: 50), () {
-                        textFocusNode.requestFocus();
-                      });
-                    }
-                  });
-                }),
-          ])), // toolbar
+          if (Platform.isAndroid) ...[
+            Container(
+                child: Row(children: [
+              IconButton(
+                  icon: Icon(Icons.keyboard, color: Colors.white),
+                  onPressed: () {
+                    setState(() {
+                      showKeyboard = !showKeyboard;
+                      if (showKeyboard) {
+                        Future.delayed(Duration(milliseconds: 50), () {
+                          textFocusNode.requestFocus();
+                        });
+                      }
+                    });
+                  }),
+            ]))
+          ], // toolbar
+
           Container(
               width: 1,
               height: 1,
