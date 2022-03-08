@@ -227,6 +227,8 @@ class _Editor extends State<Editor> {
 
   void onDoubleTapDown(RenderObject? obj, Offset globalPosition) {
     Document d = doc.doc;
+    Offset o = screenToCursor(obj, globalPosition);
+    d.moveCursor(o.dy.toInt(), o.dx.toInt(), keepAnchor: shifting);
     d.selectWord();
     doc.touch();
   }
