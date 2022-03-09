@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_highlight/themes/dracula.dart';
+final theTheme = draculaTheme;
+// import 'package:flutter_highlight/themes/github.dart';
+// final theTheme = githubTheme;
 
 String fontFamily = 'FiraCode';
 double fontSize = 18;
@@ -11,3 +15,7 @@ Color selection = Color(0xff44475a);
 Color function = Color(0xff50fa7b);
 Color keyword = Color(0xffff79c6);
 Color string = Colors.yellow;
+
+void initTheme() {
+  background = theTheme['root']?.backgroundColor ?? background;
+}

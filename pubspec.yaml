@@ -39,7 +39,10 @@ dependencies:
 
 dependency_overrides:
   highlight:
-    path: ../highlight.dart/highlight
+      git:
+        url: git://github.com/icedman/highlight.dart
+        ref: line-by-line-parsing
+        path: highlight
 
 dev_dependencies:
   flutter_test:

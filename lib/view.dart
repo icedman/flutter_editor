@@ -204,8 +204,8 @@ class _View extends State<View> {
 
             double dv = estimateTarget - position;
             double ds = sqrt(dv * dv);
-            if (ds > 500) {
-              speed = (ds / 10);
+            if (ds > 250) {
+              speed = (ds / 6);
             }
             if (ds > 1000) {
               speed = (ds / 4);

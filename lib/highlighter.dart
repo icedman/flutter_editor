@@ -11,9 +11,6 @@ import 'theme.dart';
 import 'package:highlight/highlight_core.dart' show highlight;
 import 'package:highlight/languages/cpp.dart';
 import 'package:highlight/languages/json.dart';
-import 'package:flutter_highlight/themes/dracula.dart';
-
-final theTheme = draculaTheme;
 
 Color colorCombine(Color a, Color b, {int aw = 1, int bw = 1}) {
   int red = (a.red * aw + b.red * bw) ~/ (aw + bw);

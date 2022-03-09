@@ -8,6 +8,9 @@ import 'theme.dart';
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  initTheme();
+
   ThemeData themeData = ThemeData(
     fontFamily: 'FiraCode',
     primaryColor: foreground,
