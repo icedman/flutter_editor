@@ -1,16 +1,12 @@
-# editor_from_scratch
+# code editor
 
-A new Flutter project.
+This project is the more advanced version of editor_from_scratch (https://github.com/icedman/editor_from_scratch). And some concepts here are used in the more advanced android app Ashlar Code (http://www.munchyapps.com/)
 
-## Getting Started
+# features
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
-
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+* gutters - line numbering
+* multi-cursor editing
+* syntax highlighting with flutter_highlight
+* support for very large files
+* support for wrapped & overflowed text
+* support for virtual keyboard for mobile
