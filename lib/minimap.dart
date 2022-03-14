@@ -74,9 +74,9 @@ class MapPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(CustomPainter oldDelegate) {
-    // int oldHash = (oldDelegate as MapPainter).hash;
-    // return ((oldHash != hash) || hash == 0);
-    return true;
+    int oldHash = (oldDelegate as MapPainter).hash;
+    return ((oldHash != hash) || hash == 0);
+    // return true;
   }
 }
 
