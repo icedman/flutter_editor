@@ -54,7 +54,7 @@ class Highlighter {
 
   List<InlineSpan> run(Block? block, int line, Document document) {
     TextStyle defaultStyle = TextStyle(
-        fontFamily: fontFamily, fontSize: fontSize, color: foreground);
+        fontFamily: theme.fontFamily, fontSize: theme.fontSize, color: theme.foreground);
     List<InlineSpan> res = <InlineSpan>[];
     List<LineDecoration> decors = <LineDecoration>[];
 
@@ -96,7 +96,7 @@ class Highlighter {
         String className = node.className;
         className = className.replaceAll('meta-', '');
         TextStyle? style = theTheme[className];
-        d.color = style?.color ?? foreground;
+        d.color = style?.color ?? theme.foreground;
         decors.add(d);
       }
     }
@@ -149,7 +149,7 @@ class Highlighter {
               (line == anchorLine && i < cur.anchorColumn)) {
           } else {
             style =
-                style.copyWith(backgroundColor: selection.withOpacity(0.75));
+                style.copyWith(backgroundColor: theme.selection.withOpacity(0.75));
             cache = false;
             break;
           }

@@ -9,13 +9,11 @@ import 'theme.dart';
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  initTheme();
-
   ThemeData themeData = ThemeData(
     fontFamily: 'FiraCode',
-    primaryColor: foreground,
-    backgroundColor: background,
-    scaffoldBackgroundColor: background,
+    primaryColor: theme.foreground,
+    backgroundColor: theme.background,
+    scaffoldBackgroundColor: theme.background,
   );
 
   String path = './tests/tinywl.c';

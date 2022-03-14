@@ -248,9 +248,9 @@ class _View extends State<View> {
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
 
     final TextStyle style = TextStyle(
-        fontFamily: fontFamily, fontSize: fontSize, color: Colors.white);
+        fontFamily: theme.fontFamily, fontSize: theme.fontSize, color: Colors.white);
     final TextStyle gutterStyle = TextStyle(
-        fontFamily: fontFamily, fontSize: gutterFontSize, color: comment);
+        fontFamily: theme.fontFamily, fontSize: theme.gutterFontSize, color: theme.comment);
 
     double gutterWidth = 0;
     if (doc.showGutters) {
@@ -260,7 +260,7 @@ class _View extends State<View> {
 
     if (fontHeight == 0) {
       fontHeight = getTextExtents(
-              'X', TextStyle(fontFamily: fontFamily, fontSize: fontSize))
+              'X', TextStyle(fontFamily: theme.fontFamily, fontSize: theme.fontSize))
           .height;
     }
 
@@ -339,7 +339,7 @@ class _View extends State<View> {
 
       if (!softWrap && gutterWidth > 0) {
         gutters.add(Container(
-            color: background,
+            color: theme.background,
             height: fontHeight,
             width: gutterWidth,
             alignment: Alignment.centerRight,
