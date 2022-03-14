@@ -105,7 +105,7 @@ class Highlighter {
     var continuation = prev?.mode;
     block?.prevBlockClass = prev?.mode?.className ?? '';
     var result =
-        highlight.parse(text, language: 'cpp'); //, continuation: continuation);
+        highlight.parse(text, language: 'cpp', continuation: continuation);
     block?.mode = result.top;
 
     Block? next = block?.next;
