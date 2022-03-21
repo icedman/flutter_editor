@@ -9,6 +9,7 @@ import 'document.dart';
 import 'view.dart';
 import 'input.dart';
 import 'highlighter.dart';
+import 'minimap.dart';
 
 class Editor extends StatefulWidget {
   Editor({Key? key, String this.path = ''}) : super(key: key);
@@ -37,20 +38,34 @@ class _Editor extends State<Editor> {
     super.dispose();
   }
 
-  void command(String cmd) async {
+  void command(String cmd, {List<String> params = const <String>[]}) async {
+    bool doScroll = false;
     Document d = doc.doc;
     switch (cmd) {
       case 'ctrl+w':
         doc.softWrap = !doc.softWrap;
         doc.notifyListeners();
         break;
+      case 'ctrl+e':
+        doc.showGutters = !doc.showGutters;
+        doc.notifyListeners();
+        break;
       case 'ctrl+c':
         Clipboard.setData(ClipboardData(text: d.selectedText()));
         break;
       case 'ctrl+x':
-        Clipboard.setData(ClipboardData(text: d.selectedText()));
-        d.deleteSelectedText();
-        break;
+        {
+          if (!d.hasSelection()) {
+            d.selectLine();
+            Clipboard.setData(ClipboardData(text: d.selectedText()));
+            d.deleteSelectedText();
+            d.deleteText();
+            break;
+          }
+          Clipboard.setData(ClipboardData(text: d.selectedText()));
+          d.deleteSelectedText();
+          break;
+        }
       case 'ctrl+v':
         {
           ClipboardData? data = await Clipboard.getData('text/plain');
@@ -68,6 +83,11 @@ class _Editor extends State<Editor> {
       case 'ctrl+s':
         d.saveFile();
         break;
+      case 'ctrl+a':
+        d.moveCursorToStartOfDocument();
+        d.moveCursorToEndOfDocument(keepAnchor: true);
+        doScroll = true;
+        break;
       case 'ctrl+d':
         {
           if (d.cursor().hasSelection()) {
@@ -75,19 +95,31 @@ class _Editor extends State<Editor> {
             if (!cur.isNull) {
               d.addCursor();
               d.cursor().copyFrom(cur, keepAnchor: true);
+              doScroll = true;
             }
+          } else {
+            d.selectWord();
           }
           break;
         }
     }
+
+    if (doScroll) {
+      doc.scrollTo = d.cursor().block?.line ?? -1;
+    }
+    doc.touch();
   }
 
   void onKeyDown(String key,
-      {int keyId = 0, bool shift = false, bool control = false}) {
+      {int keyId = 0,
+      bool shift = false,
+      bool control = false,
+      bool softKeyboard = false}) {
     shifting = shift;
     controlling = control;
     Document d = doc.doc;
     bool doScroll = true;
+
     switch (key) {
       case 'Escape':
         d.clearCursors();
@@ -109,6 +141,7 @@ class _Editor extends State<Editor> {
       case 'Tab':
         d.insertText('    ');
         break;
+      case '\n':
       case 'Enter':
         d.deleteSelectedText();
         d.insertNewLine();
@@ -117,8 +150,7 @@ class _Editor extends State<Editor> {
         if (d.cursor().hasSelection()) {
           d.deleteSelectedText();
         } else {
-          d.moveCursorLeft();
-          d.deleteText();
+          d.backspace();
         }
         break;
       case 'Delete':
@@ -168,7 +200,7 @@ class _Editor extends State<Editor> {
             break;
           }
         }
-        if (key.length == 1) {
+        if (key.length == 1 || softKeyboard) {
           d.insertText(key);
         }
         break;
@@ -197,6 +229,14 @@ class _Editor extends State<Editor> {
     }
   }
 
+  void onDoubleTapDown(RenderObject? obj, Offset globalPosition) {
+    Document d = doc.doc;
+    Offset o = screenToCursor(obj, globalPosition);
+    d.moveCursor(o.dy.toInt(), o.dx.toInt(), keepAnchor: shifting);
+    d.selectWord();
+    doc.touch();
+  }
+
   void onPanUpdate(RenderObject? obj, Offset globalPosition) {
     Document d = doc.doc;
     Offset o = screenToCursor(obj, globalPosition);
@@ -214,17 +254,23 @@ class _Editor extends State<Editor> {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (context) => doc),
-          ChangeNotifierProvider(create: (context) => CaretPulse()),
-          Provider(create: (context) => highlighter),
-        ],
-        child: InputListener(
+      providers: [
+        ChangeNotifierProvider(create: (context) => doc),
+        ChangeNotifierProvider(create: (context) => CaretPulse()),
+        Provider(create: (context) => highlighter),
+      ],
+      child: Row(children: [
+        Expanded(
+            child: InputListener(
           child: View(),
           onKeyDown: onKeyDown,
           onKeyUp: onKeyUp,
           onTapDown: onTapDown,
+          onDoubleTapDown: onDoubleTapDown,
           onPanUpdate: onPanUpdate,
-        ));
+        )),
+        Container(width: 100, child: Minimap())
+      ]),
+    );
   }
 }

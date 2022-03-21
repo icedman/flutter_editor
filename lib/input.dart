@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'dart:math';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
@@ -7,15 +9,18 @@ import 'package:provider/provider.dart';
 import 'document.dart';
 import 'view.dart';
 import 'highlighter.dart';
+import 'theme.dart';
 
 Offset screenToCursor(RenderObject? obj, Offset pos) {
   List<RenderParagraph> pars = <RenderParagraph>[];
   findRenderParagraphs(obj, pars);
 
+  RenderParagraph? lastPar;
   RenderParagraph? targetPar;
   int line = -1;
 
   for (final par in pars) {
+    if (((par.text as TextSpan).children?.length ?? 0) > 0) lastPar = par;
     TextSpan t = par.text as TextSpan;
     Rect bounds = const Offset(0, 0) & par.size;
     Offset offsetForCaret = par.localToGlobal(
@@ -28,6 +33,15 @@ Offset screenToCursor(RenderObject? obj, Offset pos) {
     }
   }
 
+  if (targetPar == null && lastPar != null) {
+    List<InlineSpan> children =
+        (lastPar.text as TextSpan).children ?? <InlineSpan>[];
+    if (children.length > 0 && children.last is CustomWidgetSpan) {
+      line = (children.last as CustomWidgetSpan).line;
+    }
+    int textOffset = -1;
+    return Offset(textOffset.toDouble(), line.toDouble());
+  }
   if (targetPar == null) return Offset(-1, -1);
 
   Rect bounds = const Offset(0, 0) & targetPar.size;
@@ -56,7 +70,7 @@ Offset screenToCursor(RenderObject? obj, Offset pos) {
           .getOffsetForCaret(TextPosition(offset: textOffset), bounds));
 
       Rect charBounds = offsetForCaret & fontCharSize;
-      if (charBounds.inflate(2).contains(Offset(pos.dx + 1, pos.dy + 1))) {
+      if (charBounds.inflate(2).contains(Offset(pos.dx + 2, pos.dy + 1))) {
         found = true;
         break;
       }
@@ -98,11 +112,22 @@ void findRenderParagraphs(RenderObject? obj, List<RenderParagraph> res) {
   });
 }
 
+class CustomEditingController extends TextEditingController {
+  @override
+  TextSpan buildTextSpan(
+      {required BuildContext context,
+      TextStyle? style,
+      required bool withComposing}) {
+    return const TextSpan();
+  }
+}
+
 class InputListener extends StatefulWidget {
   late Widget child;
   Function? onKeyDown;
   Function? onKeyUp;
   Function? onTapDown;
+  Function? onDoubleTapDown;
   Function? onPanUpdate;
 
   InputListener(
@@ -110,6 +135,7 @@ class InputListener extends StatefulWidget {
       Function? this.onKeyDown,
       Function? this.onKeyUp,
       Function? this.onTapDown,
+      Function? this.onDoubleTapDown,
       Function? this.onPanUpdate});
   @override
   _InputListener createState() => _InputListener();
@@ -117,55 +143,131 @@ class InputListener extends StatefulWidget {
 
 class _InputListener extends State<InputListener> {
   late FocusNode focusNode;
+  late FocusNode textFocusNode;
+  late TextEditingController controller;
+
+  bool showKeyboard = true;
+  Offset lastTap = const Offset(0, 0);
 
   @override
   void initState() {
     super.initState();
     focusNode = FocusNode();
+    textFocusNode = FocusNode();
+    controller = CustomEditingController();
+
+    controller.addListener(() {
+      final t = controller.text;
+      if (t.isNotEmpty) {
+        widget.onKeyDown?.call(t,
+            keyId: 0, shift: false, control: false, softKeyboard: true);
+      }
+      controller.text = '';
+    });
   }
 
   @override
   void dispose() {
     super.dispose();
     focusNode.dispose();
+    textFocusNode.dispose();
+    controller.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!focusNode.hasFocus) {
-      focusNode.requestFocus();
-    }
-
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
     Document d = doc.doc;
-    return GestureDetector(
-        child: Focus(
-            child: widget.child,
-            focusNode: focusNode,
-            autofocus: true,
-            onKey: (FocusNode node, RawKeyEvent event) {
-              if (event.runtimeType.toString() == 'RawKeyDownEvent') {
-                widget.onKeyDown?.call(event.logicalKey.keyLabel,
-                    keyId: event.logicalKey.keyId,
-                    shift: event.isShiftPressed,
-                    control: event.isControlPressed);
-              }
-              if (event.runtimeType.toString() == 'RawKeyUpEvent') {
-                widget.onKeyUp?.call();
-              }
-              return KeyEventResult.handled;
-            }),
-        onTapDown: (TapDownDetails details) {
-          widget.onTapDown
-              ?.call(context.findRenderObject(), details.globalPosition);
+    return Focus(
+        onFocusChange: (focused) {
+          // if (focused && !textFocusNode.hasFocus) {
+          //   textFocusNode.requestFocus();
+          // }
         },
-        onPanUpdate: (DragUpdateDetails details) {
-          widget.onPanUpdate
-              ?.call(context.findRenderObject(), details.globalPosition);
-        },
-        onLongPressMoveUpdate: (LongPressMoveUpdateDetails details) {
-          widget.onPanUpdate
-              ?.call(context.findRenderObject(), details.globalPosition);
+        child: Column(children: [
+          Expanded(
+              child: GestureDetector(
+                  child: widget.child,
+                  onTapUp: (TapUpDetails details) {
+                    lastTap = details.globalPosition;
+                  },
+                  onTapDown: (TapDownDetails details) {
+                    if (!focusNode.hasFocus) {
+                      focusNode.requestFocus();
+                      textFocusNode.unfocus();
+                      FocusScope.of(context).unfocus();
+                    }
+                    if (!textFocusNode.hasFocus) {
+                      textFocusNode.requestFocus();
+                    }
+                    widget.onTapDown?.call(
+                        context.findRenderObject(), details.globalPosition);
+                  },
+                  onDoubleTap: () {
+                    widget.onDoubleTapDown
+                        ?.call(context.findRenderObject(), lastTap);
+                  },
+                  onPanUpdate: (DragUpdateDetails details) {
+                    widget.onPanUpdate?.call(
+                        context.findRenderObject(), details.globalPosition);
+                  },
+                  onLongPressMoveUpdate: (LongPressMoveUpdateDetails details) {
+                    widget.onPanUpdate?.call(
+                        context.findRenderObject(), details.globalPosition);
+                  })),
+
+          // TextField(focusNode: textFocusNode, controller: controller, autofocus: true,
+          // maxLines: null,
+          // enableInteractiveSelection: false,)
+
+          if (Platform.isAndroid) ...[
+            Container(
+                child: Row(children: [
+              IconButton(
+                  icon: Icon(Icons.keyboard, color: Colors.white),
+                  onPressed: () {
+                    setState(() {
+                      showKeyboard = !showKeyboard;
+                      if (showKeyboard) {
+                        Future.delayed(Duration(milliseconds: 50), () {
+                          textFocusNode.requestFocus();
+                        });
+                      }
+                    });
+                  }),
+            ]))
+          ], // toolbar
+
+          Container(
+              width: 1,
+              height: 1,
+              child: !showKeyboard
+                  ? null
+                  : TextField(
+                      focusNode: textFocusNode,
+                      autofocus: true,
+                      maxLines: null,
+                      enableInteractiveSelection: false,
+                      decoration:
+                          const InputDecoration(border: InputBorder.none),
+                      controller: controller))
+        ]),
+        focusNode: focusNode,
+        autofocus: true,
+        onKey: (FocusNode node, RawKeyEvent event) {
+          // if (textFocusNode.hasFocus) {
+          //   return KeyEventResult.ignored;
+          // }
+          if (event.runtimeType.toString() == 'RawKeyDownEvent') {
+            widget.onKeyDown?.call(event.logicalKey.keyLabel,
+                keyId: event.logicalKey.keyId,
+                shift: event.isShiftPressed,
+                control: event.isControlPressed);
+          }
+          if (event.runtimeType.toString() == 'RawKeyUpEvent') {
+            widget.onKeyUp?.call();
+          }
+          return KeyEventResult.handled;
         });
   }
 }

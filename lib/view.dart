@@ -20,32 +20,15 @@ import 'highlighter.dart';
 import 'theme.dart';
 import 'native.dart';
 
-class DocumentProvider extends ChangeNotifier {
-  Document doc = Document();
-
-  int scrollTo = -1;
-  bool softWrap = true;
-
-  Future<bool> openFile(String path) async {
-    bool res = await doc.openFile(path);
-    touch();
-    return res;
-  }
-
-  void touch() {
-    notifyListeners();
-  }
-}
-
 class ViewLine extends StatelessWidget {
-  ViewLine(
-      {Key? key,
-      Block? this.block,
-      double this.gutterWidth = 0,
-      TextStyle? this.gutterStyle,
-      double this.width = 0,
-      double this.height = 0})
-      : super(key: key);
+  ViewLine({
+    Key? key,
+    Block? this.block,
+    double this.gutterWidth = 0,
+    TextStyle? this.gutterStyle,
+    double this.width = 0,
+    double this.height = 0,
+  }) : super(key: key);
 
   Block? block;
   double width = 0;
@@ -56,7 +39,7 @@ class ViewLine extends StatelessWidget {
   Future<List<InlineSpan>> _getSpans(Block block, Highlighter hl) async {
     return Future.delayed(Duration(milliseconds: 0), () {
       return hl.run(block, block.line, block.document ?? Document());
-      });
+    });
     return hl.run(block, block.line, block.document ?? Document());
   }
 
@@ -78,9 +61,10 @@ class ViewLine extends StatelessWidget {
     int lineNumber = block?.line ?? 0;
 
     // print('build ${block?.line}');
-    List<InlineSpan> spans = block?.spans ?? []; // snapshot.hasData ? snapshot.data : [];
+    List<InlineSpan> spans =
+        block?.spans ?? []; // snapshot.hasData ? snapshot.data : [];
     // if (text.length > 0 && spans.length == 0) {
-    //   spans.add(WidgetSpan(child: Text(block?.text ?? '', 
+    //   spans.add(WidgetSpan(child: Text(block?.text ?? '',
     //     style: TextStyle(fontSize: fontSize, fontFamily: fontFamily, color: Colors.white))));
     // }
 
@@ -102,13 +86,14 @@ class ViewLine extends StatelessWidget {
             text: TextSpan(text: block?.text ?? '', style: ts.style),
             textDirection: TextDirection.ltr)
           ..layout(minWidth: 0, maxWidth: size.width - gutterWidth);
-        for(final col in block?.carets ?? []) {
+        for (final col in block?.carets ?? []) {
           Offset offsetForCaret = textPainter.getOffsetForCaret(
-              TextPosition(offset: col), Offset(0, 0) & Size(0,0));
+              TextPosition(offset: col.position), Offset(0, 0) & Size(0, 0));
           carets.add(Positioned(
               left: gutterWidth + offsetForCaret.dx,
               top: offsetForCaret.dy,
-              child: AnimatedCaret(width: 2, height: sz.height, color: Colors.yellow)));
+              child: AnimatedCaret(
+                  width: 2, height: sz.height, color: col.color)));
         }
       }
     }
@@ -129,9 +114,7 @@ class ViewLine extends StatelessWidget {
 }
 
 class View extends StatefulWidget {
-  View({Key? key, String this.path = ''}) : super(key: key);
-
-  String path = '';
+  View({Key? key}) : super(key: key);
 
   @override
   _View createState() => _View();
@@ -148,14 +131,15 @@ class _View extends State<View> {
 
   int visibleLine = 0;
   double fontHeight = 0;
-  
+
   ReceivePort? _receivePort;
   Isolate? _isolate;
   SendPort? _isolateSendPort;
 
   static void remoteIsolate(SendPort sendPort) {
     init_highlighter();
-    int theme = loadTheme("/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.0/theme/dracula-soft.json");
+    int theme = loadTheme(
+        "/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.0/theme/dracula-soft.json");
     int lang = loadLanguage("test.cpp");
     ReceivePort _isolateReceivePort = ReceivePort();
     sendPort.send(_isolateReceivePort.sendPort);
@@ -166,7 +150,7 @@ class _View extends State<View> {
         List<String> res = [];
         List<String> s = message.split(']::[');
         if (s.length != 2) return;
-        if (s[1].length == 0 || s[1][s[1].length-1] != ']') {
+        if (s[1].length == 0 || s[1][s[1].length - 1] != ']') {
           return;
         }
         if (s[0].length == 0 || s[0][0] != '[') {
@@ -174,8 +158,8 @@ class _View extends State<View> {
         }
         int line = int.parse(s[0].substring(1));
 
-        String text = s[1].substring(0, s[1].length-1);
-        
+        String text = s[1].substring(0, s[1].length - 1);
+
         final nspans = runHighlighter(text, lang, theme, 0, 0, 0);
         print('at isolate: $line');
 
@@ -200,10 +184,11 @@ class _View extends State<View> {
           bool hasBg = (spn.bg_r + spn.bg_g + spn.bg_b != 0);
 
           LineDecoration d = LineDecoration();
-            d.start = s;
-            d.end = s + l - 1;
-            d.color = fg;
-            jm.map['${d.start}_${d.end}'] = '${d.color.red},${d.color.green},${d.color.blue}';
+          d.start = s;
+          d.end = s + l - 1;
+          d.color = fg;
+          jm.map['${d.start}_${d.end}'] =
+              '${d.color.red},${d.color.green},${d.color.blue}';
         }
 
         jm.map['line'] = '$line';
@@ -220,48 +205,46 @@ class _View extends State<View> {
 
     _receivePort?.listen((msg) {
       if (msg is SendPort) {
-              _isolateSendPort = msg;
-            } else{
+        _isolateSendPort = msg;
+      } else {
+        DocumentProvider doc =
+            Provider.of<DocumentProvider>(context, listen: false);
 
-      DocumentProvider doc =
-          Provider.of<DocumentProvider>(context, listen: false);
+        JsonMap jm = JsonMap();
+        jm.decode(msg);
 
-              JsonMap jm = JsonMap();
-              jm.decode(msg);
+        List<LineDecoration> decors = [];
 
-              List<LineDecoration> decors = [];
+        int line = int.parse(jm.map['line'] ?? '0');
+        Block block = doc.doc.blockAtLine(line) ?? Block('');
+        if (block.spans != null) return;
 
-              int line = int.parse(jm.map['line'] ?? '0');
-              Block block = doc.doc.blockAtLine(line) ?? Block('');
-              if (block.spans != null) return;
+        jm.map.forEach((k, v) {
+          List<String> s = k.split('_');
+          List<String> rgb = v.split(',');
+          if (s.length != 2 && rgb.length != 3) return;
 
-              jm.map.forEach((k,v) {
-                List<String> s = k.split('_');
-                List<String> rgb = v.split(',');
-                if (s.length != 2 && rgb.length != 3) return;
+          LineDecoration d = LineDecoration();
+          d.start = int.parse(s[0]);
+          d.end = int.parse(s[1]);
+          int r = int.parse(rgb[0]);
+          int g = int.parse(rgb[1]);
+          int b = int.parse(rgb[2]);
+          d.color = Color.fromRGBO(r, g, b, 1);
+          decors.add(d);
+        });
 
-                LineDecoration d = LineDecoration();
-                d.start = int.parse(s[0]);
-                d.end = int.parse(s[1]);
-                int r = int.parse(rgb[0]);
-                int g = int.parse(rgb[1]);
-                int b = int.parse(rgb[2]);
-                d.color = Color.fromRGBO(r,g,b,1);
-                decors.add(d);
-                });
+        Highlighter hl = Provider.of<Highlighter>(context, listen: false);
 
-      Highlighter hl =
-          Provider.of<Highlighter>(context, listen: false);
+        block.decors = decors;
 
-              block.decors = decors;
-
-              hl.run(block, block.line, block.document ?? Document());
-              setState(() {
-                block.waiting = false;
-                // pulse
-                });
-            }
-      });
+        hl.run(block, block.line, block.document ?? Document());
+        setState(() {
+          block.waiting = false;
+          // pulse
+        });
+      }
+    });
   }
 
   @override
@@ -368,8 +351,8 @@ class _View extends State<View> {
 
             double dv = estimateTarget - position;
             double ds = sqrt(dv * dv);
-            if (ds > 500) {
-              speed = (ds / 10);
+            if (ds > 250) {
+              speed = (ds / 6);
             }
             if (ds > 1000) {
               speed = (ds / 4);
@@ -403,9 +386,7 @@ class _View extends State<View> {
 
             return !(isLineVisible(line));
           },
-          onDone: () {
-            print('done');
-          });
+          onDone: () {});
     }
   }
 
@@ -414,16 +395,23 @@ class _View extends State<View> {
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
 
     final TextStyle style = TextStyle(
-        fontFamily: fontFamily, fontSize: fontSize, color: Colors.white);
+        fontFamily: theme.fontFamily,
+        fontSize: theme.fontSize,
+        color: Colors.white);
     final TextStyle gutterStyle = TextStyle(
-        fontFamily: fontFamily, fontSize: gutterFontSize, color: comment);
+        fontFamily: theme.fontFamily,
+        fontSize: theme.gutterFontSize,
+        color: theme.comment);
 
-    double gutterWidth =
-        getTextExtents(' ${doc.doc.blocks.length} ', gutterStyle).width;
+    double gutterWidth = 0;
+    if (doc.showGutters) {
+      gutterWidth =
+          getTextExtents(' ${doc.doc.blocks.length} ', gutterStyle).width;
+    }
 
     if (fontHeight == 0) {
-      fontHeight = getTextExtents(
-              'X', TextStyle(fontFamily: fontFamily, fontSize: fontSize))
+      fontHeight = getTextExtents('X',
+              TextStyle(fontFamily: theme.fontFamily, fontSize: theme.fontSize))
           .height;
     }
 
@@ -441,7 +429,7 @@ class _View extends State<View> {
     }
 
     RenderObject? obj = context.findRenderObject();
-    Size size = Size(0,0);
+    Size size = Size(0, 0);
     if (obj != null) {
       RenderBox? box = obj as RenderBox;
       size = box.size;
@@ -507,7 +495,7 @@ class _View extends State<View> {
     double totalHeight = docSize * fontHeight;
 
     double top = fontHeight * visibleLine;
-    top -= (fontHeight * count/2);
+    top -= (fontHeight * count / 2);
     if (top < 0) top = 0;
 
     // print('count: $count top: $top visible: $visibleLine');
@@ -530,9 +518,9 @@ class _View extends State<View> {
           gutterWidth: gutterWidth,
           gutterStyle: gutterStyle));
 
-      if (!softWrap) {
+      if (!softWrap && gutterWidth > 0) {
         gutters.add(Container(
-            color: background,
+            color: theme.background,
             height: fontHeight,
             width: gutterWidth,
             alignment: Alignment.centerRight,

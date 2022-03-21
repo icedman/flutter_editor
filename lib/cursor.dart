@@ -78,11 +78,17 @@ class Cursor {
   }
 
   void moveCursor(int l, int c, {bool keepAnchor = false}) {
-    block?.spans = null;
+    block?.makeDirty();
     block = document?.blockAtLine(l) ?? Block('');
     block?.line = l;
-    block?.spans = null;
+    block?.makeDirty();
     column = c;
+
+    int len = (block?.text ?? '').length;
+    if (column > len || column == -1) {
+      column = len;
+    }
+
     if (!keepAnchor) {
       anchorBlock = block;
       anchorColumn = column;
@@ -90,14 +96,14 @@ class Cursor {
   }
 
   void moveCursorLeft({int count = 1, bool keepAnchor = false}) {
-    block?.spans = null;
+    block?.makeDirty();
     if (hasSelection() && !keepAnchor) {
       clearSelection();
       return;
     }
 
     if (column >= (block?.text ?? '').length) {
-      moveCursorToEndOfLine();
+      moveCursorToEndOfLine(keepAnchor: keepAnchor);
     }
 
     int line = block?.line ?? 0;
@@ -114,11 +120,11 @@ class Cursor {
       anchorBlock = block;
       anchorColumn = column;
     }
-    block?.spans = null;
+    block?.makeDirty();
   }
 
   void moveCursorRight({int count = 1, bool keepAnchor = false}) {
-    block?.spans = null;
+    block?.makeDirty();
     if (hasSelection() && !keepAnchor) {
       clearSelection();
       return;
@@ -131,39 +137,37 @@ class Cursor {
       if (line < blocks.length - 1) {
         moveCursorDown(keepAnchor: keepAnchor);
         moveCursorToStartOfLine(keepAnchor: keepAnchor);
-      } else {
-        column = l.length - 1;
       }
     }
     if (!keepAnchor) {
       anchorBlock = block;
       anchorColumn = column;
     }
-    block?.spans = null;
+    block?.makeDirty();
   }
 
   void moveCursorUp({int count = 1, bool keepAnchor = false}) {
-    block?.spans = null;
+    block?.makeDirty();
     block = block?.previous ?? block;
     if (!keepAnchor) {
       anchorBlock = block;
       anchorColumn = column;
     }
-    block?.spans = null;
+    block?.makeDirty();
   }
 
   void moveCursorDown({int count = 1, bool keepAnchor = false}) {
-    block?.spans = null;
+    block?.makeDirty();
     block = block?.next ?? block;
     if (!keepAnchor) {
       anchorBlock = block;
       anchorColumn = column;
     }
-    block?.spans = null;
+    block?.makeDirty();
   }
 
   void moveCursorToStartOfLine({bool keepAnchor = false}) {
-    block?.spans = null;
+    block?.makeDirty();
     column = 0;
     if (!keepAnchor) {
       anchorBlock = block;
@@ -172,7 +176,7 @@ class Cursor {
   }
 
   void moveCursorToEndOfLine({bool keepAnchor = false}) {
-    block?.spans = null;
+    block?.makeDirty();
     String l = block?.text ?? '';
     column = l.length;
     if (!keepAnchor) {
@@ -182,25 +186,25 @@ class Cursor {
   }
 
   void moveCursorToStartOfDocument({bool keepAnchor = false}) {
-    block?.spans = null;
+    block?.makeDirty();
     block = document?.firstBlock();
     column = 0;
     if (!keepAnchor) {
       anchorBlock = block;
       anchorColumn = column;
     }
-    block?.spans = null;
+    block?.makeDirty();
   }
 
   void moveCursorToEndOfDocument({bool keepAnchor = false}) {
-    block?.spans = null;
+    block?.makeDirty();
     block = document?.lastBlock();
     column = block?.text.length ?? 0;
     if (!keepAnchor) {
       anchorBlock = block;
       anchorColumn = column;
     }
-    block?.spans = null;
+    block?.makeDirty();
   }
 
   void deleteSelectedText() {
@@ -213,7 +217,7 @@ class Cursor {
     if (res.length == 1) {
       cur.deleteText(numberOfCharacters: cur.anchorColumn - cur.column);
       cur.clearSelection();
-      cur.block?.spans = null;
+      cur.block?.makeDirty();
       copyFrom(cur);
       return;
     }
@@ -223,12 +227,15 @@ class Cursor {
     String left = l.substring(0, cur.column);
     String al = cur.anchorBlock?.text ?? '';
     String right = al.substring(cur.anchorColumn);
+
+    // print('${res.length}');
+
     for (int i = 0; i < (res.length - 1); i++) {
       document?.removeBlockAtLine(blockLine + 1);
     }
     cur.block?.text = left + right;
     cur.clearSelection();
-    cur.block?.spans = null;
+    cur.block?.makeDirty();
     copyFrom(cur);
   }
 
@@ -243,10 +250,10 @@ class Cursor {
       return res;
     }
     res.add(block ?? Block(''));
-    Block? b = block?.next;
+    Block? b = cur.block?.next;
     for (int i = blockLine + 1; b != null && i < anchorLine; i++) {
       res.add(b);
-      b.spans = null;
+      b.makeDirty();
       b = b.next;
     }
     res.add(anchorBlock ?? Block(''));
@@ -269,6 +276,34 @@ class Cursor {
     }
     res.add((cur.anchorBlock?.text ?? '').substring(0, cur.anchorColumn));
     return res.join('\n');
+  }
+
+  void selectLine() {
+    moveCursorToStartOfLine();
+    moveCursorToEndOfLine(keepAnchor: true);
+  }
+
+  void selectWord() {
+    RegExp regExp = new RegExp(
+      r'[a-z_\-0-9]*',
+      caseSensitive: false,
+      multiLine: false,
+    );
+    String l = block?.text ?? '';
+    var matches = regExp.allMatches(l);
+    for (final m in matches) {
+      var g = m.groups([0]);
+      String t = g[0] ?? '';
+      if (t.length > 0) {
+        // print('${m.start} >> ${g[0]}');
+        if (column >= m.start && column < m.start + t.length) {
+          anchorColumn = m.start;
+          column = anchorColumn + t.length;
+          break;
+        }
+      }
+    }
+    ;
   }
 
   void mergeNextLine() {
@@ -311,7 +346,7 @@ class Cursor {
     String left = l.substring(0, column);
     String right = l.substring(column + numberOfCharacters);
     block?.text = left + right;
-    block?.spans = null;
+    block?.makeDirty();
     advanceBlockCursors(-numberOfCharacters);
   }
 
@@ -335,7 +370,7 @@ class Cursor {
 
     // handle new line
     block?.text = left;
-    block?.spans = null;
+    block?.makeDirty();
     Block? newBlock = document?.addBlockAtLine(line + 1);
     newBlock?.text = right;
     moveCursorDown();
@@ -354,7 +389,7 @@ class Cursor {
     String right = l.substring(column);
 
     block?.text = left + text + right;
-    block?.spans = null;
+    block?.makeDirty();
     moveCursorRight(count: text.length);
     advanceBlockCursors(text.length);
   }
