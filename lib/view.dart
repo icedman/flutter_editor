@@ -139,7 +139,7 @@ class _View extends State<View> {
   static void remoteIsolate(SendPort sendPort) {
     init_highlighter();
     int theme = loadTheme(
-        "/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.0/theme/dracula-soft.json");
+        "/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json");
     int lang = loadLanguage("test.cpp");
     ReceivePort _isolateReceivePort = ReceivePort();
     sendPort.send(_isolateReceivePort.sendPort);
@@ -161,9 +161,8 @@ class _View extends State<View> {
         String text = s[1].substring(0, s[1].length - 1);
 
         final nspans = runHighlighter(text, lang, theme, 0, 0, 0);
-        print('at isolate: $line');
 
-        JsonMap jm = JsonMap();
+        List<Object> objs = [];
 
         int idx = 0;
         while (idx < (2048 * 4)) {
@@ -187,13 +186,11 @@ class _View extends State<View> {
           d.start = s;
           d.end = s + l - 1;
           d.color = fg;
-          jm.map['${d.start}_${d.end}'] =
-              '${d.color.red},${d.color.green},${d.color.blue}';
+          objs.add(d.toObject());
         }
 
-        jm.map['line'] = '$line';
-        sendPort.send(jm.encode());
-        // print(jm.encode());
+        String json = jsonEncode({'line': line, 'decors': objs});
+        sendPort.send(json);
       }
     });
   }
@@ -210,32 +207,20 @@ class _View extends State<View> {
         DocumentProvider doc =
             Provider.of<DocumentProvider>(context, listen: false);
 
-        JsonMap jm = JsonMap();
-        jm.decode(msg);
-
+        final jm = jsonDecode(msg);
         List<LineDecoration> decors = [];
 
-        int line = int.parse(jm.map['line'] ?? '0');
+        int line = jm['line'] ?? 0;
         Block block = doc.doc.blockAtLine(line) ?? Block('');
-        if (block.spans != null) return;
+        // if (block.spans != null) return;
 
-        jm.map.forEach((k, v) {
-          List<String> s = k.split('_');
-          List<String> rgb = v.split(',');
-          if (s.length != 2 && rgb.length != 3) return;
-
+        for (final obj in jm['decors'] ?? []) {
           LineDecoration d = LineDecoration();
-          d.start = int.parse(s[0]);
-          d.end = int.parse(s[1]);
-          int r = int.parse(rgb[0]);
-          int g = int.parse(rgb[1]);
-          int b = int.parse(rgb[2]);
-          d.color = Color.fromRGBO(r, g, b, 1);
+          d.fromObject(obj);
           decors.add(d);
-        });
+        }
 
         Highlighter hl = Provider.of<Highlighter>(context, listen: false);
-
         block.decors = decors;
 
         hl.run(block, block.line, block.document ?? Document());
@@ -247,9 +232,19 @@ class _View extends State<View> {
     });
   }
 
+  int themeId = 0;
+  int langId = 0;
+
   @override
   void initState() {
-    spawnIsolate();
+    // spawnIsolate();
+
+    init_highlighter();
+    themeId = loadTheme(
+        "/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json");
+    langId = loadLanguage("test.cpp");
+
+    // print('$themeId $langId');
 
     scroller = ScrollController();
     hscroller = ScrollController();
@@ -471,11 +466,59 @@ class _View extends State<View> {
             Block block = doc.doc.blockAtLine(line) ?? Block('');
             block.line = line;
 
-            if (_isolateSendPort != null) {
-              if (block.spans == null && !block.waiting) {
-                block.waiting = true;
-                _isolateSendPort!.send('[$line]::[${block.text}]');
+            // if (_isolateSendPort != null) {
+            //   if (block.spans == null && !block.waiting) {
+            //     block.waiting = true;
+            //     _isolateSendPort!.send('[$line]::[${block.text}]');
+            //   }
+            // }
+
+            if (block.spans == null) {
+              Highlighter hl = Provider.of<Highlighter>(context, listen: false);
+
+              List<LineDecoration> decors = [];
+
+              Block? prevBlock = block.previous;
+              Block? nextBlock = block.next;
+
+              String text = block.text;
+              final nspans = runHighlighter(
+                  text,
+                  langId,
+                  themeId,
+                  block.blockId,
+                  prevBlock?.blockId ?? 0,
+                  nextBlock?.blockId ?? 0);
+
+              int idx = 0;
+              while (idx < (2048 * 4)) {
+                final spn = nspans[idx++];
+                if (spn.start == 0 && spn.length == 0) break;
+                int s = spn.start;
+                int l = spn.length;
+
+                // todo... cleanup these checks
+                if (s < 0) continue;
+                if (s - 1 >= text.length) continue;
+                if (s + l >= text.length) {
+                  l = text.length - s;
+                }
+                if (l <= 0) continue;
+
+                Color fg = Color.fromRGBO(spn.r, spn.g, spn.b, 1);
+                bool hasBg = (spn.bg_r + spn.bg_g + spn.bg_b != 0);
+
+                LineDecoration d = LineDecoration();
+                d.start = s;
+                d.end = s + l - 1;
+                d.color = fg;
+                decors.add(d);
+
+                // print('$s $l ${spn.r}, ${spn.g}, ${spn.b}');
               }
+
+              block.decors = decors;
+              hl.run(block, block.line, block.document ?? Document());
             }
 
             return ViewLine(

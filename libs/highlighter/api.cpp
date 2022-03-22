@@ -68,7 +68,6 @@ struct span_info_t {
     bool bold;
     bool italic;
     bool underline;
-    // block_state_e state;
     std::string scope;
 };
 
@@ -129,26 +128,6 @@ EXPORT void init_highlighter()
     // }
 }
 
-EXPORT int load_theme(char* path)
-{
-    theme_ptr theme = theme_from_name(path, extensions);
-    if (theme != nullptr) {
-        themes.emplace_back(theme);
-        return themes.size()-1;
-    }
-    return 0;
-}
-
-EXPORT int load_language(char* path)
-{
-    language_info_ptr lange = language_from_file(path, extensions);
-    if (lange != nullptr) {
-        languages.emplace_back(lange);
-        return languages.size()-1;
-    }
-    return 0;
-}
-
 theme_color_t theme_color_from_scope_fg_bg(char* scope, bool fore = true)
 {
     theme_color_t res = { -1, 0, 0 };
@@ -187,6 +166,9 @@ theme_color_from_scope(char* scope)
 {
     return theme_color_from_scope_fg_bg(scope);
 }
+
+theme_info_t themeInfo;
+int themeInfoId = -1;
 
 EXPORT
 theme_info_t
@@ -253,7 +235,29 @@ theme_info()
         info.sel_g *= -1;
         info.sel_b *= -1;
     }
+
     return info;
+}
+
+EXPORT int load_theme(char* path)
+{
+    theme_ptr theme = theme_from_name(path, extensions);
+
+    if (theme != nullptr) {
+        themes.emplace_back(theme);
+        return themes.size()-1;
+    }
+    return 0;
+}
+
+EXPORT int load_language(char* path)
+{
+    language_info_ptr lange = language_from_file(path, extensions);
+    if (lange != nullptr) {
+        languages.emplace_back(lange);
+        return languages.size()-1;
+    }
+    return 0;
 }
 
 void dump_tokens(std::map<size_t, scope::scope_t>& scopes)
@@ -270,13 +274,24 @@ void dump_tokens(std::map<size_t, scope::scope_t>& scopes)
     }
 }
 
-parse::stack_ptr parser_state;
+std::map<size_t, parse::stack_ptr> parser_states;
+std::map<size_t, std::string> block_texts;
+
+EXPORT void set_block_text(int block, char* text) {
+    block_texts[block] = text;
+}
 
 EXPORT
 textstyle_t* run_highlighter(char *_text, int langId, int themeId, int block, int previous_block, int next_block)
 {
     theme_ptr theme = themes[themeId];
     parse::grammar_ptr gm = languages[langId]->grammar;
+
+    if (themeInfoId != themeId) {
+        themeInfo = theme_info();
+        themeInfoId = themeId;
+    }
+
     // parse::stack_ptr parser_state;
     std::map<size_t, scope::scope_t> scopes;
 
@@ -284,14 +299,17 @@ textstyle_t* run_highlighter(char *_text, int langId, int themeId, int block, in
     textstyle_buffer[0].start = 0;
     textstyle_buffer[0].length = 0;
 
-    std::string str = _text;
+    std::string str = _text; // block_texts[block];
     const char *text = str.c_str();
 
     size_t l = str.length();
     const char* first = text;
     const char* last = first + l;
 
-    parse::stack_ptr stack;
+    parse::stack_ptr parser_state;
+    if (parser_states[previous_block] != NULL) {
+        parser_state = parser_states[previous_block];
+    }
 
     bool firstLine = false;
     if (parser_state == nullptr) {
@@ -299,13 +317,10 @@ textstyle_t* run_highlighter(char *_text, int langId, int themeId, int block, in
         firstLine = true;
     }
     parser_state = parse::parse(first, last, parser_state, scopes, firstLine);
+    parser_states[block] = parser_state;
 
     std::map<size_t, scope::scope_t>::iterator it = scopes.begin();
     size_t n = 0;
-
-    theme_info_t thm = theme_info();
-
-    // printf("hl %d %d %d \n", block->lineNumber, block->length(), scopes.size());
 
     std::vector<span_info_t> spans;
 
@@ -313,8 +328,6 @@ textstyle_t* run_highlighter(char *_text, int langId, int themeId, int block, in
         n = it->first;
         scope::scope_t scope = it->second;
         std::string scopeName(scope);
-        style_t s = theme->styles_for_scope(scopeName);
-
         style_t style = theme->styles_for_scope(scopeName);
         span_info_t span = {
             .start = (int)n,
@@ -361,9 +374,9 @@ textstyle_t* run_highlighter(char *_text, int langId, int themeId, int block, in
 
         if (!color_is_set({ ts->r, ts->g, ts->b, 0 })) {
             if (ts->r + ts->g + ts->b == 0) {
-                ts->r = thm.fg_r;
-                ts->g = thm.fg_g;
-                ts->b = thm.fg_b;
+                ts->r = themeInfo.fg_r;
+                ts->g = themeInfo.fg_g;
+                ts->b = themeInfo.fg_b;
             }
         }
 
@@ -374,8 +387,6 @@ textstyle_t* run_highlighter(char *_text, int langId, int themeId, int block, in
 
         idx++;
     }
-
-    // printf(">>%d\n", idx);
 
     textstyle_buffer[idx].start = 0;
     textstyle_buffer[idx].length = 0;

@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:highlight/src/mode.dart';
 import 'cursor.dart';
 import 'highlighter.dart';
+import 'native.dart';
 
 int _blockId = 0xffff;
 
@@ -24,6 +25,7 @@ class Block {
   int blockId = 0;
   int line = 0;
   String text = '';
+  // String prevText = '';
   Document? document;
   Block? previous;
   Block? next;
@@ -43,6 +45,10 @@ class Block {
     mode = null;
     spans = null;
     carets = [];
+    // if (text != prevText) {
+    //   setBlockText(blockId, text);
+    //   prevText = text;
+    // }
   }
 }
 

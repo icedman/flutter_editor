@@ -103,5 +103,7 @@ target_include_directories(editor_api
     ./highlighter
 )
 
+set_target_properties(editor_api PROPERTIES
+  BUILD_WITH_INSTALL_RPATH 1 INSTALL_RPATH "$ORIGIN")
 
 target_link_libraries(editor_api PRIVATE onigmolib)

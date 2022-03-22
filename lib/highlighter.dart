@@ -35,31 +35,6 @@ Size getTextExtents(String text, TextStyle style,
   return textPainter.size;
 }
 
-class JsonMap {
-  Map<String, String> map = <String, String>{};
-
-  String encode() {
-    String res = '';
-    for (final n in map.keys) {
-      if (res != '') {
-        res += ', ';
-      }
-      res += '"$n": "${map[n]}"';
-    }
-    res = '{ $res }';
-    return res;
-  }
-
-  Map<String, String> decode(String s) {
-    map.clear();
-    final json = jsonDecode(s);
-    for (final k in json.keys) {
-      map[k] = json[k];
-    }
-    return map;
-  }
-}
-
 class LineDecoration {
   int start = 0;
   int end = 0;
@@ -68,20 +43,19 @@ class LineDecoration {
   bool underline = false;
   bool italic = false;
 
-  String encode() {
-    JsonMap jm = JsonMap();
-    jm.map['start'] = '$start';
-    jm.map['end'] = '$end';
-    jm.map['color'] = '${color.red},${color.green},${color.blue}';
-    return jm.encode();
+  Object toObject() {
+    return {
+      'start': start,
+      'end': end,
+      'color': [color.red, color.green, color.blue]
+    };
   }
 
-  void decode(String str) {
-    JsonMap jm = JsonMap();
-    jm.decode(str);
-    start = int.parse(jm.map['start'] ?? '0');
-    end = int.parse(jm.map['end'] ?? '0');
-    color = Colors.red;
+  void fromObject(json) {
+    start = json['start'] ?? 0;
+    end = json['end'] ?? 0;
+    final clr = json['color'] ?? [0, 0, 0];
+    color = Color.fromRGBO(clr[0], clr[1], clr[2], 1);
   }
 }
 
@@ -148,21 +122,21 @@ class Highlighter {
       }
     }
 
-    Block? prev = block?.previous;
-    var continuation = prev?.mode;
-    block?.prevBlockClass = prev?.mode?.className ?? '';
-    var result =
-        highlight.parse(text, language: 'cpp', continuation: continuation);
-    block?.mode = result.top;
+    // Block? prev = block?.previous;
+    // var continuation = prev?.mode;
+    // block?.prevBlockClass = prev?.mode?.className ?? '';
+    // var result =
+    //     highlight.parse(text, language: 'cpp', continuation: continuation);
+    // block?.mode = result.top;
 
-    Block? next = block?.next;
-    if (next != null && block?.mode != null) {
-      if (next.prevBlockClass != block?.mode?.className) {
-        next.makeDirty();
-      }
-    }
+    // Block? next = block?.next;
+    // if (next != null && block?.mode != null) {
+    //   if (next.prevBlockClass != block?.mode?.className) {
+    //     next.makeDirty();
+    //   }
+    // }
 
-    result.nodes?.forEach(_traverse);
+    // result.nodes?.forEach(_traverse);
 
     text += ' ';
 
