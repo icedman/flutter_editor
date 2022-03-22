@@ -60,26 +60,15 @@ final _run_highlighter = nativeEditorApiLib.lookup<
 final run_highlighter = _run_highlighter.asFunction<
     Pointer<TextSpanStyle> Function(Pointer<Utf8>, int, int, int, int, int)>();
 
-final _set_block_text = nativeEditorApiLib
-    .lookup<NativeFunction<Void Function(Int32, Pointer<Utf8>)>>('set_block_text');
-final set_block_text = _set_block_text.asFunction<void Function(int, Pointer<Utf8>)>();
-
+final _set_block = nativeEditorApiLib.lookup<
+    NativeFunction<
+        Void Function(Int32, Pointer<Utf8>)>>('set_block');
+final set_block = _set_block.asFunction<
+    void Function(int, Pointer<Utf8>)>();
 
 void initHighlighter() {
   init_highlighter();
 }
-
-Pointer<Utf8> _text = '    '.toNativeUtf8();
-// void setBlockText(int block, String text) {
-//   if (_text.length < text.length) {
-//     _text = text.toNativeUtf8();
-//   } else {
-//     for(int i=0; i<text.length; i++) {
-//       // _text.elementAt(i); //text.substring(i, 1);
-//     }
-//   }
-//   set_block_text(block, _text);
-// }
 
 int loadTheme(String path) {
   final _path = path.toNativeUtf8();
@@ -97,11 +86,10 @@ int loadLanguage(String path) {
 
 Pointer<TextSpanStyle> _runHighlighter(
     String text, int lang, int theme, int block, int prev, int next) {
-
   final _text = text.toNativeUtf8();
   Pointer<TextSpanStyle> res =
       run_highlighter(_text, lang, theme, block, prev, next);
-      
+
   calloc.free(_text);
   return res;
 }
@@ -112,14 +100,14 @@ int resultLength = 32;
 
 Pointer<TextSpanStyle> runHighlighter(
     String text, int lang, int theme, int block, int prev, int next) {
-
   final units = utf8.encode(text);
   int l = units.length + 1;
 
   if (l > resultLength) {
     calloc.free(result);
-    result = malloc<Uint8>(l);
-    resultLength = l;
+
+    resultLength = resultLength + 32;
+    result = malloc<Uint8>(resultLength);
   }
 
   final Uint8List nativeString = result.asTypedList(l);
@@ -128,6 +116,25 @@ Pointer<TextSpanStyle> runHighlighter(
 
   Pointer<TextSpanStyle> res =
       run_highlighter(result.cast<Utf8>(), lang, theme, block, prev, next);
-      
+
   return res;
 }
+
+void setBlock(int blockId, String text) {
+  final units = utf8.encode(text);
+  int l = units.length + 1;
+
+  if (l > resultLength) {
+    calloc.free(result);
+
+    resultLength = resultLength + 32;
+    result = malloc<Uint8>(resultLength);
+  }
+
+  final Uint8List nativeString = result.asTypedList(l);
+  nativeString.setAll(0, units);
+  nativeString[units.length] = 0;
+
+  set_block(blockId, result.cast<Utf8>());
+}
+

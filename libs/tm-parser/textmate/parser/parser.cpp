@@ -159,7 +159,8 @@ static std::string expand_back_references(std::string const& ptrn,
     for (auto const& it : ptrn) {
         if (escape && isdigit(it)) {
             // int i = digittoint(it);
-            int i = (int)it;
+            // int i = (int)it;
+            int i = atoi(&it);
             if (!m.empty(i))
                 escape_regexp(m.buffer() + m.begin(i), m.buffer() + m.end(i),
                     back_inserter(res));

@@ -44,11 +44,11 @@ class _Editor extends State<Editor> {
     switch (cmd) {
       case 'ctrl+w':
         doc.softWrap = !doc.softWrap;
-        doc.notifyListeners();
+        doc.touch();
         break;
       case 'ctrl+e':
         doc.showGutters = !doc.showGutters;
-        doc.notifyListeners();
+        doc.touch();
         break;
       case 'ctrl+c':
         Clipboard.setData(ClipboardData(text: d.selectedText()));
@@ -269,7 +269,7 @@ class _Editor extends State<Editor> {
           onDoubleTapDown: onDoubleTapDown,
           onPanUpdate: onPanUpdate,
         )),
-        Container(width: 100, child: Minimap())
+        // Container(width: 100, child: Minimap())
       ]),
     );
   }

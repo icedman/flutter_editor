@@ -7,7 +7,6 @@ import 'dart:ffi' hide Size;
 import 'dart:convert';
 import 'package:ffi/ffi.dart';
 
-import 'dart:isolate';
 import 'dart:io';
 import 'dart:convert';
 import 'dart:math';
@@ -36,38 +35,27 @@ class ViewLine extends StatelessWidget {
   double gutterWidth = 0;
   TextStyle? gutterStyle;
 
-  Future<List<InlineSpan>> _getSpans(Block block, Highlighter hl) async {
-    return Future.delayed(Duration(milliseconds: 0), () {
-      return hl.run(block, block.line, block.document ?? Document());
-    });
-    return hl.run(block, block.line, block.document ?? Document());
-  }
-
   @override
   Widget build(BuildContext context) {
-    // Highlighter hl = Provider.of<Highlighter>(context);
-    // return FutureBuilder<List<InlineSpan>>(
-    //   future: _getSpans(block ?? Block(''), hl),
-    //   builder: _build
-    //   );
-    return _build(context, null);
-  }
-
-  Widget _build(BuildContext context, snapshot) {
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
     Highlighter hl = Provider.of<Highlighter>(context);
+    // BlockData data = Provider.of<BlockData>(context);
 
-    String text = block?.text ?? '';
+    List<Block> sel = doc.doc.selectedBlocks();
+    for (final s in sel) {
+      s.makeDirty();
+    }
+
+    // String text = block?.text ?? '';
     int lineNumber = block?.line ?? 0;
 
-    // print('build ${block?.line}');
-    List<InlineSpan> spans =
-        block?.spans ?? []; // snapshot.hasData ? snapshot.data : [];
-    // if (text.length > 0 && spans.length == 0) {
-    //   spans.add(WidgetSpan(child: Text(block?.text ?? '',
-    //     style: TextStyle(fontSize: fontSize, fontFamily: fontFamily, color: Colors.white))));
-    // }
+    Block b = block ?? Block('', document: doc.doc);
+    if (b.spans == null) {
+      Highlighter hl = Provider.of<Highlighter>(context, listen: false);
+      hl.run(b, b.line, b.document ?? Document());
+    }
 
+    List<InlineSpan> spans = block?.spans ?? [];
     bool softWrap = doc.softWrap;
 
     // render carets
@@ -132,119 +120,8 @@ class _View extends State<View> {
   int visibleLine = 0;
   double fontHeight = 0;
 
-  ReceivePort? _receivePort;
-  Isolate? _isolate;
-  SendPort? _isolateSendPort;
-
-  static void remoteIsolate(SendPort sendPort) {
-    init_highlighter();
-    int theme = loadTheme(
-        "/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json");
-    int lang = loadLanguage("test.cpp");
-    ReceivePort _isolateReceivePort = ReceivePort();
-    sendPort.send(_isolateReceivePort.sendPort);
-    _isolateReceivePort.listen((message) {
-      if (message == '?') {
-        // return
-      } else {
-        List<String> res = [];
-        List<String> s = message.split(']::[');
-        if (s.length != 2) return;
-        if (s[1].length == 0 || s[1][s[1].length - 1] != ']') {
-          return;
-        }
-        if (s[0].length == 0 || s[0][0] != '[') {
-          return;
-        }
-        int line = int.parse(s[0].substring(1));
-
-        String text = s[1].substring(0, s[1].length - 1);
-
-        final nspans = runHighlighter(text, lang, theme, 0, 0, 0);
-
-        List<Object> objs = [];
-
-        int idx = 0;
-        while (idx < (2048 * 4)) {
-          final spn = nspans[idx++];
-          if (spn.start == 0 && spn.length == 0) break;
-          int s = spn.start;
-          int l = spn.length;
-
-          // todo... cleanup these checks
-          if (s < 0) continue;
-          if (s - 1 >= text.length) continue;
-          if (s + l >= text.length) {
-            l = text.length - s;
-          }
-          if (l <= 0) continue;
-
-          Color fg = Color.fromRGBO(spn.r, spn.g, spn.b, 1);
-          bool hasBg = (spn.bg_r + spn.bg_g + spn.bg_b != 0);
-
-          LineDecoration d = LineDecoration();
-          d.start = s;
-          d.end = s + l - 1;
-          d.color = fg;
-          objs.add(d.toObject());
-        }
-
-        String json = jsonEncode({'line': line, 'decors': objs});
-        sendPort.send(json);
-      }
-    });
-  }
-
-  Future spawnIsolate() async {
-    _receivePort = ReceivePort();
-    _isolate = await Isolate.spawn(remoteIsolate, _receivePort!.sendPort,
-        debugName: "remoteIsolate");
-
-    _receivePort?.listen((msg) {
-      if (msg is SendPort) {
-        _isolateSendPort = msg;
-      } else {
-        DocumentProvider doc =
-            Provider.of<DocumentProvider>(context, listen: false);
-
-        final jm = jsonDecode(msg);
-        List<LineDecoration> decors = [];
-
-        int line = jm['line'] ?? 0;
-        Block block = doc.doc.blockAtLine(line) ?? Block('');
-        // if (block.spans != null) return;
-
-        for (final obj in jm['decors'] ?? []) {
-          LineDecoration d = LineDecoration();
-          d.fromObject(obj);
-          decors.add(d);
-        }
-
-        Highlighter hl = Provider.of<Highlighter>(context, listen: false);
-        block.decors = decors;
-
-        hl.run(block, block.line, block.document ?? Document());
-        setState(() {
-          block.waiting = false;
-          // pulse
-        });
-      }
-    });
-  }
-
-  int themeId = 0;
-  int langId = 0;
-
   @override
   void initState() {
-    // spawnIsolate();
-
-    init_highlighter();
-    themeId = loadTheme(
-        "/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json");
-    langId = loadLanguage("test.cpp");
-
-    // print('$themeId $langId');
 
     scroller = ScrollController();
     hscroller = ScrollController();
@@ -274,9 +151,6 @@ class _View extends State<View> {
 
   @override
   void dispose() {
-    if (_isolate != null) {
-      _isolate!.kill();
-    }
     scroller.dispose();
     hscroller.dispose();
     scrollTo.cancel();
@@ -286,7 +160,7 @@ class _View extends State<View> {
   void updateVisibleRange(BuildContext context) {
     RenderObject? obj = context.findRenderObject();
     RenderBox? box = obj as RenderBox;
-    Offset offset = box.localToGlobal(Offset(0, 0));
+    Offset offset = box.localToGlobal(const Offset(0, 0));
     Rect bounds = obj.paintBounds;
     Rect globalBounds = offset & bounds.size;
 
@@ -298,7 +172,7 @@ class _View extends State<View> {
 
     for (final p in pars) {
       RenderBox? pBox = p as RenderBox;
-      Offset pOffset = pBox.localToGlobal(Offset(0, 0));
+      Offset pOffset = pBox.localToGlobal(const Offset(0, 0));
       Rect globalPBox = pOffset & pBox.size;
       if (globalBounds.contains(pOffset) &&
           globalBounds.contains(pOffset.translate(0, pBox.size.height))) {
@@ -437,26 +311,6 @@ class _View extends State<View> {
 
     int docSize = doc.doc.blocks.length;
 
-    // highlight run
-    // Highlighter hl = Provider.of<Highlighter>(context);
-    // for (int i = 0; i < count; i++) {
-    //   int line = visibleLine + i;
-    //   if (line >= docSize) {
-    //     break;
-    //   }
-    //   Block block = doc.doc.blockAtLine(line) ?? Block('');
-    //   // block.line = line;
-    //   // String text = block.text;
-    //   // int lineNumber = block.line;
-
-    //   // print('build ${block?.line}');
-    //   // List<InlineSpan> spans = hl.run(block, lineNumber, doc.doc);
-    //   if (_isolateSendPort != null)
-    //   if (block.spans == null) {
-    //     _isolateSendPort!.send('[$line]::[${block.text}]');
-    //   }
-    // }
-
     if ((!largeDoc && softWrap) || !softWrap) {
       return ListView.builder(
           controller: scroller,
@@ -465,68 +319,17 @@ class _View extends State<View> {
           itemBuilder: (BuildContext context, int line) {
             Block block = doc.doc.blockAtLine(line) ?? Block('');
             block.line = line;
-
-            // if (_isolateSendPort != null) {
-            //   if (block.spans == null && !block.waiting) {
-            //     block.waiting = true;
-            //     _isolateSendPort!.send('[$line]::[${block.text}]');
-            //   }
-            // }
-
-            if (block.spans == null) {
-              Highlighter hl = Provider.of<Highlighter>(context, listen: false);
-
-              List<LineDecoration> decors = [];
-
-              Block? prevBlock = block.previous;
-              Block? nextBlock = block.next;
-
-              String text = block.text;
-              final nspans = runHighlighter(
-                  text,
-                  langId,
-                  themeId,
-                  block.blockId,
-                  prevBlock?.blockId ?? 0,
-                  nextBlock?.blockId ?? 0);
-
-              int idx = 0;
-              while (idx < (2048 * 4)) {
-                final spn = nspans[idx++];
-                if (spn.start == 0 && spn.length == 0) break;
-                int s = spn.start;
-                int l = spn.length;
-
-                // todo... cleanup these checks
-                if (s < 0) continue;
-                if (s - 1 >= text.length) continue;
-                if (s + l >= text.length) {
-                  l = text.length - s;
-                }
-                if (l <= 0) continue;
-
-                Color fg = Color.fromRGBO(spn.r, spn.g, spn.b, 1);
-                bool hasBg = (spn.bg_r + spn.bg_g + spn.bg_b != 0);
-
-                LineDecoration d = LineDecoration();
-                d.start = s;
-                d.end = s + l - 1;
-                d.color = fg;
-                decors.add(d);
-
-                // print('$s $l ${spn.r}, ${spn.g}, ${spn.b}');
-              }
-
-              block.decors = decors;
-              hl.run(block, block.line, block.document ?? Document());
-            }
-
+      //       return MultiProvider(
+      // providers: [
+      //   ChangeNotifierProvider(create: (context) => block.data),
+      // ], child: 
             return ViewLine(
                 block: block,
                 width: size.width - gutterWidth,
                 height: fontHeight,
                 gutterWidth: gutterWidth,
-                gutterStyle: gutterStyle);
+                gutterStyle: gutterStyle
+                );
           });
     }
 

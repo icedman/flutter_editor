@@ -65,10 +65,20 @@ class CustomWidgetSpan extends WidgetSpan {
       : super(child: child);
 }
 
+int themeId = 0;
+int langId = 0;
+
 class Highlighter {
+
   Highlighter() {
-    highlight.registerLanguage('cpp', cpp);
-    highlight.registerLanguage('json', json);
+
+    init_highlighter();
+    themeId = loadTheme(
+        "/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json");
+    langId = loadLanguage("test.c");
+
+    // highlight.registerLanguage('cpp', cpp);
+    // highlight.registerLanguage('json', json);
   }
 
   List<InlineSpan> run(Block? block, int line, Document document) {
@@ -77,14 +87,52 @@ class Highlighter {
         fontSize: theme.fontSize,
         color: theme.foreground);
     List<InlineSpan> res = <InlineSpan>[];
-    List<LineDecoration> decors = block?.decors ?? [];
+    List<LineDecoration> decors = [];// block?.decors ?? [];
 
-    List<Block> sel = document.selectedBlocks();
-    for (final s in sel) {
-      s.makeDirty();
-    }
+    // List<Block> sel = document.selectedBlocks();
+    // for (final s in sel) {
+    //   s.makeDirty();
+    // }
+      Block b = block ?? Block('', document: Document());
 
-    String text = block?.text ?? '';
+      Block? prevBlock = b.previous;
+      Block? nextBlock = b.next;
+
+      String text = b.text;
+      final nspans = runHighlighter(text, langId, themeId, b.blockId,
+          prevBlock?.blockId ?? 0, nextBlock?.blockId ?? 0);
+
+      int idx = 0;
+      while (idx < (2048 * 4)) {
+        final spn = nspans[idx++];
+        if (spn.start == 0 && spn.length == 0) break;
+        int s = spn.start;
+        int l = spn.length;
+
+        // todo... cleanup these checks
+        if (s < 0) continue;
+        if (s - 1 >= text.length) continue;
+        if (s + l >= text.length) {
+          l = text.length - s;
+        }
+        if (l <= 0) continue;
+
+        Color fg = Color.fromRGBO(spn.r, spn.g, spn.b, 1);
+        bool hasBg = (spn.bg_r + spn.bg_g + spn.bg_b != 0);
+
+        LineDecoration d = LineDecoration();
+        d.start = s;
+        d.end = s + l - 1;
+        d.color = fg;
+        decors.add(d);
+
+        // print('$s $l ${spn.r}, ${spn.g}, ${spn.b}');
+      }
+
+      b.decors = decors;
+
+
+    // String text = block?.text ?? '';
     bool cache = true;
     if (block?.spans != null) {
       return block?.spans ?? [];
@@ -92,59 +140,8 @@ class Highlighter {
 
     block?.carets.clear();
 
-    int idx = 0;
-    void _traverse(var node) {
-      int start = idx;
-      final shouldAddSpan = node.className != null &&
-          ((node.value != null && node.value!.isNotEmpty) ||
-              (node.children != null && node.children!.isNotEmpty));
-
-      if (shouldAddSpan) {
-        //
-      }
-
-      if (node.value != null) {
-        int l = (node.value ?? '').length;
-        idx = idx + l;
-      } else if (node.children != null) {
-        node.children!.forEach(_traverse);
-      }
-
-      if (shouldAddSpan) {
-        LineDecoration d = LineDecoration();
-        d.start = start;
-        d.end = idx - 1;
-        String className = node.className;
-        className = className.replaceAll('meta-', '');
-        TextStyle? style = theTheme[className];
-        d.color = style?.color ?? theme.foreground;
-        decors.add(d);
-      }
-    }
-
-    // Block? prev = block?.previous;
-    // var continuation = prev?.mode;
-    // block?.prevBlockClass = prev?.mode?.className ?? '';
-    // var result =
-    //     highlight.parse(text, language: 'cpp', continuation: continuation);
-    // block?.mode = result.top;
-
-    // Block? next = block?.next;
-    // if (next != null && block?.mode != null) {
-    //   if (next.prevBlockClass != block?.mode?.className) {
-    //     next.makeDirty();
-    //   }
-    // }
-
-    // result.nodes?.forEach(_traverse);
-
     text += ' ';
-
-    // res.add(TextSpan(
-    //           text: text,
-    //           style: defaultStyle,
-    //           mouseCursor: MaterialStateMouseCursor.textable));
-
+    
     String prevText = '';
     for (int i = 0; i < text.length; i++) {
       String ch = text[i];
@@ -171,7 +168,6 @@ class Highlighter {
           } else {
             style = style.copyWith(
                 backgroundColor: theme.selection.withOpacity(0.75));
-            cache = false;
             break;
           }
         }

@@ -138,8 +138,10 @@ void theme_tokens(std::map<size_t, scope::scope_t>& scopes, theme_ptr theme)
     }
 }
 
-void test_c()
+int test_c()
 {
+    int lines = 0;
+
     grammar_ptr gm;
     // gm = load("test-cases/first-mate/fixtures/c.json");
     gm = load("extensions/cpp/syntaxes/cpp.tmLanguage.json");
@@ -149,8 +151,8 @@ void test_c()
     theme_ptr theme = parse_theme(root);
 
     // FILE* fp = fopen("tests/cases/sqlite3.c", "r");
-    FILE* fp = fopen("tests/cases/test.cpp", "r");
-    // FILE* fp = fopen("tests/cases/tinywl.c", "r");
+    // FILE* fp = fopen("tests/cases/test.cpp", "r");
+    FILE* fp = fopen("tests/cases/tinywl.c", "r");
     char str[1024];
 
     for (int i = 0; i < 1; i++) {
@@ -172,6 +174,7 @@ void test_c()
             std::map<size_t, scope::scope_t> scopes;
             parser_state = parse::parse(first, last, parser_state, scopes, firstLine);
             dump_tokens(scopes);
+            lines++;
 
             // theme_tokens(scopes, theme);
 
@@ -182,6 +185,8 @@ void test_c()
     }
 
     fclose(fp);
+
+    return lines;
 }
 
 void test_markdown()
@@ -263,6 +268,7 @@ void test_stream()
         std::map<size_t, scope::scope_t> scopes;
         parser_state = parse::parse(start, start + len, parser_state, scopes, firstLine);
         dump_tokens(scopes);
+        break;
 
         firstLine = false;
     }
@@ -275,12 +281,13 @@ int main(int argc, char** argv)
     double cpu_time_used;
     start = clock();
 
+    int lines = 1;
+
     // test_read_and_parse();
     // test_hello();
     // test_coffee();
-    // test_c();
-
-    test_stream();
+    lines = test_c();
+    // test_stream();
 
     // test_markdown();
     // test_plist();
@@ -288,6 +295,6 @@ int main(int argc, char** argv)
     end = clock();
     cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
     std::cout << std::endl
-              << "done in " << cpu_time_used << "s" << std::endl;
+              << "done in " << cpu_time_used << "s " << (cpu_time_used/lines) << "s/line" << std::endl;
     return 0;
 }

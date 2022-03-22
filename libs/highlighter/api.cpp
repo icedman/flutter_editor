@@ -4,6 +4,8 @@
 #include "theme.h"
 #include "extension.h"
 
+#include <time.h>
+
 #ifdef WIN64
 #define EXPORT __declspec(dllexport)
 #else
@@ -12,6 +14,15 @@
 
 #include <string>
 #include <iostream>
+
+#define TIMER_BEGIN \
+    clock_t start, end; \
+    double cpu_time_used; \
+    start = clock();
+
+#define TIMER_END \
+    end = clock(); \
+    cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
 
 #define MAX_STYLED_SPANS 512
 
@@ -277,13 +288,15 @@ void dump_tokens(std::map<size_t, scope::scope_t>& scopes)
 std::map<size_t, parse::stack_ptr> parser_states;
 std::map<size_t, std::string> block_texts;
 
-EXPORT void set_block_text(int block, char* text) {
-    block_texts[block] = text;
+EXPORT
+void set_block(int blockId, char* text) {
+    block_texts[blockId] = text;
 }
 
 EXPORT
 textstyle_t* run_highlighter(char *_text, int langId, int themeId, int block, int previous_block, int next_block)
 {
+
     theme_ptr theme = themes[themeId];
     parse::grammar_ptr gm = languages[langId]->grammar;
 
@@ -300,6 +313,8 @@ textstyle_t* run_highlighter(char *_text, int langId, int themeId, int block, in
     textstyle_buffer[0].length = 0;
 
     std::string str = _text; // block_texts[block];
+    str += "\n";
+    
     const char *text = str.c_str();
 
     size_t l = str.length();
@@ -316,7 +331,16 @@ textstyle_t* run_highlighter(char *_text, int langId, int themeId, int block, in
         parser_state = gm->seed();
         firstLine = true;
     }
+
+TIMER_BEGIN
     parser_state = parse::parse(first, last, parser_state, scopes, firstLine);
+TIMER_END
+
+    // if ((cpu_time_used > 0.01)) {
+        printf(">>%f %s", cpu_time_used, text);
+        // dump_tokens(scopes);
+    // }
+
     parser_states[block] = parser_state;
 
     std::map<size_t, scope::scope_t>::iterator it = scopes.begin();
@@ -390,5 +414,7 @@ textstyle_t* run_highlighter(char *_text, int langId, int themeId, int block, in
 
     textstyle_buffer[idx].start = 0;
     textstyle_buffer[idx].length = 0;
+    
     return textstyle_buffer;
 }
+

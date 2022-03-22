@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h> 
-#include include include include include include <time.h>
+#include <time.h>
 #include <unistd.h>
 #include <wayland-server-core.h>
 #include <wlr/backend.h>
@@ -993,6 +993,9 @@ int main(int argc, char* argv[])
     wl_display_destroy(server.wl_display);
     return 0;
 }
+
+
+
 
 
 
