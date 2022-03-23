@@ -17,9 +17,7 @@ class BlockCaret {
   Color color = Colors.white;
 }
 
-class BlockData extends ChangeNotifier {
-
-}
+class BlockData extends ChangeNotifier {}
 
 class Block {
   Block(String this.text, {int this.line = 0, Document? this.document}) {
@@ -51,11 +49,11 @@ class Block {
     mode = null;
     spans = null;
     carets = [];
-    // if (text != prevText) {
-    //   setBlock(blockId, text);
-    //   prevText = text;
-    // }
-    // data.notifyListeners();
+    if (text != prevText) {
+      setBlock(blockId, text);
+      prevText = text;
+    }
+    data.notifyListeners();
   }
 }
 
@@ -341,8 +339,7 @@ class DocumentProvider extends ChangeNotifier {
 
   Future<bool> openFile(String path) async {
     bool res = await doc.openFile(path);
-    touch();
-    // notifyListeners();
+    notifyListeners();
     return res;
   }
 

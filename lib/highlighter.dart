@@ -69,9 +69,7 @@ int themeId = 0;
 int langId = 0;
 
 class Highlighter {
-
   Highlighter() {
-
     init_highlighter();
     themeId = loadTheme(
         "/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json");
@@ -87,50 +85,49 @@ class Highlighter {
         fontSize: theme.fontSize,
         color: theme.foreground);
     List<InlineSpan> res = <InlineSpan>[];
-    List<LineDecoration> decors = [];// block?.decors ?? [];
+    List<LineDecoration> decors = []; // block?.decors ?? [];
 
-    // List<Block> sel = document.selectedBlocks();
-    // for (final s in sel) {
-    //   s.makeDirty();
-    // }
-      Block b = block ?? Block('', document: Document());
+    List<Block> sel = document.selectedBlocks();
+    for (final s in sel) {
+      s.makeDirty();
+    }
+    Block b = block ?? Block('', document: Document());
 
-      Block? prevBlock = b.previous;
-      Block? nextBlock = b.next;
+    Block? prevBlock = b.previous;
+    Block? nextBlock = b.next;
 
-      String text = b.text;
-      final nspans = runHighlighter(text, langId, themeId, b.blockId,
-          prevBlock?.blockId ?? 0, nextBlock?.blockId ?? 0);
+    String text = b.text;
+    final nspans = runHighlighter(text, langId, themeId, b.blockId,
+        prevBlock?.blockId ?? 0, nextBlock?.blockId ?? 0);
 
-      int idx = 0;
-      while (idx < (2048 * 4)) {
-        final spn = nspans[idx++];
-        if (spn.start == 0 && spn.length == 0) break;
-        int s = spn.start;
-        int l = spn.length;
+    int idx = 0;
+    while (idx < (2048 * 4)) {
+      final spn = nspans[idx++];
+      if (spn.start == 0 && spn.length == 0) break;
+      int s = spn.start;
+      int l = spn.length;
 
-        // todo... cleanup these checks
-        if (s < 0) continue;
-        if (s - 1 >= text.length) continue;
-        if (s + l >= text.length) {
-          l = text.length - s;
-        }
-        if (l <= 0) continue;
-
-        Color fg = Color.fromRGBO(spn.r, spn.g, spn.b, 1);
-        bool hasBg = (spn.bg_r + spn.bg_g + spn.bg_b != 0);
-
-        LineDecoration d = LineDecoration();
-        d.start = s;
-        d.end = s + l - 1;
-        d.color = fg;
-        decors.add(d);
-
-        // print('$s $l ${spn.r}, ${spn.g}, ${spn.b}');
+      // todo... cleanup these checks
+      if (s < 0) continue;
+      if (s - 1 >= text.length) continue;
+      if (s + l >= text.length) {
+        l = text.length - s;
       }
+      if (l <= 0) continue;
 
-      b.decors = decors;
+      Color fg = Color.fromRGBO(spn.r, spn.g, spn.b, 1);
+      bool hasBg = (spn.bg_r + spn.bg_g + spn.bg_b != 0);
 
+      LineDecoration d = LineDecoration();
+      d.start = s;
+      d.end = s + l - 1;
+      d.color = fg;
+      decors.add(d);
+
+      // print('$s $l ${spn.r}, ${spn.g}, ${spn.b}');
+    }
+
+    b.decors = decors;
 
     // String text = block?.text ?? '';
     bool cache = true;
@@ -141,7 +138,7 @@ class Highlighter {
     block?.carets.clear();
 
     text += ' ';
-    
+
     String prevText = '';
     for (int i = 0; i < text.length; i++) {
       String ch = text[i];

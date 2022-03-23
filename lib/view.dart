@@ -41,11 +41,6 @@ class ViewLine extends StatelessWidget {
     Highlighter hl = Provider.of<Highlighter>(context);
     // BlockData data = Provider.of<BlockData>(context);
 
-    List<Block> sel = doc.doc.selectedBlocks();
-    for (final s in sel) {
-      s.makeDirty();
-    }
-
     // String text = block?.text ?? '';
     int lineNumber = block?.line ?? 0;
 
@@ -122,7 +117,6 @@ class _View extends State<View> {
 
   @override
   void initState() {
-
     scroller = ScrollController();
     hscroller = ScrollController();
     scrollTo = PeriodicTimer();
@@ -311,6 +305,13 @@ class _View extends State<View> {
 
     int docSize = doc.doc.blocks.length;
 
+  Widget _provider(BlockData? data, Widget? child) {
+    return child ?? Container();
+    // return MultiProvider(providers: [
+    //   ChangeNotifierProvider(create: (context) => data),
+    // ], child: child ?? Container());
+  }
+
     if ((!largeDoc && softWrap) || !softWrap) {
       return ListView.builder(
           controller: scroller,
@@ -319,17 +320,14 @@ class _View extends State<View> {
           itemBuilder: (BuildContext context, int line) {
             Block block = doc.doc.blockAtLine(line) ?? Block('');
             block.line = line;
-      //       return MultiProvider(
-      // providers: [
-      //   ChangeNotifierProvider(create: (context) => block.data),
-      // ], child: 
-            return ViewLine(
-                block: block,
-                width: size.width - gutterWidth,
-                height: fontHeight,
-                gutterWidth: gutterWidth,
-                gutterStyle: gutterStyle
-                );
+            return _provider(
+                block.data,
+                ViewLine(
+                    block: block,
+                    width: size.width - gutterWidth,
+                    height: fontHeight,
+                    gutterWidth: gutterWidth,
+                    gutterStyle: gutterStyle));
           });
     }
 

@@ -60,11 +60,9 @@ final _run_highlighter = nativeEditorApiLib.lookup<
 final run_highlighter = _run_highlighter.asFunction<
     Pointer<TextSpanStyle> Function(Pointer<Utf8>, int, int, int, int, int)>();
 
-final _set_block = nativeEditorApiLib.lookup<
-    NativeFunction<
-        Void Function(Int32, Pointer<Utf8>)>>('set_block');
-final set_block = _set_block.asFunction<
-    void Function(int, Pointer<Utf8>)>();
+final _set_block = nativeEditorApiLib
+    .lookup<NativeFunction<Void Function(Int32, Pointer<Utf8>)>>('set_block');
+final set_block = _set_block.asFunction<void Function(int, Pointer<Utf8>)>();
 
 void initHighlighter() {
   init_highlighter();
@@ -137,4 +135,3 @@ void setBlock(int blockId, String text) {
 
   set_block(blockId, result.cast<Utf8>());
 }
-
