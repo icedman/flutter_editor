@@ -1,12 +1,13 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'dart:collection';
 import 'dart:ui' as ui;
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import 'cursor.dart';
-import 'document.dart';
-import 'view.dart';
-import 'theme.dart';
+import 'package:editor/cursor.dart';
+import 'package:editor/document.dart';
+import 'package:editor/view.dart';
+import 'package:editor/theme.dart';
+import 'package:editor/services/fhl.dart';
 
 import 'package:highlight/highlight_core.dart' show highlight;
 import 'package:highlight/languages/cpp.dart';
@@ -31,6 +32,12 @@ Size getTextExtents(String text, TextStyle style,
   return textPainter.size;
 }
 
+abstract class HLEngine {
+  List<LineDecoration> run(Block? block, int line, Document document);
+  int getLanguageId(String filename);
+  void loadTheme(String filename);
+}
+
 class LineDecoration {
   int start = 0;
   int end = 0;
@@ -47,20 +54,22 @@ class CustomWidgetSpan extends WidgetSpan {
 }
 
 class Highlighter {
-  Highlighter() {
-    highlight.registerLanguage('cpp', cpp);
-    highlight.registerLanguage('json', json);
-  }
+  HLEngine engine = FlutterHighlighter();
 
   List<InlineSpan> run(Block? block, int line, Document document) {
     TextStyle defaultStyle = TextStyle(
-        fontFamily: theme.fontFamily, fontSize: theme.fontSize, color: theme.foreground);
+        fontFamily: theme.fontFamily,
+        fontSize: theme.fontSize,
+        color: theme.foreground);
     List<InlineSpan> res = <InlineSpan>[];
-    List<LineDecoration> decors = <LineDecoration>[];
 
     List<Block> sel = document.selectedBlocks();
     for (final s in sel) {
       s.makeDirty();
+    }
+    for(final c in document.cursors) {
+      c.block?.makeDirty();
+      c.anchorBlock?.makeDirty();
     }
 
     String text = block?.text ?? '';
@@ -71,59 +80,9 @@ class Highlighter {
 
     block?.carets.clear();
 
-    int idx = 0;
-    void _traverse(var node) {
-      int start = idx;
-      final shouldAddSpan = node.className != null &&
-          ((node.value != null && node.value!.isNotEmpty) ||
-              (node.children != null && node.children!.isNotEmpty));
-
-      if (shouldAddSpan) {
-        //
-      }
-
-      if (node.value != null) {
-        int l = (node.value ?? '').length;
-        idx = idx + l;
-      } else if (node.children != null) {
-        node.children!.forEach(_traverse);
-      }
-
-      if (shouldAddSpan) {
-        LineDecoration d = LineDecoration();
-        d.start = start;
-        d.end = idx - 1;
-        String className = node.className;
-        className = className.replaceAll('meta-', '');
-        TextStyle? style = theTheme[className];
-        d.color = style?.color ?? theme.foreground;
-        decors.add(d);
-      }
-    }
-
-    Block? prev = block?.previous;
-    var continuation = prev?.mode;
-    block?.prevBlockClass = prev?.mode?.className ?? '';
-    var result =
-        highlight.parse(text, language: 'cpp', continuation: continuation);
-    block?.mode = result.top;
-
-    Block? next = block?.next;
-    if (next != null && block?.mode != null) {
-      if (next.prevBlockClass != block?.mode?.className) {
-        next.makeDirty();
-      }
-    }
-
-    result.nodes?.forEach(_traverse);
+    List<LineDecoration> decors = engine.run(block, line, document);
 
     text += ' ';
-
-    // res.add(TextSpan(
-    //           text: text,
-    //           style: defaultStyle,
-    //           mouseCursor: MaterialStateMouseCursor.textable));
-
     String prevText = '';
     for (int i = 0; i < text.length; i++) {
       String ch = text[i];
@@ -148,8 +107,8 @@ class Highlighter {
               line < anchorLine ||
               (line == anchorLine && i < cur.anchorColumn)) {
           } else {
-            style =
-                style.copyWith(backgroundColor: theme.selection.withOpacity(0.75));
+            style = style.copyWith(
+                backgroundColor: theme.selection.withOpacity(0.75));
             cache = false;
             break;
           }

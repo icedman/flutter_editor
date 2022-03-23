@@ -2,9 +2,10 @@ import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'editor.dart';
-import 'highlighter.dart';
-import 'theme.dart';
+
+import 'package:editor/editor.dart';
+import 'package:editor/theme.dart';
+import 'package:editor/services/highlighter.dart';
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();

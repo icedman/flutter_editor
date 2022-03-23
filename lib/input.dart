@@ -6,10 +6,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 
-import 'document.dart';
-import 'view.dart';
-import 'highlighter.dart';
-import 'theme.dart';
+import 'package:editor/document.dart';
+import 'package:editor/view.dart';
+import 'package:editor/theme.dart';
+import 'package:editor/services/highlighter.dart';
 
 Offset screenToCursor(RenderObject? obj, Offset pos) {
   List<RenderParagraph> pars = <RenderParagraph>[];

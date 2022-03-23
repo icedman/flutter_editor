@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import 'caret.dart';
-import 'cursor.dart';
-import 'document.dart';
-import 'view.dart';
-import 'input.dart';
-import 'highlighter.dart';
-import 'minimap.dart';
+import 'package:editor/caret.dart';
+import 'package:editor/cursor.dart';
+import 'package:editor/document.dart';
+import 'package:editor/view.dart';
+import 'package:editor/input.dart';
+import 'package:editor/minimap.dart';
+import 'package:editor/services/highlighter.dart';
 
 class Editor extends StatefulWidget {
   Editor({Key? key, String this.path = ''}) : super(key: key);

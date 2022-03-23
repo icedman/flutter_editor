@@ -7,12 +7,12 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:math';
 
-import 'caret.dart';
-import 'timer.dart';
-import 'input.dart';
-import 'document.dart';
-import 'highlighter.dart';
-import 'theme.dart';
+import 'package:editor/caret.dart';
+import 'package:editor/timer.dart';
+import 'package:editor/input.dart';
+import 'package:editor/document.dart';
+import 'package:editor/theme.dart';
+import 'package:editor/services/highlighter.dart';
 
 class ViewLine extends StatelessWidget {
   ViewLine({
@@ -248,9 +248,13 @@ class _View extends State<View> {
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
 
     final TextStyle style = TextStyle(
-        fontFamily: theme.fontFamily, fontSize: theme.fontSize, color: Colors.white);
+        fontFamily: theme.fontFamily,
+        fontSize: theme.fontSize,
+        color: Colors.white);
     final TextStyle gutterStyle = TextStyle(
-        fontFamily: theme.fontFamily, fontSize: theme.gutterFontSize, color: theme.comment);
+        fontFamily: theme.fontFamily,
+        fontSize: theme.gutterFontSize,
+        color: theme.comment);
 
     double gutterWidth = 0;
     if (doc.showGutters) {
@@ -259,8 +263,8 @@ class _View extends State<View> {
     }
 
     if (fontHeight == 0) {
-      fontHeight = getTextExtents(
-              'X', TextStyle(fontFamily: theme.fontFamily, fontSize: theme.fontSize))
+      fontHeight = getTextExtents('X',
+              TextStyle(fontFamily: theme.fontFamily, fontSize: theme.fontSize))
           .height;
     }
 
