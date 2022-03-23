@@ -305,12 +305,12 @@ class _View extends State<View> {
 
     int docSize = doc.doc.blocks.length;
 
-  Widget _provider(BlockData? data, Widget? child) {
-    return child ?? Container();
-    // return MultiProvider(providers: [
-    //   ChangeNotifierProvider(create: (context) => data),
-    // ], child: child ?? Container());
-  }
+    Widget _provider(BlockData? data, Widget? child) {
+      return child ?? Container();
+      // return MultiProvider(providers: [
+      //   ChangeNotifierProvider(create: (context) => data),
+      // ], child: child ?? Container());
+    }
 
     if ((!largeDoc && softWrap) || !softWrap) {
       return ListView.builder(

@@ -71,4 +71,12 @@ class FlutterHighlighter extends HLEngine {
 
     return decors;
   }
+
+  int getLanguageId(String filename) {
+    return 0;
+  }
+
+  int loadTheme(String filename) {
+    return 0;
+  }
 }

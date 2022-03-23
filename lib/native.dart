@@ -40,118 +40,101 @@ class TextSpanStyle extends Struct {
   external int string;
 }
 
-final DynamicLibrary nativeEditorApiLib = Platform.isMacOS || Platform.isIOS
-    ? DynamicLibrary.process()
-    : (DynamicLibrary.open(
-        Platform.isWindows ? 'editor_api.dll' : 'libeditor_api.so'));
+class FFIBridge {
+  static late final DynamicLibrary nativeEditorApiLib;
+  static late Function init_highlighter;
+  static late Function load_theme;
+  static late Function load_language;
+  static late Function run_highlighter;
+  static late Function create_document;
+  static late Function destroy_document;
+  static late Function add_block;
+  static late Function remove_block;
 
-final _init_highlighter = nativeEditorApiLib
-    .lookup<NativeFunction<Void Function()>>('init_highlighter');
-final init_highlighter = _init_highlighter.asFunction<void Function()>();
+  static void initialize() {
+    DynamicLibrary nativeEditorApiLib = Platform.isMacOS || Platform.isIOS
+        ? DynamicLibrary.process()
+        : (DynamicLibrary.open(
+            Platform.isWindows ? 'editor_api.dll' : 'libeditor_api.so'));
 
-final _load_theme = nativeEditorApiLib
-    .lookup<NativeFunction<Int32 Function(Pointer<Utf8>)>>('load_theme');
-final load_theme = _load_theme.asFunction<int Function(Pointer<Utf8>)>();
+    final _init_highlighter = nativeEditorApiLib
+        .lookup<NativeFunction<Void Function()>>('init_highlighter');
+    init_highlighter = _init_highlighter.asFunction<void Function()>();
 
-final _load_language = nativeEditorApiLib
-    .lookup<NativeFunction<Int32 Function(Pointer<Utf8>)>>('load_language');
-final load_language = _load_language.asFunction<int Function(Pointer<Utf8>)>();
+    final _load_theme = nativeEditorApiLib
+        .lookup<NativeFunction<Int32 Function(Pointer<Utf8>)>>('load_theme');
+    load_theme = _load_theme.asFunction<int Function(Pointer<Utf8>)>();
 
-final _run_highlighter = nativeEditorApiLib.lookup<
-    NativeFunction<
-        Pointer<TextSpanStyle> Function(Pointer<Utf8>, Int32, Int32, Int32, Int32,
-            Int32, Int32)>>('run_highlighter');
-final run_highlighter = _run_highlighter.asFunction<
-    Pointer<TextSpanStyle> Function(Pointer<Utf8>, int, int, int, int, int, int)>();
+    final _load_language = nativeEditorApiLib
+        .lookup<NativeFunction<Int32 Function(Pointer<Utf8>)>>('load_language');
+    load_language = _load_language.asFunction<int Function(Pointer<Utf8>)>();
 
-final _create_document = nativeEditorApiLib
-    .lookup<NativeFunction<Void Function(Int32)>>('create_document');
-final create_document = _create_document.asFunction<void Function(int)>();
+    final _run_highlighter = nativeEditorApiLib.lookup<
+        NativeFunction<
+            Pointer<TextSpanStyle> Function(Pointer<Utf8>, Int32, Int32, Int32,
+                Int32, Int32, Int32)>>('run_highlighter');
+    run_highlighter = _run_highlighter.asFunction<
+        Pointer<TextSpanStyle> Function(
+            Pointer<Utf8>, int, int, int, int, int, int)>();
 
-final _destroy_document = nativeEditorApiLib
-    .lookup<NativeFunction<Void Function(Int32)>>('destroy_document');
-final destroy_document = _destroy_document.asFunction<void Function(int)>();
+    final _create_document = nativeEditorApiLib
+        .lookup<NativeFunction<Void Function(Int32)>>('create_document');
+    create_document = _create_document.asFunction<void Function(int)>();
 
-final _add_block = nativeEditorApiLib
-    .lookup<NativeFunction<Void Function(Int32, Int32)>>('add_block');
-final add_block = _add_block.asFunction<void Function(int, int)>();
+    final _destroy_document = nativeEditorApiLib
+        .lookup<NativeFunction<Void Function(Int32)>>('destroy_document');
+    destroy_document = _destroy_document.asFunction<void Function(int)>();
 
-final _remove_block = nativeEditorApiLib
-    .lookup<NativeFunction<Void Function(Int32, Int32)>>('remove_block');
-final remove_block = _remove_block.asFunction<void Function(int, int)>();
+    final _add_block = nativeEditorApiLib
+        .lookup<NativeFunction<Void Function(Int32, Int32)>>('add_block');
+    add_block = _add_block.asFunction<void Function(int, int)>();
 
-// final _set_block = nativeEditorApiLib
-//     .lookup<NativeFunction<Void Function(Int32, Pointer<Utf8>)>>('set_block');
-// final set_block = _set_block.asFunction<void Function(int, Pointer<Utf8>)>();
-
-void initHighlighter() {
-  init_highlighter();
-}
-
-int loadTheme(String path) {
-  final _path = path.toNativeUtf8();
-  int res = load_theme(_path);
-  calloc.free(_path);
-  return res;
-}
-
-int loadLanguage(String path) {
-  final _path = path.toNativeUtf8();
-  int res = load_language(_path);
-  calloc.free(_path);
-  return res;
-}
-
-// Pointer<TextSpanStyle> _runHighlighter(
-//     String text, int lang, int theme, int document, int block, int prev, int next) {
-//   final _text = text.toNativeUtf8();
-//   Pointer<TextSpanStyle> res =
-//       run_highlighter(_text, lang, theme, document, block, prev, next);
-
-//   calloc.free(_text);
-//   return res;
-// }
-
-// re-use pointers
-Pointer<Uint8> result = malloc<Uint8>(32);
-int resultLength = 32;
-
-Pointer<TextSpanStyle> runHighlighter(
-    String text, int lang, int theme, int document, int block, int prev, int next) {
-  final units = utf8.encode(text);
-  int l = units.length + 1;
-
-  if (l > resultLength) {
-    calloc.free(result);
-
-    resultLength = resultLength + 32;
-    result = malloc<Uint8>(resultLength);
+    final _remove_block = nativeEditorApiLib
+        .lookup<NativeFunction<Void Function(Int32, Int32)>>('remove_block');
+    remove_block = _remove_block.asFunction<void Function(int, int)>();
   }
 
-  final Uint8List nativeString = result.asTypedList(l);
-  nativeString.setAll(0, units);
-  nativeString[units.length] = 0;
+  static void initHighlighter() {
+    init_highlighter();
+  }
 
-  Pointer<TextSpanStyle> res =
-      run_highlighter(result.cast<Utf8>(), lang, theme, document, block, prev, next);
+  static int loadTheme(String path) {
+    final _path = path.toNativeUtf8();
+    int res = load_theme(_path);
+    calloc.free(_path);
+    return res;
+  }
 
-  return res;
+  static int loadLanguage(String path) {
+    final _path = path.toNativeUtf8();
+    int res = load_language(_path);
+    calloc.free(_path);
+    return res;
+  }
+
+  // re-use pointers
+  static Pointer<Uint8> result = malloc<Uint8>(32);
+  static int resultLength = 32;
+
+  static Pointer<TextSpanStyle> runHighlighter(String text, int lang, int theme,
+      int document, int block, int prev, int next) {
+    final units = utf8.encode(text);
+    int l = units.length + 1;
+
+    if (l > resultLength) {
+      calloc.free(result);
+
+      resultLength = resultLength + 32;
+      result = malloc<Uint8>(resultLength);
+    }
+
+    final Uint8List nativeString = result.asTypedList(l);
+    nativeString.setAll(0, units);
+    nativeString[units.length] = 0;
+
+    Pointer<TextSpanStyle> res = run_highlighter(
+        result.cast<Utf8>(), lang, theme, document, block, prev, next);
+
+    return res;
+  }
 }
-
-// void setBlock(int blockId, String text) {
-//   final units = utf8.encode(text);
-//   int l = units.length + 1;
-
-//   if (l > resultLength) {
-//     calloc.free(result);
-
-//     resultLength = resultLength + 32;
-//     result = malloc<Uint8>(resultLength);
-//   }
-
-//   final Uint8List nativeString = result.asTypedList(l);
-//   nativeString.setAll(0, units);
-//   nativeString[units.length] = 0;
-
-//   // set_block(blockId, result.cast<Utf8>());
-// }

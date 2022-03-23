@@ -116,9 +116,9 @@ inline bool textstyles_equal(textstyle_t &first, textstyle_t &second) {
          !first.tab && !second.tab && first.comment == second.comment && first.string == second.string;
 }
 
-extension_list extensions;
-std::vector<theme_ptr> themes;
-std::vector<language_info_ptr> languages;
+static extension_list extensions;
+static std::vector<theme_ptr> themes;
+static std::vector<language_info_ptr> languages;
 
 static textstyle_t textstyle_buffer[MAX_STYLED_SPANS];
 
@@ -240,7 +240,6 @@ theme_info_t theme_info() {
 
 EXPORT int load_theme(char *path) {
   theme_ptr theme = theme_from_name(path, extensions);
-
   if (theme != NULL) {
     themes.emplace_back(theme);
     return themes.size() - 1;
@@ -336,6 +335,9 @@ void set_block(int blockId, char *text) {
 EXPORT
 textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document, int block,
                              int previous_block, int next_block) {
+  // end marker
+  textstyle_buffer[0].start = 0;
+  textstyle_buffer[0].length = 0;
 
   theme_ptr theme = themes[themeId];
   language_info_ptr lang = languages[langId];
@@ -349,10 +351,6 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
   create_document(document);
 
   std::map<size_t, scope::scope_t> scopes;
-
-  // end marker
-  textstyle_buffer[0].start = 0;
-  textstyle_buffer[0].length = 0;
 
   std::string str = _text;
   str += "\n";

@@ -58,12 +58,13 @@ class Document {
   String docPath = '';
   List<Block> blocks = [];
   List<Cursor> cursors = [];
+  List<Cursor> folds = [];
 
   int documentId = 0;
 
   Document() {
     documentId = _documentId++;
-    create_document(documentId);
+    FFIBridge.create_document(documentId);
     clear();
   }
 
@@ -177,7 +178,7 @@ class Document {
       blocks[i].line = i;
     }
 
-    add_block(documentId, block.blockId);
+    FFIBridge.add_block(documentId, block.blockId);
     return block;
   }
 
@@ -193,7 +194,7 @@ class Document {
     }
 
     if (block != null) {
-      remove_block(documentId, block.blockId);
+      FFIBridge.remove_block(documentId, block.blockId);
     }
 
     return block;

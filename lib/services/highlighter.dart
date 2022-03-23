@@ -34,6 +34,8 @@ Size getTextExtents(String text, TextStyle style,
 
 abstract class HLEngine {
   List<LineDecoration> run(Block? block, int line, Document document);
+  int getLanguageId(String filename);
+  int loadTheme(String filename);
 }
 
 class LineDecoration {
@@ -67,7 +69,6 @@ class CustomWidgetSpan extends WidgetSpan {
 }
 
 class Highlighter {
-
   HLEngine engine = TMParser();
   // HLEngine engine = FlutterHighlighter();
 
@@ -78,14 +79,16 @@ class Highlighter {
         color: theme.foreground);
     List<InlineSpan> res = <InlineSpan>[];
 
+    String text = block?.text ?? '';
+
     List<Block> sel = document.selectedBlocks();
     for (final s in sel) {
       s.makeDirty();
     }
-    Block b = block ?? Block('', document: Document());
-    String text = b.text;
-
-    List<LineDecoration> decors = engine.run(block, line, document);
+    for (final c in document.cursors) {
+      c.block?.makeDirty();
+      c.anchorBlock?.makeDirty();
+    }
 
     bool cache = true;
     if (block?.spans != null) {
@@ -94,6 +97,7 @@ class Highlighter {
 
     block?.carets.clear();
 
+    List<LineDecoration> decors = engine.run(block, line, document);
     text += ' ';
     String prevText = '';
     for (int i = 0; i < text.length; i++) {

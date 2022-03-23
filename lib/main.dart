@@ -3,13 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:ffi/ffi.dart';
 import 'package:editor/editor.dart';
 import 'package:editor/theme.dart';
+import 'package:editor/native.dart';
 import 'package:editor/services/highlighter.dart';
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  FFIBridge.initialize();
 
   ThemeData themeData = ThemeData(
     fontFamily: 'FiraCode',

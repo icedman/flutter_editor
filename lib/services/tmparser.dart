@@ -9,15 +9,14 @@ import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 
 class TMParser extends HLEngine {
-
-    int themeId = 0;
-    int langId = 0;
+  int themeId = 0;
+  int langId = 0;
 
   TMParser() {
-    init_highlighter();
-    themeId = loadTheme(
+    FFIBridge.initHighlighter();
+    themeId = FFIBridge.loadTheme(
         "/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json");
-    langId = loadLanguage("test.c");
+    langId = FFIBridge.loadLanguage("test.c");
   }
 
   List<LineDecoration> run(Block? block, int line, Document document) {
@@ -31,8 +30,14 @@ class TMParser extends HLEngine {
 
     String text = b.text;
 
-    final nspans = runHighlighter(text, langId, themeId, b.document?.documentId ?? 0, b.blockId,
-        prevBlock?.blockId ?? 0, nextBlock?.blockId ?? 0);
+    final nspans = FFIBridge.runHighlighter(
+        text,
+        langId,
+        themeId,
+        b.document?.documentId ?? 0,
+        b.blockId,
+        prevBlock?.blockId ?? 0,
+        nextBlock?.blockId ?? 0);
 
     bool comment = false;
     bool string = false;
@@ -62,8 +67,8 @@ class TMParser extends HLEngine {
       decors.add(d);
 
       if (l > 1) {
-          comment = spn.comment != 0;
-          string = spn.string != 0;
+        comment = spn.comment != 0;
+        string = spn.string != 0;
       }
 
       // print('$s $l ${spn.r}, ${spn.g}, ${spn.b}');
@@ -79,5 +84,13 @@ class TMParser extends HLEngine {
     }
 
     return decors;
+  }
+
+  int getLanguageId(String filename) {
+    return 0;
+  }
+
+  int loadTheme(String filename) {
+    return 0;
   }
 }
