@@ -3,12 +3,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
 import 'package:highlight/src/mode.dart';
-import 'cursor.dart';
-import 'highlighter.dart';
-import 'native.dart';
 
+import 'package:editor/cursor.dart';
+import 'package:editor/native.dart';
+import 'package:editor/services/highlighter.dart';
+
+int _documentId = 0xffff;
 int _blockId = 0xffff;
 
 class BlockCaret {
@@ -49,11 +50,6 @@ class Block {
     mode = null;
     spans = null;
     carets = [];
-    if (text != prevText) {
-      setBlock(blockId, text);
-      prevText = text;
-    }
-    data.notifyListeners();
   }
 }
 
@@ -62,7 +58,11 @@ class Document {
   List<Block> blocks = [];
   List<Cursor> cursors = [];
 
+  int documentId = 0;
+
   Document() {
+    documentId = _documentId++;
+    create_document(documentId);
     clear();
   }
 
@@ -175,6 +175,8 @@ class Document {
     for (int i = index; i < blocks.length; i++) {
       blocks[i].line = i;
     }
+
+    add_block(documentId, block.blockId);
     return block;
   }
 
@@ -188,6 +190,11 @@ class Document {
     for (int i = index; i < blocks.length; i++) {
       blocks[i].line = i;
     }
+
+    if (block != null) {
+      remove_block(documentId, block.blockId);
+    }
+    
     return block;
   }
 

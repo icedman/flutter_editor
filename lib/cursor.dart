@@ -1,4 +1,4 @@
-import 'document.dart';
+import 'package:editor/document.dart';
 
 class Cursor {
   Cursor(

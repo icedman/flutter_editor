@@ -34,6 +34,10 @@ class TextSpanStyle extends Struct {
   external int strike;
   @Int8()
   external int tab;
+  @Int8()
+  external int comment;
+  @Int8()
+  external int string;
 }
 
 final DynamicLibrary nativeEditorApiLib = Platform.isMacOS || Platform.isIOS
@@ -55,14 +59,30 @@ final load_language = _load_language.asFunction<int Function(Pointer<Utf8>)>();
 
 final _run_highlighter = nativeEditorApiLib.lookup<
     NativeFunction<
-        Pointer<TextSpanStyle> Function(Pointer<Utf8>, Int32, Int32, Int32,
+        Pointer<TextSpanStyle> Function(Pointer<Utf8>, Int32, Int32, Int32, Int32,
             Int32, Int32)>>('run_highlighter');
 final run_highlighter = _run_highlighter.asFunction<
-    Pointer<TextSpanStyle> Function(Pointer<Utf8>, int, int, int, int, int)>();
+    Pointer<TextSpanStyle> Function(Pointer<Utf8>, int, int, int, int, int, int)>();
 
-final _set_block = nativeEditorApiLib
-    .lookup<NativeFunction<Void Function(Int32, Pointer<Utf8>)>>('set_block');
-final set_block = _set_block.asFunction<void Function(int, Pointer<Utf8>)>();
+final _create_document = nativeEditorApiLib
+    .lookup<NativeFunction<Void Function(Int32)>>('create_document');
+final create_document = _create_document.asFunction<void Function(int)>();
+
+final _destroy_document = nativeEditorApiLib
+    .lookup<NativeFunction<Void Function(Int32)>>('destroy_document');
+final destroy_document = _destroy_document.asFunction<void Function(int)>();
+
+final _add_block = nativeEditorApiLib
+    .lookup<NativeFunction<Void Function(Int32, Int32)>>('add_block');
+final add_block = _add_block.asFunction<void Function(int, int)>();
+
+final _remove_block = nativeEditorApiLib
+    .lookup<NativeFunction<Void Function(Int32, Int32)>>('remove_block');
+final remove_block = _remove_block.asFunction<void Function(int, int)>();
+
+// final _set_block = nativeEditorApiLib
+//     .lookup<NativeFunction<Void Function(Int32, Pointer<Utf8>)>>('set_block');
+// final set_block = _set_block.asFunction<void Function(int, Pointer<Utf8>)>();
 
 void initHighlighter() {
   init_highlighter();
@@ -82,22 +102,22 @@ int loadLanguage(String path) {
   return res;
 }
 
-Pointer<TextSpanStyle> _runHighlighter(
-    String text, int lang, int theme, int block, int prev, int next) {
-  final _text = text.toNativeUtf8();
-  Pointer<TextSpanStyle> res =
-      run_highlighter(_text, lang, theme, block, prev, next);
+// Pointer<TextSpanStyle> _runHighlighter(
+//     String text, int lang, int theme, int document, int block, int prev, int next) {
+//   final _text = text.toNativeUtf8();
+//   Pointer<TextSpanStyle> res =
+//       run_highlighter(_text, lang, theme, document, block, prev, next);
 
-  calloc.free(_text);
-  return res;
-}
+//   calloc.free(_text);
+//   return res;
+// }
 
 // re-use pointers
 Pointer<Uint8> result = malloc<Uint8>(32);
 int resultLength = 32;
 
 Pointer<TextSpanStyle> runHighlighter(
-    String text, int lang, int theme, int block, int prev, int next) {
+    String text, int lang, int theme, int document, int block, int prev, int next) {
   final units = utf8.encode(text);
   int l = units.length + 1;
 
@@ -113,25 +133,25 @@ Pointer<TextSpanStyle> runHighlighter(
   nativeString[units.length] = 0;
 
   Pointer<TextSpanStyle> res =
-      run_highlighter(result.cast<Utf8>(), lang, theme, block, prev, next);
+      run_highlighter(result.cast<Utf8>(), lang, theme, document, block, prev, next);
 
   return res;
 }
 
-void setBlock(int blockId, String text) {
-  final units = utf8.encode(text);
-  int l = units.length + 1;
+// void setBlock(int blockId, String text) {
+//   final units = utf8.encode(text);
+//   int l = units.length + 1;
 
-  if (l > resultLength) {
-    calloc.free(result);
+//   if (l > resultLength) {
+//     calloc.free(result);
 
-    resultLength = resultLength + 32;
-    result = malloc<Uint8>(resultLength);
-  }
+//     resultLength = resultLength + 32;
+//     result = malloc<Uint8>(resultLength);
+//   }
 
-  final Uint8List nativeString = result.asTypedList(l);
-  nativeString.setAll(0, units);
-  nativeString[units.length] = 0;
+//   final Uint8List nativeString = result.asTypedList(l);
+//   nativeString.setAll(0, units);
+//   nativeString[units.length] = 0;
 
-  set_block(blockId, result.cast<Utf8>());
-}
+//   // set_block(blockId, result.cast<Utf8>());
+// }

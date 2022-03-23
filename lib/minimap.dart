@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import 'document.dart';
-import 'highlighter.dart';
+import 'package:editor/document.dart';
+import 'package:editor/services/highlighter.dart';
 
 int minimapLineSpacing = 3;
 int minimapSkipX = 1;

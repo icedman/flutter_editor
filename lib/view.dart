@@ -11,13 +11,13 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:math';
 
-import 'caret.dart';
-import 'timer.dart';
-import 'input.dart';
-import 'document.dart';
-import 'highlighter.dart';
-import 'theme.dart';
-import 'native.dart';
+import 'package:editor/caret.dart';
+import 'package:editor/timer.dart';
+import 'package:editor/input.dart';
+import 'package:editor/document.dart';
+import 'package:editor/theme.dart';
+import 'package:editor/native.dart';
+import 'package:editor/services/highlighter.dart';
 
 class ViewLine extends StatelessWidget {
   ViewLine({
