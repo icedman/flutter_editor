@@ -27,10 +27,15 @@ class TMParser extends HLEngine {
     Block? prevBlock = b.previous;
     Block? nextBlock = b.next;
 
+    b.prevBlockClass = prevBlock?.className ?? '';
+
     String text = b.text;
 
     final nspans = runHighlighter(text, langId, themeId, b.document?.documentId ?? 0, b.blockId,
         prevBlock?.blockId ?? 0, nextBlock?.blockId ?? 0);
+
+    bool comment = false;
+    bool string = false;
 
     int idx = 0;
     while (idx < (2048 * 4)) {
@@ -56,10 +61,22 @@ class TMParser extends HLEngine {
       d.color = fg;
       decors.add(d);
 
+      if (l > 1) {
+          comment = spn.comment != 0;
+          string = spn.string != 0;
+      }
+
       // print('$s $l ${spn.r}, ${spn.g}, ${spn.b}');
     }
 
     b.decors = decors;
+    b.className = comment ? 'comment' : (string ? 'string' : '');
+
+    if (nextBlock != null) {
+      if (nextBlock.prevBlockClass != b.className) {
+        nextBlock.makeDirty();
+      }
+    }
 
     return decors;
   }

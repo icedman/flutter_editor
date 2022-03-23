@@ -101,7 +101,8 @@ inline textstyle_t construct_style(std::vector<span_info_t> &spans, int index) {
         res.b = span.fg.b;
       }
       res.italic = res.italic || span.italic;
-      res.comment = span.scope.contains("comment.block");
+      res.comment = span.scope.find("comment.block") == 0;
+      res.string = span.scope.find("string.quoted") == 0;
     }
   }
   return res;
@@ -395,6 +396,10 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
     scope::scope_t scope = it->second;
     std::string scopeName(scope);
     style_t style = theme->styles_for_scope(scopeName);
+
+    scopeName = scope.back();
+    // printf(">%s\n", scopeName.c_str());
+
     span_info_t span = {.start = (int)n,
                         .length = (int)(l - n),
                         .fg =
@@ -429,95 +434,6 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
       prev = &s;
     }
   }
-
-
-
-#if 0
-  //----------------------
-  // find block comments
-  //----------------------
-  if (lang->blockCommentStart.length()) {
-    size_t beginComment = str.find(lang->blockCommentStart);
-    size_t endComment = str.find(lang->blockCommentEnd);
-    style_t s = theme->styles_for_scope("comment");
-        if (endComment == std::string::npos && (beginComment != std::string::npos || previousBlockState == BLOCK_STATE_COMMENT)) {
-            blockData->state = BLOCK_STATE_COMMENT;
-            int b = beginComment != std::string::npos ? beginComment : 0;
-            int e = endComment != std::string::npos ? endComment : (last - first);
-
-            span_info_t span = {
-                .start = b,
-                .length = e - b,
-                .fg = {
-                    (int)(s.foreground.red * 255),
-                    (int)(s.foreground.green * 255),
-                    (int)(s.foreground.blue * 255),
-                    255,
-                },
-                .bg = { 0, 0, 0, 0 },
-                .bold = s.bold == bool_true,
-                .italic = s.italic == bool_true,
-                .underline = false,
-                .state = BLOCK_STATE_COMMENT,
-                .scope = "comment"
-            };
-
-            // addCommentSpan(blockData->spans, span);
-
-        } else if (beginComment != std::string::npos && endComment != std::string::npos) {
-            blockData->state = BLOCK_STATE_UNKNOWN;
-            int b = beginComment;
-            int e = endComment + lang->blockCommentEnd.length();
-
-            span_info_t span = {
-                .start = b,
-                .length = e - b,
-                .fg = {
-                    (int)(s.foreground.red * 255),
-                    (int)(s.foreground.green * 255),
-                    (int)(s.foreground.blue * 255),
-                    255,
-                },
-                .bg = { 0, 0, 0, 0 },
-                .bold = s.bold == bool_true,
-                .italic = s.italic == bool_true,
-                .underline = false,
-                .state = BLOCK_STATE_COMMENT,
-                .scope = "comment"
-            };
-
-            // addCommentSpan(blockData->spans, span);
-
-        } else {
-            blockData->state = BLOCK_STATE_UNKNOWN;
-            if (endComment != std::string::npos && previousBlockState == BLOCK_STATE_COMMENT) {
-                span_info_t span = {
-                    .start = 0,
-                    .length = (int)(endComment + lang->blockCommentEnd.length()),
-                    .fg = {
-                        (int)(s.foreground.red * 255),
-                        (int)(s.foreground.green * 255),
-                        (int)(s.foreground.blue * 255),
-                        255,
-                    },
-                    .bg = { 0, 0, 0, 0 },
-                    .bold = s.bold == bool_true,
-                    .italic = s.italic == bool_true,
-                    .underline = false,
-                    .state = BLOCK_STATE_UNKNOWN,
-                    .scope = ""
-                };
-                // addCommentSpan(blockData->spans, span);
-            }
-        }
-  }
-#endif
-
-  if (lang->lineComment.length()) {
-    // comment out until the end
-  }
-
-  // ----------------
 
   int idx = 0;
   textstyle_t *prev = NULL;

@@ -43,6 +43,7 @@ class Block {
   int lineCount = 0;
 
   Mode? mode;
+  String className = '';
   String prevBlockClass = '';
 
   void makeDirty() {
@@ -194,7 +195,7 @@ class Document {
     if (block != null) {
       remove_block(documentId, block.blockId);
     }
-    
+
     return block;
   }
 

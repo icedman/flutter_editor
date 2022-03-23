@@ -17,7 +17,13 @@ class FlutterHighlighter extends HLEngine {
   List<LineDecoration> run(Block? block, int line, Document document) {
     List<LineDecoration> decors = [];
 
-    String text = block?.text ?? '';
+    Block b = block ?? Block('', document: Document());
+    Block? prevBlock = b.previous;
+    Block? nextBlock = b.next;
+
+    b.prevBlockClass = prevBlock?.className ?? '';
+
+    String text = b.text;
 
     int idx = 0;
     void _traverse(var node) {
@@ -49,17 +55,15 @@ class FlutterHighlighter extends HLEngine {
       }
     }
 
-    Block? prev = block?.previous;
-    var continuation = prev?.mode;
-    block?.prevBlockClass = prev?.mode?.className ?? '';
+    var continuation = prevBlock?.mode;
     var result =
         highlight.parse(text, language: 'cpp', continuation: continuation);
     block?.mode = result.top;
 
-    Block? next = block?.next;
-    if (next != null && block?.mode != null) {
-      if (next.prevBlockClass != block?.mode?.className) {
-        next.makeDirty();
+    b.className = b.mode?.className ?? '';
+    if (nextBlock != null) {
+      if (nextBlock.prevBlockClass != b.className) {
+        nextBlock.makeDirty();
       }
     }
 
