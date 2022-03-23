@@ -3,9 +3,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
 import 'package:highlight/src/mode.dart';
-import 'cursor.dart';
+
+import 'package:editor/cursor.dart';
 
 class BlockCaret {
   BlockCaret({int this.position = 0, Color this.color = Colors.white});
