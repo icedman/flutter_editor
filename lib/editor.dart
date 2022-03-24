@@ -40,9 +40,20 @@ class _Editor extends State<Editor> {
 
   String _buildKeys(String keys, {bool control: false, bool shift: false}) {
     String res = '';
-    if (keys.startsWith('Arrow')) {
+
+    keys = keys.toLowerCase();
+
+    // morph
+    if (keys == '\n' || keys == 'enter') {
+      keys = 'newline';
+    }
+    if (keys.startsWith('arrow')) {
       keys = keys.substring(6);
     }
+    if (keys == 'space') {
+      keys = ' ';
+    }
+
     if (control) {
       res = 'ctrl';
     }
@@ -51,63 +62,105 @@ class _Editor extends State<Editor> {
       res += 'shift';
     }
     if (res != '') res += '+';
-    res += keys.toLowerCase();
+    res += keys;
     return res;
   }
 
   void onShortcut(String keys) {
+    String cmd = keys;
     switch (keys) {
       case 'ctrl+c':
-        keys = 'copy';
+        cmd = 'copy';
         break;
       case 'ctrl+x':
-        keys = 'cut';
+        cmd = 'cut';
         break;
       case 'ctrl+v':
-        keys = 'paste';
+        cmd = 'paste';
         break;
       case 'ctrl+a':
-        keys = 'select_all';
+        cmd = 'select_all';
         break;
       case 'ctrl+d':
-        keys = 'select_word';
+        cmd = 'select_word';
+        break;
+      case 'ctrl+l':
+        cmd = 'select_line';
         break;
       case 'ctrl+s':
-        keys = 'save';
+        cmd = 'save';
         break;
       case 'ctrl+w':
-        keys = 'settings_toggle_wrap';
+        cmd = 'settings_toggle_wrap';
         break;
       case 'ctrl+g':
-        keys = 'settings_toggle_gutter';
+        cmd = 'settings_toggle_gutter';
         break;
       case 'ctrl+m':
-        keys = 'settings_toggle_minimap';
+        cmd = 'settings_toggle_minimap';
         break;
     }
-    print(keys);
-    command(keys);
+    command(cmd);
   }
 
   void command(String cmd, {List<String> params = const <String>[]}) async {
     bool doScroll = false;
     Document d = doc.doc;
+
     switch (cmd) {
       case 'cancel':
         d.clearCursors();
         break;
 
+      case 'newline':
+        d.deleteSelectedText();
+        d.insertNewLine();
+        break;
+
+      case 'backspace':
+        if (d.cursor().hasSelection()) {
+          d.deleteSelectedText();
+        } else {
+          d.backspace();
+        }
+        break;
+      case 'delete':
+        if (d.cursor().hasSelection()) {
+          d.deleteSelectedText();
+        } else {
+          d.deleteText();
+        }
+        break;
+
+        // todo ... cmd!
       case 'left':
         d.moveCursorLeft();
+        break;
+      case 'ctrl+left':
+        d.moveCursorPreviousWord();
+        break;
+      case 'ctrl+shift+left':
+        d.moveCursorPreviousWord(keepAnchor: true);
         break;
       case 'shift+left':
         d.moveCursorLeft(keepAnchor: true);
         break;
+
       case 'right':
         d.moveCursorRight();
         break;
+      case 'ctrl+right':
+        d.moveCursorNextWord();
+        break;
+      case 'ctrl+shift+right':
+        d.moveCursorNextWord(keepAnchor: true);
+        break;
       case 'shift+right':
         d.moveCursorRight(keepAnchor: true);
+        break;
+
+      case 'up':
+        d.cursor().moveCursorUp();
         break;
       case 'ctrl+up':
         d.addCursor();
@@ -116,6 +169,7 @@ class _Editor extends State<Editor> {
       case 'shift+up':
         d.moveCursorUp(keepAnchor: true);
         break;
+
       case 'down':
         d.moveCursorDown();
         break;
@@ -221,6 +275,9 @@ class _Editor extends State<Editor> {
           }
           break;
         }
+      case 'select_line':
+        d.selectLine();
+        break;
     }
 
     if (doScroll) {
@@ -237,57 +294,25 @@ class _Editor extends State<Editor> {
     shifting = shift;
     controlling = control;
     Document d = doc.doc;
-    bool doScroll = true;
+    bool doScroll = false;
 
     switch (key) {
       case 'Escape':
         command('cancel');
         return;
+
+      case 'Arrow Left':
+      case 'Arrow Right':
+      case 'Arrow Up':
+      case 'Arrow Down':
+      case 'Backspace':
+      case 'Delete':
       case 'Tab':
       case 'Home':
       case 'End':
-        command(_buildKeys(key, control: control, shift: shift));
-        break;
-      case '\n':
       case 'Enter':
-        d.deleteSelectedText();
-        d.insertNewLine();
-        break;
-      case 'Backspace':
-        if (d.cursor().hasSelection()) {
-          d.deleteSelectedText();
-        } else {
-          d.backspace();
-        }
-        break;
-      case 'Delete':
-        if (d.cursor().hasSelection()) {
-          d.deleteSelectedText();
-        } else {
-          d.deleteText();
-        }
-        break;
-      case 'Arrow Left':
-        d.moveCursorLeft(keepAnchor: shift);
-        break;
-      case 'Arrow Right':
-        d.moveCursorRight(keepAnchor: shift);
-        break;
-      case 'Arrow Up':
-        if (control) {
-          d.addCursor();
-          d.cursor().moveCursorUp();
-        } else {
-          d.moveCursorUp(keepAnchor: shift);
-        }
-        break;
-      case 'Arrow Down':
-        if (control) {
-          d.addCursor();
-          d.cursor().moveCursorDown();
-        } else {
-          d.moveCursorDown(keepAnchor: shift);
-        }
+      case '\n':
+        command(_buildKeys(key, control: control, shift: shift));
         break;
       default:
         {
@@ -299,23 +324,25 @@ class _Editor extends State<Editor> {
             String ch =
                 String.fromCharCode(97 + k - LogicalKeyboardKey.keyA.keyId);
             if (control) {
-              onShortcut('ctrl+$ch');
-              doScroll = false;
+              onShortcut(_buildKeys(ch, control: true, shift: shift));
               break;
             }
             d.insertText(ch);
+            doScroll = true;
             break;
           }
         }
         if (key.length == 1 || softKeyboard) {
           d.insertText(key);
+          doScroll = true;
         }
         break;
     }
+
     if (doScroll) {
       doc.scrollTo = d.cursor().block?.line ?? -1;
+      doc.touch();
     }
-    doc.touch();
   }
 
   void onKeyUp() {

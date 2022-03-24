@@ -295,7 +295,6 @@ class Cursor {
       var g = m.groups([0]);
       String t = g[0] ?? '';
       if (t.length > 0) {
-        // print('${m.start} >> ${g[0]}');
         if (column >= m.start && column < m.start + t.length) {
           anchorColumn = m.start;
           column = anchorColumn + t.length;
@@ -303,7 +302,69 @@ class Cursor {
         }
       }
     }
-    ;
+  }
+
+  void moveCursorNextWord({bool keepAnchor = false}) {
+    RegExp regExp = new RegExp(
+      r'[a-z_\-0-9]*',
+      caseSensitive: false,
+      multiLine: false,
+    );
+    String l = block?.text ?? '';
+    var matches = regExp.allMatches(l);
+    bool breakNext = false;
+    bool found = false;
+    for (final m in matches) {
+      var g = m.groups([0]);
+      String t = g[0] ?? '';
+      if (t.length > 0) {
+        if (column >= m.start) {
+          breakNext = true;
+          continue;
+        }
+        if (breakNext) {
+          column = m.start;
+          found = true;
+          if (!keepAnchor) {
+            anchorBlock = block;
+            anchorColumn = column;
+          }
+          break;
+        }
+      }
+    }
+    if (!found) moveCursorToEndOfLine(keepAnchor: keepAnchor);
+    block?.makeDirty();
+  }
+
+  void moveCursorPreviousWord({bool keepAnchor = false}) {
+    RegExp regExp = new RegExp(
+      r'[a-z_\-0-9]*',
+      caseSensitive: false,
+      multiLine: false,
+    );
+    int lastColumn = column;
+    bool found = false;
+    String l = block?.text ?? '';
+    var matches = regExp.allMatches(l);
+    for (final m in matches) {
+      var g = m.groups([0]);
+      String t = g[0] ?? '';
+      if (t.length > 0) {
+        if (column >= m.start && column < m.start + t.length && column != lastColumn) {
+          column = lastColumn;
+          found = true;
+          if (!keepAnchor) {
+            anchorBlock = block;
+            anchorColumn = column;
+          }
+          break;
+        }
+        lastColumn = m.start;
+      }
+    }
+    if (!found) moveCursorToStartOfLine(keepAnchor: keepAnchor);
+    block?.makeDirty();
   }
 
   void mergeNextLine() {
@@ -349,12 +410,6 @@ class Cursor {
     block?.makeDirty();
     advanceBlockCursors(-numberOfCharacters);
   }
-
-  // void deleteLine({int numberOfBlocks = 1}) {
-  //   for(int i=0; i<numberOfBlocks; i++) {
-  //     document?.removeBlockAtLine(line);
-  //   }
-  // }
 
   void insertNewLine() {
     deleteSelectedText();

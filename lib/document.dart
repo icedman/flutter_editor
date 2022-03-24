@@ -265,6 +265,18 @@ class Document {
     });
   }
 
+  void moveCursorNextWord({bool keepAnchor = false}) {
+    cursors.forEach((c) {
+      c.moveCursorNextWord(keepAnchor: keepAnchor);
+    });
+  }
+
+  void moveCursorPreviousWord({bool keepAnchor = false}) {
+    cursors.forEach((c) {
+      c.moveCursorPreviousWord(keepAnchor: keepAnchor);
+    });
+  }
+
   void backspace() {
     cursors.forEach((c) {
       // print('${c.block?.line} ${c.column}');
@@ -292,12 +304,6 @@ class Document {
       c.deleteText(numberOfCharacters: numberOfCharacters);
     });
   }
-
-  // void deleteLine({int numberOfBlocks = 1}) {
-  //   cursorsSorted().forEach((c) {
-  //     c.deleteLine(numberOfBlocks: 1);
-  //   });
-  // }
 
   List<Block> selectedBlocks() {
     return cursor().selectedBlocks();
