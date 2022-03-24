@@ -4,3 +4,7 @@ EXPORTS
     load_theme
     load_language
     run_highlighter
+    create_document
+    destroy_document
+    add_block
+    remove_block

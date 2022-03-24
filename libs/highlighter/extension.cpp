@@ -240,35 +240,23 @@ void parseXMLElement(Json::Value &target, tinyxml2::XMLElement *element) {
   }
 }
 
-std::string convertTMLanguagetoJSON(const char *path) {
-  std::string _path = path;
-  if (_path.find(".json") != std::string::npos) {
-    return _path;
+// std::string convertTMLanguagetoJSON(const char *path) {
+Json::Value loadPListOrJson(std::string path) {
+  if (path.find(".json") != std::string::npos) {
+    return parse::loadJson(path.c_str());
   }
-  std::string target = _path + ".json";
-  if (file_exists(target.c_str())) {
-    // return _path;
-  }
-
   Json::Value result;
 
   printf("convert!\n");
   tinyxml2::XMLDocument doc;
-  doc.LoadFile(path);
+  doc.LoadFile(path.c_str());
   tinyxml2::XMLElement *pRoot = doc.RootElement();
   if (pRoot == nullptr)
-    return _path;
+    return result;
 
   parseXMLElement(result, pRoot->FirstChildElement());
 
-  std::ofstream tmp(target, std::ofstream::out);
-  tmp << result;
-  if (!tmp) {
-    printf("error saving config file\n");
-    return _path;
-  }
-
-  return target;
+  return result;
 }
 
 bool is_extension_available(const std::string id) {
@@ -395,11 +383,12 @@ void load_extensions(const std::string _path,
 static bool load_language_configuration(const std::string path,
                                         language_info_ptr lang) {
   Json::Value root = parse::loadJson(path);
-
   if (root.empty()) {
     log("unable to load configuration file %s", path.c_str());
     return false;
   }
+
+  lang->definition = root;
 
   if (root.isMember("comments")) {
     Json::Value comments = root["comments"];
@@ -572,15 +561,14 @@ language_from_file(const std::string path,
           std::string path =
               resolvedExtension.path + "/" + g["path"].asString();
 
-          path = convertTMLanguagetoJSON(path.c_str());
+          // path = convertTMLanguagetoJSON(path.c_str());
 
-          // std::cout << path << std::endl;
           printf("grammar: %s\n", path.c_str());
 
           log("grammar: %s", path.c_str());
           log("extension: %s", resolvedExtension.path.c_str());
 
-          lang->grammar = parse::parse_grammar(parse::loadJson(path));
+          lang->grammar = parse::parse_grammar(loadPListOrJson(path));
           lang->id = resolvedLanguage;
 
           // language configuration

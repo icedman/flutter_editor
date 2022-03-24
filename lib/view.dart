@@ -90,7 +90,7 @@ class ViewLine extends StatelessWidget {
           width: gutterWidth,
           alignment: Alignment.centerRight,
           child:
-              softWrap ? Text('${lineNumber + 1} ', style: gutterStyle) : null),
+              Text('${lineNumber + 1} ', style: gutterStyle)),
       ...carets,
     ]);
   }
@@ -307,9 +307,6 @@ class _View extends State<View> {
 
     Widget _provider(BlockData? data, Widget? child) {
       return child ?? Container();
-      // return MultiProvider(providers: [
-      //   ChangeNotifierProvider(create: (context) => data),
-      // ], child: child ?? Container());
     }
 
     if ((!largeDoc && softWrap) || !softWrap) {

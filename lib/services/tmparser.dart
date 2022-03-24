@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:ffi';
+import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
 
 import 'package:editor/document.dart';
@@ -5,18 +8,19 @@ import 'package:editor/theme.dart';
 import 'package:editor/native.dart';
 import 'package:editor/services/highlighter.dart';
 
-import 'dart:ffi';
-import 'package:ffi/ffi.dart';
+class TMParserLanguage extends HLLanguage {}
 
 class TMParser extends HLEngine {
   int themeId = 0;
   int langId = 0;
 
+  Map<int, HLLanguage> languages = {};
+
   TMParser() {
     FFIBridge.initHighlighter();
     themeId = FFIBridge.loadTheme(
         "/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json");
-    langId = FFIBridge.loadLanguage("test.c");
+    langId = loadLanguage("test.c").langId;
   }
 
   List<LineDecoration> run(Block? block, int line, Document document) {
@@ -92,5 +96,41 @@ class TMParser extends HLEngine {
 
   int loadTheme(String filename) {
     return 0;
+  }
+
+  HLLanguage loadLanguage(String filename) {
+    int langId = FFIBridge.loadLanguage("test.c");
+    if (languages.containsKey(langId)) {
+      return languages[langId] ?? TMParserLanguage();
+    }
+
+    String res = FFIBridge.languageDefinition(langId);
+    final j = jsonDecode(res);
+
+    HLLanguage l = TMParserLanguage();
+    l.langId = langId;
+
+    if (j['brackets'] is List) {
+      List? brackets = j['brackets'];
+      if (brackets != null && brackets.length > 0 && brackets[0] is List) {
+        for (final p in brackets) {
+          List<String> pp = [];
+          for (final i in p) {
+            pp.add(i as String);
+          }
+
+          l.brackets.add(pp);
+        }
+      }
+    }
+
+    // if (j['autoClosingPairs'] is List) {
+    //   for(final p in j['autoClosingPairs'] ?? []) {
+    //     print(p);
+    //   }
+    // }
+
+    languages[langId] = l;
+    return l;
   }
 }

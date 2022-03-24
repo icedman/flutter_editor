@@ -39,6 +39,8 @@ struct language_info_t {
   std::vector<std::string> pairClose;
 
   parse::grammar_ptr grammar;
+
+  Json::Value definition;
 };
 
 struct icon_theme_t {

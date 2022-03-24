@@ -203,6 +203,9 @@ class _InputListener extends State<InputListener> {
                     widget.onTapDown?.call(
                         context.findRenderObject(), details.globalPosition);
                   },
+                  onDoubleTapDown: (TapDownDetails details) {
+                    lastTap = details.globalPosition;
+                    },
                   onDoubleTap: () {
                     widget.onDoubleTapDown
                         ?.call(context.findRenderObject(), lastTap);

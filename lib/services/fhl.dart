@@ -8,8 +8,10 @@ import 'package:highlight/highlight_core.dart' show highlight;
 import 'package:highlight/languages/cpp.dart';
 import 'package:highlight/languages/json.dart';
 
-class FlutterHighlighter extends HLEngine {
-  FlutterHighlighter() {
+class FlutterHighlightLanguage extends HLLanguage {}
+
+class FlutterHighlight extends HLEngine {
+  FlutterHighlight() {
     highlight.registerLanguage('cpp', cpp);
     highlight.registerLanguage('json', json);
   }
@@ -72,11 +74,11 @@ class FlutterHighlighter extends HLEngine {
     return decors;
   }
 
-  int getLanguageId(String filename) {
+  int loadTheme(String filename) {
     return 0;
   }
 
-  int loadTheme(String filename) {
-    return 0;
+  HLLanguage loadLanguage(String filename) {
+    return FlutterHighlightLanguage();
   }
 }

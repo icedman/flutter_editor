@@ -38,22 +38,100 @@ class _Editor extends State<Editor> {
     super.dispose();
   }
 
+  String _buildKeys(String keys, { bool control: false, bool shift: false}) {
+    String res = '';
+    if (control) {
+      res = 'ctrl';
+    }
+    if (shift) {
+      if (res != '') res += '+';
+      res += 'shift';
+    }
+    if (res != '') res += '+';
+    res += keys.toLowerCase();
+    return res;
+  }
+
+  void onShortcut(String keys) {
+    switch(keys) {
+      case 'ctrl+c':
+        keys = 'copy';
+        break;
+      case 'ctrl+x':
+        keys = 'cut';
+        break;
+      case 'ctrl+v':
+        keys = 'paste';
+        break;
+      case 'ctrl+a':
+        keys = 'select_all';
+        break;
+      case 'ctrl+d':
+        keys = 'select_word';
+        break;
+      case 'ctrl+s':
+        keys = 'save';
+        break;
+      case 'ctrl+w':
+        keys = 'settings_toggle_wrap';
+        break;
+      case 'ctrl+g':
+        keys = 'settings_toggle_gutter';
+        break;
+      case 'ctrl+m':
+        keys = 'settings_toggle_minimap';
+        break;
+    }
+    command(keys);
+  }
+
   void command(String cmd, {List<String> params = const <String>[]}) async {
     bool doScroll = false;
     Document d = doc.doc;
     switch (cmd) {
-      case 'ctrl+w':
+      case 'cancel':
+        d.clearCursors();
+        break;
+      case 'home':
+        d.moveCursorToStartOfLine();
+        break;
+      case 'shift+home':
+        d.moveCursorToStartOfLine(keepAnchor: true);
+        break;
+      case 'ctrl+shift+home':
+        d.moveCursorToStartOfDocument(keepAnchor: true);
+        break;
+      case 'ctrl+home':
+        d.moveCursorToStartOfDocument();
+        break;
+      case 'end':
+        d.moveCursorToEndOfLine();
+        break;
+      case 'shift+end':
+        d.moveCursorToEndOfLine(keepAnchor: true);
+        break;
+      case 'ctrl+end':
+        d.moveCursorToEndOfDocument();
+        break;
+      case 'ctrl+shift+end':
+        d.moveCursorToEndOfDocument(keepAnchor: true);
+        break;
+      case 'settings_toggle_wrap':
         doc.softWrap = !doc.softWrap;
         doc.touch();
         break;
-      case 'ctrl+e':
+      case 'settings_toggle_gutter':
         doc.showGutters = !doc.showGutters;
         doc.touch();
         break;
-      case 'ctrl+c':
+      case 'settings_toggle_minimap':
+        doc.showMinimap = !doc.showMinimap;
+        doc.touch();
+        break;
+      case 'copy':
         Clipboard.setData(ClipboardData(text: d.selectedText()));
         break;
-      case 'ctrl+x':
+      case 'cut':
         {
           if (!d.hasSelection()) {
             d.selectLine();
@@ -66,7 +144,7 @@ class _Editor extends State<Editor> {
           d.deleteSelectedText();
           break;
         }
-      case 'ctrl+v':
+      case 'paste':
         {
           ClipboardData? data = await Clipboard.getData('text/plain');
           if (data == null) return;
@@ -80,15 +158,15 @@ class _Editor extends State<Editor> {
           });
           break;
         }
-      case 'ctrl+s':
+      case 'save':
         d.saveFile();
         break;
-      case 'ctrl+a':
+      case 'select_all':
         d.moveCursorToStartOfDocument();
         d.moveCursorToEndOfDocument(keepAnchor: true);
         doScroll = true;
         break;
-      case 'ctrl+d':
+      case 'select_word':
         {
           if (d.cursor().hasSelection()) {
             Cursor cur = d.cursor().findText(d.cursor().selectedText());
@@ -99,6 +177,7 @@ class _Editor extends State<Editor> {
             }
           } else {
             d.selectWord();
+            d.cursor().block?.makeDirty();
           }
           break;
         }
@@ -122,21 +201,11 @@ class _Editor extends State<Editor> {
 
     switch (key) {
       case 'Escape':
-        d.clearCursors();
-        break;
+        command('cancel');
+        return;
       case 'Home':
-        if (control) {
-          d.moveCursorToStartOfDocument(keepAnchor: shifting);
-        } else {
-          d.moveCursorToStartOfLine(keepAnchor: shifting);
-        }
-        break;
       case 'End':
-        if (control) {
-          d.moveCursorToEndOfDocument(keepAnchor: shifting);
-        } else {
-          d.moveCursorToEndOfLine(keepAnchor: shifting);
-        }
+        command(_buildKeys(key, control: control, shift: shift));
         break;
       case 'Tab':
         d.insertText('    ');
@@ -192,7 +261,7 @@ class _Editor extends State<Editor> {
             String ch =
                 String.fromCharCode(97 + k - LogicalKeyboardKey.keyA.keyId);
             if (control) {
-              command('ctrl+$ch');
+              onShortcut('ctrl+$ch');
               doScroll = false;
               break;
             }
@@ -221,20 +290,18 @@ class _Editor extends State<Editor> {
     Offset o = screenToCursor(obj, globalPosition);
     d.moveCursor(o.dy.toInt(), o.dx.toInt(), keepAnchor: shifting);
     doc.scrollTo = d.cursor().block?.line ?? -1;
-    doc.touch();
-
     List<Block> blocks = d.selectedBlocks();
     for (final b in blocks) {
-      b.spans = null;
+      b.makeDirty();
     }
+    doc.touch();
   }
 
   void onDoubleTapDown(RenderObject? obj, Offset globalPosition) {
     Document d = doc.doc;
     Offset o = screenToCursor(obj, globalPosition);
     d.moveCursor(o.dy.toInt(), o.dx.toInt(), keepAnchor: shifting);
-    d.selectWord();
-    doc.touch();
+    command('ctrl+d');
   }
 
   void onPanUpdate(RenderObject? obj, Offset globalPosition) {

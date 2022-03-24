@@ -34,8 +34,16 @@ Size getTextExtents(String text, TextStyle style,
 
 abstract class HLEngine {
   List<LineDecoration> run(Block? block, int line, Document document);
-  int getLanguageId(String filename);
   int loadTheme(String filename);
+  HLLanguage loadLanguage(String filename);
+}
+
+abstract class HLLanguage {
+  int langId = 0;
+  List<List<String>> brackets = [];
+  // List<List<String>> autoClose = [];
+  // List<String> blockComment = [];
+  // String lineComment = '';
 }
 
 class LineDecoration {
@@ -70,7 +78,7 @@ class CustomWidgetSpan extends WidgetSpan {
 
 class Highlighter {
   HLEngine engine = TMParser();
-  // HLEngine engine = FlutterHighlighter();
+  // HLEngine engine = FlutterHighlight();
 
   List<InlineSpan> run(Block? block, int line, Document document) {
     TextStyle defaultStyle = TextStyle(

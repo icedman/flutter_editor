@@ -345,6 +345,7 @@ class DocumentProvider extends ChangeNotifier {
   int scrollTo = -1;
   bool softWrap = true;
   bool showGutters = true;
+  bool showMinimap = true;
 
   Future<bool> openFile(String path) async {
     bool res = await doc.openFile(path);

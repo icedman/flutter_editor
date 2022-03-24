@@ -50,6 +50,7 @@ class FFIBridge {
   static late Function destroy_document;
   static late Function add_block;
   static late Function remove_block;
+  static late Function language_definition;
 
   static void initialize() {
     DynamicLibrary nativeEditorApiLib = Platform.isMacOS || Platform.isIOS
@@ -92,6 +93,11 @@ class FFIBridge {
     final _remove_block = nativeEditorApiLib
         .lookup<NativeFunction<Void Function(Int32, Int32)>>('remove_block');
     remove_block = _remove_block.asFunction<void Function(int, int)>();
+
+    final _language_definition = nativeEditorApiLib.lookup<
+        NativeFunction<Pointer<Utf8> Function(Int32)>>('language_definition');
+    language_definition =
+        _language_definition.asFunction<Pointer<Utf8> Function(int)>();
   }
 
   static void initHighlighter() {
@@ -110,6 +116,11 @@ class FFIBridge {
     int res = load_language(_path);
     calloc.free(_path);
     return res;
+  }
+
+  static String languageDefinition(int id) {
+    Pointer<Utf8> res = language_definition(id);
+    return res.toDartString();
   }
 
   // re-use pointers

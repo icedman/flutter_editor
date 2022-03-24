@@ -26,6 +26,7 @@
   cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
 
 #define MAX_STYLED_SPANS 512
+#define MAX_BUFFER_LENGTH (1024*4)
 
 struct theme_color_t {
   int8_t r;
@@ -121,6 +122,7 @@ static std::vector<theme_ptr> themes;
 static std::vector<language_info_ptr> languages;
 
 static textstyle_t textstyle_buffer[MAX_STYLED_SPANS];
+static char text_buffer[MAX_BUFFER_LENGTH];
 
 theme_ptr current_theme() { return themes[0]; }
 
@@ -461,4 +463,16 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
   textstyle_buffer[idx].length = 0;
 
   return textstyle_buffer;
+}
+
+EXPORT
+char* language_definition(int langId) {
+  language_info_ptr lang = languages[langId];
+
+  std::ostringstream ss;
+  ss << lang->definition;
+
+  strcpy(text_buffer, ss.str().c_str());
+
+  return text_buffer;
 }
