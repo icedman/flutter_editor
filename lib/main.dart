@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:editor/editor.dart';
 import 'package:editor/theme.dart';
 import 'package:editor/native.dart';
-import 'package:editor/services/highlighter.dart';
+import 'package:editor/services/highlight/highlighter.dart';
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:editor/document.dart';
 import 'package:editor/theme.dart';
 import 'package:editor/native.dart';
-import 'package:editor/services/highlighter.dart';
+import 'package:editor/services/highlight/highlighter.dart';
 
 class TMParserLanguage extends HLLanguage {}
 

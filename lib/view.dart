@@ -17,7 +17,7 @@ import 'package:editor/input.dart';
 import 'package:editor/document.dart';
 import 'package:editor/theme.dart';
 import 'package:editor/native.dart';
-import 'package:editor/services/highlighter.dart';
+import 'package:editor/services/highlight/highlighter.dart';
 
 class ViewLine extends StatelessWidget {
   ViewLine({
@@ -89,8 +89,7 @@ class ViewLine extends StatelessWidget {
           height: height,
           width: gutterWidth,
           alignment: Alignment.centerRight,
-          child:
-              Text('${lineNumber + 1} ', style: gutterStyle)),
+          child: Text('${lineNumber + 1} ', style: gutterStyle)),
       ...carets,
     ]);
   }

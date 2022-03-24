@@ -10,8 +10,8 @@ import 'package:editor/document.dart';
 import 'package:editor/view.dart';
 import 'package:editor/theme.dart';
 import 'package:editor/native.dart';
-import 'package:editor/services/fhl.dart';
-import 'package:editor/services/tmparser.dart';
+import 'package:editor/services/highlight/fhl.dart';
+import 'package:editor/services/highlight/tmparser.dart';
 
 Color colorCombine(Color a, Color b, {int aw = 1, int bw = 1}) {
   int red = (a.red * aw + b.red * bw) ~/ (aw + bw);

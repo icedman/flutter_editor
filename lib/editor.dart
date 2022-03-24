@@ -9,7 +9,7 @@ import 'package:editor/document.dart';
 import 'package:editor/view.dart';
 import 'package:editor/input.dart';
 import 'package:editor/minimap.dart';
-import 'package:editor/services/highlighter.dart';
+import 'package:editor/services/highlight/highlighter.dart';
 
 class Editor extends StatefulWidget {
   Editor({Key? key, String this.path = ''}) : super(key: key);
@@ -38,8 +38,11 @@ class _Editor extends State<Editor> {
     super.dispose();
   }
 
-  String _buildKeys(String keys, { bool control: false, bool shift: false}) {
+  String _buildKeys(String keys, {bool control: false, bool shift: false}) {
     String res = '';
+    if (keys.startsWith('Arrow')) {
+      keys = keys.substring(6);
+    }
     if (control) {
       res = 'ctrl';
     }
@@ -53,7 +56,7 @@ class _Editor extends State<Editor> {
   }
 
   void onShortcut(String keys) {
-    switch(keys) {
+    switch (keys) {
       case 'ctrl+c':
         keys = 'copy';
         break;
@@ -82,6 +85,7 @@ class _Editor extends State<Editor> {
         keys = 'settings_toggle_minimap';
         break;
     }
+    print(keys);
     command(keys);
   }
 
@@ -92,6 +96,37 @@ class _Editor extends State<Editor> {
       case 'cancel':
         d.clearCursors();
         break;
+
+      case 'left':
+        d.moveCursorLeft();
+        break;
+      case 'shift+left':
+        d.moveCursorLeft(keepAnchor: true);
+        break;
+      case 'right':
+        d.moveCursorRight();
+        break;
+      case 'shift+right':
+        d.moveCursorRight(keepAnchor: true);
+        break;
+      case 'ctrl+up':
+        d.addCursor();
+        d.cursor().moveCursorUp();
+        break;
+      case 'shift+up':
+        d.moveCursorUp(keepAnchor: true);
+        break;
+      case 'down':
+        d.moveCursorDown();
+        break;
+      case 'ctrl+down':
+        d.addCursor();
+        d.cursor().moveCursorDown();
+        break;
+      case 'shift+down':
+        d.moveCursorDown(keepAnchor: true);
+        break;
+
       case 'home':
         d.moveCursorToStartOfLine();
         break;
@@ -120,6 +155,10 @@ class _Editor extends State<Editor> {
         doc.softWrap = !doc.softWrap;
         doc.touch();
         break;
+      case 'tab':
+        d.insertText('    ');
+        break;
+
       case 'settings_toggle_gutter':
         doc.showGutters = !doc.showGutters;
         doc.touch();
@@ -128,6 +167,7 @@ class _Editor extends State<Editor> {
         doc.showMinimap = !doc.showMinimap;
         doc.touch();
         break;
+
       case 'copy':
         Clipboard.setData(ClipboardData(text: d.selectedText()));
         break;
@@ -203,12 +243,10 @@ class _Editor extends State<Editor> {
       case 'Escape':
         command('cancel');
         return;
+      case 'Tab':
       case 'Home':
       case 'End':
         command(_buildKeys(key, control: control, shift: shift));
-        break;
-      case 'Tab':
-        d.insertText('    ');
         break;
       case '\n':
       case 'Enter':
@@ -301,7 +339,7 @@ class _Editor extends State<Editor> {
     Document d = doc.doc;
     Offset o = screenToCursor(obj, globalPosition);
     d.moveCursor(o.dy.toInt(), o.dx.toInt(), keepAnchor: shifting);
-    command('ctrl+d');
+    command('select_word');
   }
 
   void onPanUpdate(RenderObject? obj, Offset globalPosition) {

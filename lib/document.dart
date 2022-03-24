@@ -7,7 +7,7 @@ import 'package:highlight/src/mode.dart';
 
 import 'package:editor/cursor.dart';
 import 'package:editor/native.dart';
-import 'package:editor/services/highlighter.dart';
+import 'package:editor/services/highlight/highlighter.dart';
 
 int _documentId = 0xffff;
 int _blockId = 0xffff;

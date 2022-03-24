@@ -9,7 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:editor/document.dart';
 import 'package:editor/view.dart';
 import 'package:editor/theme.dart';
-import 'package:editor/services/highlighter.dart';
+import 'package:editor/services/highlight/highlighter.dart';
 
 Offset screenToCursor(RenderObject? obj, Offset pos) {
   List<RenderParagraph> pars = <RenderParagraph>[];
@@ -205,7 +205,7 @@ class _InputListener extends State<InputListener> {
                   },
                   onDoubleTapDown: (TapDownDetails details) {
                     lastTap = details.globalPosition;
-                    },
+                  },
                   onDoubleTap: () {
                     widget.onDoubleTapDown
                         ?.call(context.findRenderObject(), lastTap);
