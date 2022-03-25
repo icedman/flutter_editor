@@ -68,6 +68,7 @@ class TMParser extends HLEngine {
       d.start = s;
       d.end = s + l - 1;
       d.color = fg;
+      d.italic = spn.italic > 0;
       decors.add(d);
 
       if (l > 1) {

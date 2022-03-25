@@ -89,15 +89,6 @@ class Highlighter {
 
     String text = block?.text ?? '';
 
-    List<Block> sel = document.selectedBlocks();
-    for (final s in sel) {
-      s.makeDirty();
-    }
-    for (final c in document.cursors) {
-      c.block?.makeDirty();
-      c.anchorBlock?.makeDirty();
-    }
-
     bool cache = true;
     if (block?.spans != null) {
       return block?.spans ?? [];
@@ -116,6 +107,16 @@ class Highlighter {
       for (final d in decors) {
         if (i >= d.start && i <= d.end) {
           style = style.copyWith(color: d.color);
+          if (d.italic) {
+            style = style.copyWith(fontStyle: FontStyle.italic);
+          }
+          if (d.underline) {
+            style = style.copyWith(decoration: TextDecoration.underline,
+            decorationStyle: TextDecorationStyle.solid,
+            decorationColor: d.color,
+            decorationThickness: 1.0
+            );
+          }
           break;
         }
       }

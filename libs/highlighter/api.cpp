@@ -412,7 +412,7 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
                         .bg = {0, 0, 0, 0},
                         .bold = style.bold == bool_true,
                         .italic = style.italic == bool_true,
-                        .underline = false,
+                        .underline = style.underlined == bool_true,
                         // .state = state,
                         .scope = scopeName};
 
