@@ -48,7 +48,7 @@ class Block {
 
   bool waiting = false;
 
-  List<LineDecoration> decors = [];
+  List<LineDecoration>? decors = [];
   List<InlineSpan>? spans;
   List<BlockCaret> carets = [];
   List<BlockBracket> brackets = [];
@@ -63,9 +63,9 @@ class Block {
     carets = [];
     if (highlight) {
       prevBlockClass = '';
-      decors = [];
+      decors = null;
+      brackets = [];
     }
-    // brackets = [];
   }
 }
 
@@ -73,6 +73,7 @@ class Document {
   String docPath = '';
   List<Block> blocks = [];
   List<Cursor> cursors = [];
+  List<Cursor> folds = [];
 
   List<Cursor> extraCursors = [];
   List<Cursor> sectionCursors = [];
@@ -402,7 +403,7 @@ class Document {
     List<BlockBracket> stack = [];
 
     bool found = false;
-    for (int l = 0; l < 200 && !found; l++) {
+    for (int l = 0; l < 1000 && !found; l++) {
       for (final bc in cur.block?.brackets ?? []) {
         if (bc.position <= cur.column && l == 0) continue;
         if (!bc.open) {
@@ -425,6 +426,62 @@ class Document {
       if (cur.block == b.block) break;
     }
     return res;
+  }
+
+  void toggleFold() {
+    sectionCursors = [];
+    BlockBracket b = findUnclosedBracket(cursor());
+    final res = findBracketPair(b);
+    if (res.length == 2) {
+      for (int i = 0; i < 2; i++) {
+        Cursor c = cursor().copy();
+        c.block = res[i].block;
+        c.column = res[i].position;
+        c.color = Colors.yellow.withOpacity(0.7);
+        sectionCursors.add(c);
+      }
+    }
+
+    if (sectionCursors.length == 2) {
+      Cursor start = sectionCursors[0].copy();
+      Cursor end = sectionCursors[1].copy();
+      start.anchorBlock = end.block;
+      start.anchorColumn = end.column;
+      start = start.normalized();
+      int size = folds.length;
+      folds.removeWhere((f) {
+        return f.block == start.block;
+      });
+      if (size == folds.length) {
+        folds.add(start);
+      }
+    }
+  }
+
+  void unfoldAll() {
+    folds.clear();
+  }
+
+  int computedLine(int line) {
+    for (final f in folds) {
+      if (line > (f.anchorBlock?.line ?? 0)) {
+        line += (f.block?.line ?? 0) - (f.anchorBlock?.line ?? 0);
+      }
+    }
+    return line;
+  }
+
+  int computedSize() {
+    int l = blocks.length;
+    int sz = 0;
+    for (final f in folds) {
+      sz += (f.block?.line ?? 0) - (f.anchorBlock?.line ?? 0);
+    }
+    l -= sz;
+    if (l < 1) {
+      l = 1;
+    }
+    return l;
   }
 }
 

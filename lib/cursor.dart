@@ -385,6 +385,7 @@ class Cursor {
     String ln = next.text;
     document?.removeBlockAtLine(next.line);
     block?.text = l + ln;
+    block?.makeDirty(highlight: true);
 
     cursorsToMerge.forEach((c) {
       c.column += l.length;
@@ -427,6 +428,7 @@ class Cursor {
     block?.makeDirty(highlight: true);
     Block? newBlock = document?.addBlockAtLine(line + 1);
     newBlock?.text = right;
+    newBlock?.makeDirty(highlight: true);
     moveCursorDown();
     moveCursorToStartOfLine();
   }

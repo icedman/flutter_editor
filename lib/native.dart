@@ -10,6 +10,8 @@ class TextSpanStyle extends Struct {
   external int start;
   @Int32()
   external int length;
+  @Int32()
+  external int flags;
   @Int8()
   external int r;
   @Int8()
@@ -32,8 +34,6 @@ class TextSpanStyle extends Struct {
   external int underline;
   @Int8()
   external int strike;
-  @Int32()
-  external int flags;
 }
 
 class FFIBridge {

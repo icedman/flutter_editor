@@ -268,7 +268,8 @@ class _InputListener extends State<InputListener> {
             widget.onKeyDown?.call(event.logicalKey.keyLabel,
                 keyId: event.logicalKey.keyId,
                 shift: event.isShiftPressed,
-                control: event.isControlPressed);
+                control: event.isControlPressed,
+                alt: event.isAltPressed);
           }
           if (event.runtimeType.toString() == 'RawKeyUpEvent') {
             widget.onKeyUp?.call();

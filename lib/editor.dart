@@ -41,7 +41,8 @@ class _Editor extends State<Editor> {
     super.dispose();
   }
 
-  String _buildKeys(String keys, {bool control: false, bool shift: false}) {
+  String _buildKeys(String keys,
+      {bool control: false, bool shift: false, bool alt: false}) {
     String res = '';
 
     keys = keys.toLowerCase();
@@ -66,6 +67,10 @@ class _Editor extends State<Editor> {
     if (shift) {
       if (res != '') res += '+';
       res += 'shift';
+    }
+    if (alt) {
+      if (res != '') res += '+';
+      res += 'alt';
     }
     if (res != '') res += '+';
     res += keys;
@@ -97,6 +102,14 @@ class _Editor extends State<Editor> {
       case 'ctrl+s':
         cmd = 'save';
         break;
+
+      case 'ctrl+alt+[':
+        cmd = 'fold';
+        break;
+      case 'ctrl+alt+]':
+        cmd = 'unfold';
+        break;
+
       case 'ctrl+w':
         cmd = 'settings-toggle-wrap';
         break;
@@ -182,6 +195,15 @@ class _Editor extends State<Editor> {
           _makeDirty();
           break;
         }
+
+      case 'fold':
+        d.toggleFold();
+        doScroll = true;
+        break;
+      case 'unfold':
+        d.unfoldAll();
+        doScroll = true;
+        break;
 
       // todo ... cmd!
       case 'left':
@@ -363,7 +385,7 @@ class _Editor extends State<Editor> {
     d.sectionCursors = [];
     Cursor newCursor = d.cursor();
     if (cursor.block != newCursor.block || cursor.column != newCursor.column) {
-      Future.delayed(const Duration(milliseconds: 50), () {
+      Future.delayed(const Duration(milliseconds: 5), () {
         BlockBracket b = d.brackedUnderCursor(newCursor, openOnly: true);
         final res = d.findBracketPair(b);
         if (res.length == 2) {
@@ -377,7 +399,7 @@ class _Editor extends State<Editor> {
           doc.touch();
         }
       });
-      Future.delayed(const Duration(milliseconds: 100), () {
+      Future.delayed(const Duration(milliseconds: 10), () {
         BlockBracket b = d.findUnclosedBracket(newCursor);
         final res = d.findBracketPair(b);
         if (res.length == 2) {
@@ -423,7 +445,7 @@ class _Editor extends State<Editor> {
       case 'End':
       case 'Enter':
       case '\n':
-        command(_buildKeys(key, control: control, shift: shift));
+        command(_buildKeys(key, control: control, shift: shift, alt: alt));
         break;
       default:
         {
@@ -434,8 +456,8 @@ class _Editor extends State<Editor> {
                   k + 32 <= LogicalKeyboardKey.keyZ.keyId)) {
             String ch =
                 String.fromCharCode(97 + k - LogicalKeyboardKey.keyA.keyId);
-            if (control) {
-              onShortcut(_buildKeys(ch, control: true, shift: shift));
+            if (control || alt) {
+              onShortcut(_buildKeys(ch, control: true, shift: shift, alt: alt));
               break;
             }
             command('insert', params: [ch]);
@@ -443,7 +465,11 @@ class _Editor extends State<Editor> {
           }
         }
         if (key.length == 1 || softKeyboard) {
-          command('insert', params: [key]);
+          if (control || alt) {
+            onShortcut(_buildKeys(key, control: true, shift: shift, alt: alt));
+          } else {
+            command('insert', params: [key]);
+          }
         }
         break;
     }

@@ -105,10 +105,11 @@ class Highlighter {
 
     HLLanguage? lang = engine.language(0);
 
-    List<LineDecoration> decors = block?.decors ?? [];
-    if (decors.length == 0) {
-      decors = engine.run(block, line, document);
+    if (block?.decors == null) {
+      block?.decors = engine.run(block, line, document);
     }
+    List<LineDecoration> decors = block?.decors ?? [];
+
     text += ' ';
     String prevText = '';
     for (int i = 0; i < text.length; i++) {
@@ -119,36 +120,6 @@ class Highlighter {
         ch = ' ';
         // todo!
       }
-
-      // brackets
-      /*
-      for (final b in lang?.brackets ?? []) {
-        if (b.length != 2) continue;
-        String open = b[0] ?? '';
-        String close = b[1] ?? '';
-        String topen = text.substring(i);
-        if (topen.startsWith(open)) {
-          block?.brackets.add(BlockBracket(
-              block: block,
-              position: i,
-              open: true,
-              bracketId: bIdx,
-              bracket: open));
-          break;
-        }
-        String tclose = text.substring(i);
-        if (tclose.startsWith(close)) {
-          block?.brackets.add(BlockBracket(
-              block: block,
-              position: i,
-              open: false,
-              bracketId: bIdx,
-              bracket: close));
-          break;
-        }
-        bIdx++;
-      }
-      */
 
       // decorate
       for (final d in decors) {
@@ -166,10 +137,7 @@ class Highlighter {
           }
           if (d.bracket && i == d.start) {
             block?.brackets.add(BlockBracket(
-                block: block,
-                position: d.start,
-                open: d.open,
-                bracket: d.open ? '{' : '}'));
+                block: block, position: d.start, open: d.open, bracket: ch));
           }
           break;
         }
@@ -236,8 +204,6 @@ class Highlighter {
     if (cache) {
       block?.spans = res;
     }
-
-    // print(block?.brackets);
 
     return res;
   }

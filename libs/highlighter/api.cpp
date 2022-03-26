@@ -60,6 +60,7 @@ struct theme_info_t {
 struct textstyle_t {
   int32_t start;
   int32_t length;
+  int32_t flags;
   int8_t r;
   int8_t g;
   int8_t b;
@@ -71,7 +72,6 @@ struct textstyle_t {
   bool italic;
   bool underline;
   bool strike;
-  int32_t flags;
 };
 
 struct rgba_t {
@@ -97,8 +97,24 @@ inline bool color_is_set(rgba_t clr) {
 }
 
 inline textstyle_t construct_style(std::vector<span_info_t> &spans, int index) {
-  textstyle_t res = {index, 1, 0,     0,     0,     0,     0,
-                     0,     0, false, false, false, false, 0};
+  textstyle_t res = {
+      index, 1, 0, 0, 0, 0, 0, 0, 0, 0, false, false, false, false,
+  };
+
+  int32_t start;
+  int32_t length;
+  int32_t flags;
+  int8_t r;
+  int8_t g;
+  int8_t b;
+  int8_t bg_r;
+  int8_t bg_g;
+  int8_t bg_b;
+  int8_t caret;
+  bool bold;
+  bool italic;
+  bool underline;
+  bool strike;
 
   for (auto span : spans) {
     if (index >= span.start && index < span.start + span.length) {
@@ -117,16 +133,14 @@ inline textstyle_t construct_style(std::vector<span_info_t> &spans, int index) {
       }
 
       if (index == span.start) {
-        if (span.scope.find(".bracket") > 0) {
+        // printf("%s\n", span.scope.c_str());
+        if (span.scope.find(".bracket") != -1) {
           res.flags = res.flags | SCOPE_BRACKET;
         }
-        if (span.scope.find(".tag") > 0) {
-          res.flags = res.flags | SCOPE_TAG;
-        }
-        if (span.scope.find(".begin") > 0) {
+        if (span.scope.find(".begin") != -1) {
           res.flags = res.flags | SCOPE_BEGIN;
         }
-        if (span.scope.find(".end") > 0) {
+        if (span.scope.find(".end") != -1) {
           res.flags = res.flags | SCOPE_END;
         }
       }

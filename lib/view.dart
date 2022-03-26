@@ -337,16 +337,16 @@ class _View extends State<View> {
       count = ((size.height / fontHeight) * 2.0).toInt();
     }
 
-    int docSize = doc.doc.blocks.length;
+    int docSize = doc.doc.computedSize();
 
     if ((!largeDoc && softWrap) || !softWrap) {
       return ListView.builder(
           controller: scroller,
-          itemCount: doc.doc.blocks.length,
+          itemCount: docSize,
           itemExtent: softWrap ? null : fontHeight,
           itemBuilder: (BuildContext context, int line) {
+            line = doc.doc.computedLine(line);
             Block block = doc.doc.blockAtLine(line) ?? Block('');
-            block.line = line;
             return ViewLine(
                 block: block,
                 width: size.width - gutterWidth,
@@ -377,8 +377,8 @@ class _View extends State<View> {
       if (line >= docSize) {
         break;
       }
+      line = doc.doc.computedLine(line);
       Block block = doc.doc.blockAtLine(line) ?? Block('');
-      block.line = line;
 
       children.add(ViewLine(
           block: block,
