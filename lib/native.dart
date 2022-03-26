@@ -38,7 +38,7 @@ class TextSpanStyle extends Struct {
 
 class FFIBridge {
   static late final DynamicLibrary nativeEditorApiLib;
-  static late Function init_highlighter;
+  static late Function _initialize;
   static late Function load_theme;
   static late Function load_language;
   static late Function run_highlighter;
@@ -48,15 +48,15 @@ class FFIBridge {
   static late Function remove_block;
   static late Function language_definition;
 
-  static void initialize() {
+  static void load() {
     DynamicLibrary nativeEditorApiLib = Platform.isMacOS || Platform.isIOS
         ? DynamicLibrary.process()
         : (DynamicLibrary.open(
             Platform.isWindows ? 'editor_api.dll' : 'libeditor_api.so'));
 
     final _init_highlighter = nativeEditorApiLib
-        .lookup<NativeFunction<Void Function()>>('init_highlighter');
-    init_highlighter = _init_highlighter.asFunction<void Function()>();
+        .lookup<NativeFunction<Void Function(Pointer<Utf8>)>>('initialize');
+    _initialize = _init_highlighter.asFunction<void Function(Pointer<Utf8>)>();
 
     final _load_theme = nativeEditorApiLib
         .lookup<NativeFunction<Int32 Function(Pointer<Utf8>)>>('load_theme');
@@ -96,8 +96,10 @@ class FFIBridge {
         _language_definition.asFunction<Pointer<Utf8> Function(int)>();
   }
 
-  static void initHighlighter() {
-    init_highlighter();
+  static void initialize(String path) {
+    final _path = path.toNativeUtf8();
+    _initialize(_path);
+    calloc.free(_path);
   }
 
   static int loadTheme(String path) {

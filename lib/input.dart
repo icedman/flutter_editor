@@ -145,7 +145,7 @@ class _InputListener extends State<InputListener> {
   late FocusNode textFocusNode;
   late TextEditingController controller;
 
-  bool showKeyboard = true;
+  bool showKeyboard = false;
   Offset lastTap = const Offset(0, 0);
 
   @override

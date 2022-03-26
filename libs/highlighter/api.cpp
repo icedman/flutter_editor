@@ -166,8 +166,8 @@ static char text_buffer[MAX_BUFFER_LENGTH];
 
 theme_ptr current_theme() { return themes[0]; }
 
-EXPORT void init_highlighter() {
-  load_extensions("/home/iceman/.editor/extensions/", extensions);
+EXPORT void initialize(char *extensionsPath) {
+  load_extensions(extensionsPath, extensions);
   // for(auto ext : extensions) {
   //     printf("%s\n", ext.name.c_str());
   // }

@@ -11,14 +11,22 @@ import 'package:editor/services/highlight/highlighter.dart';
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  FFIBridge.initialize();
+  FFIBridge.load();
 
+  String extPath = '/home/iceman/.editor/extensions/';
   String path = './tests/tinywl.c';
   // path = './tests/sqlite3.c';
-  if (Platform.isAndroid) path = '/sdcard/Developer/tests/tinywl.c';
+
+  if (Platform.isAndroid) {
+    extPath = '/sdcard/.editor/extensions/';
+    path = '/sdcard/Developer/tests/tinywl.c';
+  }
+
   if (args.isNotEmpty) {
     path = args[0];
   }
+
+  FFIBridge.initialize(extPath);
 
   return runApp(MultiProvider(providers: [
     ChangeNotifierProvider(create: (context) => HLTheme()),

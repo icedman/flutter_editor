@@ -1,6 +1,6 @@
 LIBRARY   editor_api
 EXPORTS
-    init_highlighter
+    initialize
     load_theme
     load_language
     run_highlighter

@@ -26,6 +26,12 @@ apply plugin: 'kotlin-android'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 android {
+    externalNativeBuild {
+        cmake {
+            path "../../libs/CMakeLists.txt"
+        }
+    }
+    
     compileSdkVersion flutter.compileSdkVersion
 
     compileOptions {

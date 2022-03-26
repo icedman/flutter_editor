@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
@@ -25,9 +26,10 @@ class TMParser extends HLEngine {
   Map<int, HLLanguage> languages = {};
 
   TMParser() {
-    FFIBridge.initHighlighter();
     themeId = FFIBridge.loadTheme(
-        "/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json");
+      Platform.isAndroid ?
+      '/sdcard/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json'
+       : '/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json');
     loadLanguage("test.c").langId;
   }
 
@@ -118,6 +120,7 @@ class TMParser extends HLEngine {
     HLLanguage l = TMParserLanguage();
     l.langId = langId;
 
+    /*
     if (j['brackets'] is List) {
       List? brackets = j['brackets'];
       if (brackets != null && brackets.length > 0 && brackets[0] is List) {
@@ -130,6 +133,7 @@ class TMParser extends HLEngine {
         }
       }
     }
+    */
 
     // if (j['autoClosingPairs'] is List) {
     //   for(final p in j['autoClosingPairs'] ?? []) {
