@@ -74,8 +74,8 @@ class MapPainter extends CustomPainter {
   @override
   bool shouldRepaint(CustomPainter oldDelegate) {
     int oldHash = (oldDelegate as MapPainter).hash;
-    return ((oldHash != hash) || hash == 0);
-    // return true;
+    bool repaint = ((oldHash != hash) || hash == 0);
+    return repaint;
   }
 }
 
@@ -107,8 +107,6 @@ class MinimapPage extends StatelessWidget {
           double p = dy * 100 / (box.size.height + 0.001);
           int lead = p > 50 ? 8 : -8;
           int l = p.toInt() + (start * perPage);
-          // print(l);
-
           doc.scrollTo = l + lead;
           doc.touch();
         });
@@ -139,7 +137,7 @@ class _Minimap extends State<Minimap> {
   Widget build(BuildContext context) {
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
 
-    int perPage = 100;
+    int perPage = 60;
     int pages = doc.doc.blocks.length ~/ perPage;
     if (pages <= 0) pages = 1;
 
@@ -153,11 +151,9 @@ class _Minimap extends State<Minimap> {
           for (int i = 0; i < perPage; i++) {
             hash += ((block?.text ?? '').length); // improve
             hash += ((block?.spans ?? []).length) << 4;
-
             block = block?.next;
             if (block == null) break;
           }
-
           return MinimapPage(start: index, perPage: perPage, hash: hash);
         });
   }

@@ -94,7 +94,7 @@ class ViewLine extends StatelessWidget {
       }
     }
 
-    List<Cursor> extras = [...doc.doc.extraCursors, ...doc.doc.sectionCursors];
+    List<Cursor> extras = [...doc.doc.extraCursors];
     if (!extras.isEmpty) {
       for (final e in extras) {
         if (e.block != block) continue;

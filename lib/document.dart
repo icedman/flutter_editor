@@ -67,6 +67,15 @@ class Block {
       brackets = [];
     }
   }
+
+  bool isFolded() {
+    for (final f in document?.folds ?? []) {
+      if (f.anchorBlock == this) {
+        return true;
+      }
+    }
+    return false;
+  }
 }
 
 class Document {
@@ -429,8 +438,10 @@ class Document {
   }
 
   void toggleFold() {
+    Cursor cur = cursor().copy();
+    cur.column = 0;
     sectionCursors = [];
-    BlockBracket b = findUnclosedBracket(cursor());
+    BlockBracket b = findUnclosedBracket(cur);
     final res = findBracketPair(b);
     if (res.length == 2) {
       for (int i = 0; i < 2; i++) {

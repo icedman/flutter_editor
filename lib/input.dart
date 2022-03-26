@@ -129,13 +129,16 @@ class InputListener extends StatefulWidget {
   Function? onDoubleTapDown;
   Function? onPanUpdate;
 
+  bool showKeyboard = false;
+
   InputListener(
       {required Widget this.child,
       Function? this.onKeyDown,
       Function? this.onKeyUp,
       Function? this.onTapDown,
       Function? this.onDoubleTapDown,
-      Function? this.onPanUpdate});
+      Function? this.onPanUpdate,
+      bool this.showKeyboard = false});
   @override
   _InputListener createState() => _InputListener();
 }
@@ -145,7 +148,6 @@ class _InputListener extends State<InputListener> {
   late FocusNode textFocusNode;
   late TextEditingController controller;
 
-  bool showKeyboard = false;
   Offset lastTap = const Offset(0, 0);
 
   @override
@@ -167,6 +169,12 @@ class _InputListener extends State<InputListener> {
       }
       controller.text = '';
     });
+
+    // if (widget.showKeyboard) {
+    //   Future.delayed(Duration(milliseconds: 50), () {
+    //     textFocusNode.requestFocus();
+    //   });
+    // }
   }
 
   @override
@@ -226,28 +234,10 @@ class _InputListener extends State<InputListener> {
           // maxLines: null,
           // enableInteractiveSelection: false,)
 
-          if (Platform.isAndroid) ...[
-            Container(
-                child: Row(children: [
-              IconButton(
-                  icon: Icon(Icons.keyboard, color: Colors.white),
-                  onPressed: () {
-                    setState(() {
-                      showKeyboard = !showKeyboard;
-                      if (showKeyboard) {
-                        Future.delayed(Duration(milliseconds: 50), () {
-                          textFocusNode.requestFocus();
-                        });
-                      }
-                    });
-                  }),
-            ]))
-          ], // toolbar
-
           Container(
               width: 1,
               height: 1,
-              child: !showKeyboard
+              child: !widget.showKeyboard
                   ? null
                   : TextField(
                       focusNode: textFocusNode,

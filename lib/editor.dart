@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -25,6 +26,7 @@ class _Editor extends State<Editor> {
   bool shifting = false;
   bool controlling = false;
   bool alting = false;
+  bool showKeyboard = false;
 
   @override
   void initState() {
@@ -133,6 +135,10 @@ class _Editor extends State<Editor> {
     for (final c in d.cursors) {
       c.block?.makeDirty();
       c.anchorBlock?.makeDirty();
+    }
+
+    for (final f in d.folds) {
+      f.anchorBlock?.makeDirty();
     }
   }
 
@@ -513,23 +519,41 @@ class _Editor extends State<Editor> {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (context) => doc),
-        ChangeNotifierProvider(create: (context) => CaretPulse()),
-        Provider(create: (context) => highlighter),
-      ],
-      child: Row(children: [
-        Expanded(
-            child: InputListener(
-          child: View(),
-          onKeyDown: onKeyDown,
-          onKeyUp: onKeyUp,
-          onTapDown: onTapDown,
-          onDoubleTapDown: onDoubleTapDown,
-          onPanUpdate: onPanUpdate,
-        )),
-        Container(width: 100, child: Minimap())
-      ]),
-    );
+        providers: [
+          ChangeNotifierProvider(create: (context) => doc),
+          ChangeNotifierProvider(create: (context) => CaretPulse()),
+          Provider(create: (context) => highlighter),
+        ],
+        child: Column(children: [
+          Expanded(
+              child: Row(children: [
+            Expanded(
+              child: InputListener(
+                  child: View(),
+                  onKeyDown: onKeyDown,
+                  onKeyUp: onKeyUp,
+                  onTapDown: onTapDown,
+                  onDoubleTapDown: onDoubleTapDown,
+                  onPanUpdate: onPanUpdate,
+                  showKeyboard: showKeyboard),
+            ),
+            Container(width: 100, child: Minimap())
+          ])),
+
+          if (Platform.isAndroid) ...[
+            Container(
+                child: Row(children: [
+              IconButton(
+                  icon: Icon(
+                      showKeyboard ? Icons.keyboard_hide : Icons.keyboard,
+                      color: Colors.white),
+                  onPressed: () {
+                    setState(() {
+                      showKeyboard = !showKeyboard;
+                    });
+                  }),
+            ]))
+          ], // toolbar
+        ]));
   }
 }

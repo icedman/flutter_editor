@@ -370,7 +370,7 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
   textstyle_buffer[0].length = 0;
   // return textstyle_buffer;
 
-  printf("hl %d %s\n", block, _text);
+  // printf("hl %d %s\n", block, _text);
 
   theme_ptr theme = themes[themeId];
   language_info_ptr lang = languages[langId];

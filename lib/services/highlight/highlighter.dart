@@ -198,6 +198,18 @@ class Highlighter {
       prevText = ch;
     }
 
+    if (block?.isFolded() ?? false) {
+      Paint paint = Paint()
+        ..color = theme.selection
+        ..style = PaintingStyle.stroke
+        // ..strokeCap = StrokeCap.round
+        ..strokeJoin = StrokeJoin.round
+        ..strokeWidth = 2.0;
+      TextStyle moreStyle = defaultStyle.copyWith(
+          fontSize: theme.fontSize * 0.8, background: paint);
+      res.add(TextSpan(text: '...', style: moreStyle));
+    }
+
     res.add(
         CustomWidgetSpan(child: Container(height: 1, width: 1), line: line));
 

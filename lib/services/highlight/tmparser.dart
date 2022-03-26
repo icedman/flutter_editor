@@ -26,10 +26,9 @@ class TMParser extends HLEngine {
   Map<int, HLLanguage> languages = {};
 
   TMParser() {
-    themeId = FFIBridge.loadTheme(
-      Platform.isAndroid ?
-      '/sdcard/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json'
-       : '/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json');
+    themeId = FFIBridge.loadTheme(Platform.isAndroid
+        ? '/sdcard/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json'
+        : '/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json');
     loadLanguage("test.c").langId;
   }
 
