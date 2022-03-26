@@ -8,7 +8,6 @@ import 'package:provider/provider.dart';
 
 import 'package:editor/document.dart';
 import 'package:editor/view.dart';
-import 'package:editor/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 
 Offset screenToCursor(RenderObject? obj, Offset pos) {
@@ -160,7 +159,11 @@ class _InputListener extends State<InputListener> {
       final t = controller.text;
       if (t.isNotEmpty) {
         widget.onKeyDown?.call(t,
-            keyId: 0, shift: false, control: false, softKeyboard: true);
+            keyId: 0,
+            shift: false,
+            control: false,
+            alt: false,
+            softKeyboard: true);
       }
       controller.text = '';
     });

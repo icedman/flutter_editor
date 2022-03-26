@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 
 import 'package:editor/document.dart';
-import 'package:editor/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
+import 'package:editor/services/highlight/theme.dart';
 
 import 'package:highlight/highlight_core.dart' show highlight;
 import 'package:highlight/languages/cpp.dart';
 import 'package:highlight/languages/json.dart';
+
+import 'package:flutter_highlight/themes/dracula.dart';
+
+final theTheme = draculaTheme;
 
 class FlutterHighlightLanguage extends HLLanguage {}
 
@@ -17,6 +21,8 @@ class FlutterHighlight extends HLEngine {
   }
 
   List<LineDecoration> run(Block? block, int line, Document document) {
+    HLTheme theme = HLTheme.instance();
+
     List<LineDecoration> decors = [];
 
     Block b = block ?? Block('', document: Document());
@@ -62,10 +68,10 @@ class FlutterHighlight extends HLEngine {
         highlight.parse(text, language: 'cpp', continuation: continuation);
     block?.mode = result.top;
 
-    b.className = b.mode?.className ?? '';
+    b.className = result.top?.className ?? '';
     if (nextBlock != null) {
       if (nextBlock.prevBlockClass != b.className) {
-        nextBlock.makeDirty();
+        nextBlock.makeDirty(highlight: true);
       }
     }
 
@@ -74,11 +80,15 @@ class FlutterHighlight extends HLEngine {
     return decors;
   }
 
-  int loadTheme(String filename) {
-    return 0;
-  }
+  // int loadTheme(String filename) {
+  //   return 0;
+  // }
 
   HLLanguage loadLanguage(String filename) {
     return FlutterHighlightLanguage();
+  }
+
+  HLLanguage? language(int id) {
+    return null;
   }
 }

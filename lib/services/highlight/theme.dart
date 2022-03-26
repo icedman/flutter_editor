@@ -1,11 +1,9 @@
+import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_highlight/themes/dracula.dart';
 
-final theTheme = draculaTheme;
-// import 'package:flutter_highlight/themes/github.dart';
-// final theTheme = githubTheme;
+final HLTheme theme = HLTheme();
 
-class Theme {
+class HLTheme extends ChangeNotifier {
   String fontFamily = 'FiraCode';
   double fontSize = 18;
   double gutterFontSize = 16;
@@ -18,9 +16,7 @@ class Theme {
   Color keyword = Color(0xffff79c6);
   Color string = Colors.yellow;
 
-  Theme() {
-    background = theTheme['root']?.backgroundColor ?? background;
+  static HLTheme instance() {
+    return theme;
   }
 }
-
-Theme theme = Theme();

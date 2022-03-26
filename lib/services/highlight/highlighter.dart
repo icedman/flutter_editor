@@ -8,8 +8,8 @@ import 'package:provider/provider.dart';
 import 'package:editor/cursor.dart';
 import 'package:editor/document.dart';
 import 'package:editor/view.dart';
-import 'package:editor/theme.dart';
 import 'package:editor/native.dart';
+import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/fhl.dart';
 import 'package:editor/services/highlight/tmparser.dart';
 
@@ -34,8 +34,9 @@ Size getTextExtents(String text, TextStyle style,
 
 abstract class HLEngine {
   List<LineDecoration> run(Block? block, int line, Document document);
-  int loadTheme(String filename);
+  // int loadTheme(String filename);
   HLLanguage loadLanguage(String filename);
+  HLLanguage? language(int id);
 }
 
 abstract class HLLanguage {
@@ -53,6 +54,8 @@ class LineDecoration {
   Color background = Colors.white;
   bool underline = false;
   bool italic = false;
+  bool bracket = false;
+  bool open = false;
 
   Object toObject() {
     return {
@@ -81,6 +84,8 @@ class Highlighter {
   // HLEngine engine = FlutterHighlight();
 
   List<InlineSpan> run(Block? block, int line, Document document) {
+    HLTheme theme = HLTheme.instance();
+
     TextStyle defaultStyle = TextStyle(
         fontFamily: theme.fontFamily,
         fontSize: theme.fontSize,
@@ -94,14 +99,56 @@ class Highlighter {
       return block?.spans ?? [];
     }
 
+    block?.spans?.clear();
     block?.carets.clear();
+    block?.brackets.clear();
 
-    List<LineDecoration> decors = engine.run(block, line, document);
+    HLLanguage? lang = engine.language(0);
+
+    List<LineDecoration> decors = block?.decors ?? [];
+    if (decors.length == 0) {
+      decors = engine.run(block, line, document);
+    }
     text += ' ';
     String prevText = '';
     for (int i = 0; i < text.length; i++) {
       String ch = text[i];
       TextStyle style = defaultStyle.copyWith();
+
+      if (ch == '\t') {
+        ch = ' ';
+        // todo!
+      }
+
+      // brackets
+      /*
+      for (final b in lang?.brackets ?? []) {
+        if (b.length != 2) continue;
+        String open = b[0] ?? '';
+        String close = b[1] ?? '';
+        String topen = text.substring(i);
+        if (topen.startsWith(open)) {
+          block?.brackets.add(BlockBracket(
+              block: block,
+              position: i,
+              open: true,
+              bracketId: bIdx,
+              bracket: open));
+          break;
+        }
+        String tclose = text.substring(i);
+        if (tclose.startsWith(close)) {
+          block?.brackets.add(BlockBracket(
+              block: block,
+              position: i,
+              open: false,
+              bracketId: bIdx,
+              bracket: close));
+          break;
+        }
+        bIdx++;
+      }
+      */
 
       // decorate
       for (final d in decors) {
@@ -111,11 +158,18 @@ class Highlighter {
             style = style.copyWith(fontStyle: FontStyle.italic);
           }
           if (d.underline) {
-            style = style.copyWith(decoration: TextDecoration.underline,
-            decorationStyle: TextDecorationStyle.solid,
-            decorationColor: d.color,
-            decorationThickness: 1.0
-            );
+            style = style.copyWith(
+                decoration: TextDecoration.underline,
+                decorationStyle: TextDecorationStyle.solid,
+                decorationColor: d.color,
+                decorationThickness: 1.0);
+          }
+          if (d.bracket && i == d.start) {
+            block?.brackets.add(BlockBracket(
+                block: block,
+                position: d.start,
+                open: d.open,
+                bracket: d.open ? '{' : '}'));
           }
           break;
         }
@@ -182,6 +236,8 @@ class Highlighter {
     if (cache) {
       block?.spans = res;
     }
+
+    // print(block?.brackets);
 
     return res;
   }

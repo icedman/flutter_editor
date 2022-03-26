@@ -24,12 +24,15 @@ class _Editor extends State<Editor> {
 
   bool shifting = false;
   bool controlling = false;
+  bool alting = false;
 
   @override
   void initState() {
     highlighter = Highlighter();
     doc = DocumentProvider();
     doc.openFile(widget.path);
+
+    highlighter.engine.loadLanguage(widget.path);
     super.initState();
   }
 
@@ -44,6 +47,9 @@ class _Editor extends State<Editor> {
     keys = keys.toLowerCase();
 
     // morph
+    if (keys == 'escape') {
+      keys = 'cancel';
+    }
     if (keys == '\n' || keys == 'enter') {
       keys = 'newline';
     }
@@ -63,6 +69,7 @@ class _Editor extends State<Editor> {
     }
     if (res != '') res += '+';
     res += keys;
+
     return res;
   }
 
@@ -91,13 +98,13 @@ class _Editor extends State<Editor> {
         cmd = 'save';
         break;
       case 'ctrl+w':
-        cmd = 'settings_toggle_wrap';
+        cmd = 'settings-toggle-wrap';
         break;
       case 'ctrl+g':
-        cmd = 'settings_toggle_gutter';
+        cmd = 'settings-toggle-gutter';
         break;
       case 'ctrl+m':
-        cmd = 'settings_toggle_minimap';
+        cmd = 'settings-toggle-minimap';
         break;
     }
     command(cmd);
@@ -120,11 +127,14 @@ class _Editor extends State<Editor> {
     bool doScroll = false;
     Document d = doc.doc;
 
+    Cursor cursor = d.cursor().copy();
+
     _makeDirty();
 
     switch (cmd) {
       case 'cancel':
         d.clearCursors();
+        doScroll = true;
         break;
 
       case 'insert':
@@ -155,7 +165,25 @@ class _Editor extends State<Editor> {
         doScroll = true;
         break;
 
-        // todo ... cmd!
+      case 'cursor':
+        {
+          String x = params[1];
+          String y = params[0];
+          d.moveCursor(int.parse(y), int.parse(x));
+          doScroll = true;
+          break;
+        }
+      case 'shift+cursor':
+        {
+          String x = params[1];
+          String y = params[0];
+          d.moveCursor(int.parse(y), int.parse(x), keepAnchor: true);
+          doScroll = true;
+          _makeDirty();
+          break;
+        }
+
+      // todo ... cmd!
       case 'left':
         d.moveCursorLeft();
         doScroll = true;
@@ -250,7 +278,7 @@ class _Editor extends State<Editor> {
         d.moveCursorToEndOfDocument(keepAnchor: true);
         doScroll = true;
         break;
-      case 'settings_toggle_wrap':
+      case 'settings-toggle-wrap':
         doc.softWrap = !doc.softWrap;
         doScroll = true;
         break;
@@ -259,11 +287,11 @@ class _Editor extends State<Editor> {
         doScroll = true;
         break;
 
-      case 'settings_toggle_gutter':
+      case 'settings-toggle-gutter':
         doc.showGutters = !doc.showGutters;
         doScroll = true;
         break;
-      case 'settings_toggle_minimap':
+      case 'settings-toggle-minimap':
         doc.showMinimap = !doc.showMinimap;
         doScroll = true;
         break;
@@ -329,6 +357,42 @@ class _Editor extends State<Editor> {
         break;
     }
 
+    // cursor moved
+    // rebuild bracket match
+    d.extraCursors = [];
+    d.sectionCursors = [];
+    Cursor newCursor = d.cursor();
+    if (cursor.block != newCursor.block || cursor.column != newCursor.column) {
+      Future.delayed(const Duration(milliseconds: 50), () {
+        BlockBracket b = d.brackedUnderCursor(newCursor, openOnly: true);
+        final res = d.findBracketPair(b);
+        if (res.length == 2) {
+          for (int i = 0; i < 2; i++) {
+            Cursor c = d.cursor().copy();
+            c.block = res[i].block;
+            c.column = res[i].position;
+            c.color = Colors.white.withOpacity(0.7);
+            d.extraCursors.add(c);
+          }
+          doc.touch();
+        }
+      });
+      Future.delayed(const Duration(milliseconds: 100), () {
+        BlockBracket b = d.findUnclosedBracket(newCursor);
+        final res = d.findBracketPair(b);
+        if (res.length == 2) {
+          for (int i = 0; i < 2; i++) {
+            Cursor c = d.cursor().copy();
+            c.block = res[i].block;
+            c.column = res[i].position;
+            c.color = Colors.yellow.withOpacity(0.7);
+            d.sectionCursors.add(c);
+          }
+          doc.touch();
+        }
+      });
+    }
+
     if (doScroll) {
       doc.scrollTo = d.cursor().block?.line ?? -1;
       doc.touch();
@@ -339,16 +403,15 @@ class _Editor extends State<Editor> {
       {int keyId = 0,
       bool shift = false,
       bool control = false,
+      bool alt = false,
       bool softKeyboard = false}) {
-    shifting = shift;
-    controlling = control;
+    shifting |= shift;
+    controlling |= control;
+    alting |= alt;
     Document d = doc.doc;
 
     switch (key) {
       case 'Escape':
-        command('cancel');
-        return;
-
       case 'Arrow Left':
       case 'Arrow Right':
       case 'Arrow Up':
@@ -375,12 +438,12 @@ class _Editor extends State<Editor> {
               onShortcut(_buildKeys(ch, control: true, shift: shift));
               break;
             }
-            command('insert', params: [ ch ]);
+            command('insert', params: [ch]);
             break;
           }
         }
         if (key.length == 1 || softKeyboard) {
-          command('insert', params: [ key ]);
+          command('insert', params: [key]);
         }
         break;
     }
@@ -389,37 +452,36 @@ class _Editor extends State<Editor> {
   void onKeyUp() {
     shifting = false;
     controlling = false;
+    alting = false;
   }
 
   void onTapDown(RenderObject? obj, Offset globalPosition) {
-    _makeDirty();
     Document d = doc.doc;
     Offset o = screenToCursor(obj, globalPosition);
-    // todo
-    d.moveCursor(o.dy.toInt(), o.dx.toInt(), keepAnchor: shifting);
-    doc.scrollTo = d.cursor().block?.line ?? -1;
-    doc.touch();
+    if (shifting) {
+      command('shift+cursor',
+          params: [o.dy.toInt().toString(), o.dx.toInt().toString()]);
+    } else {
+      command('cursor',
+          params: [o.dy.toInt().toString(), o.dx.toInt().toString()]);
+    }
   }
 
   void onDoubleTapDown(RenderObject? obj, Offset globalPosition) {
     Document d = doc.doc;
     Offset o = screenToCursor(obj, globalPosition);
-    // todo
     d.moveCursor(o.dy.toInt(), o.dx.toInt(), keepAnchor: shifting);
+    command('cursor',
+        params: [o.dy.toInt().toString(), o.dx.toInt().toString()]);
     command('select_word');
-    doc.scrollTo = d.cursor().block?.line ?? -1;
-    doc.touch();
   }
 
   void onPanUpdate(RenderObject? obj, Offset globalPosition) {
-    _makeDirty();
     Document d = doc.doc;
     Offset o = screenToCursor(obj, globalPosition);
     if (o.dx == -1 || o.dy == -1) return;
-    // todo
-    d.moveCursor(o.dy.toInt(), o.dx.toInt(), keepAnchor: true);
-    doc.scrollTo = d.cursor().block?.line ?? -1;
-    doc.touch();
+    command('shift+cursor',
+        params: [o.dy.toInt().toString(), o.dx.toInt().toString()]);
   }
 
   @override

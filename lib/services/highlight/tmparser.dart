@@ -4,9 +4,17 @@ import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
 
 import 'package:editor/document.dart';
-import 'package:editor/theme.dart';
 import 'package:editor/native.dart';
+import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
+
+const int SCOPE_COMMENT = (1 << 1);
+const int SCOPE_COMMENT_BLOCK = (1 << 2);
+const int SCOPE_STRING = (1 << 3);
+const int SCOPE_BRACKET = (1 << 4);
+const int SCOPE_TAG = (1 << 5);
+const int SCOPE_BEGIN = (1 << 6);
+const int SCOPE_END = (1 << 7);
 
 class TMParserLanguage extends HLLanguage {}
 
@@ -20,7 +28,7 @@ class TMParser extends HLEngine {
     FFIBridge.initHighlighter();
     themeId = FFIBridge.loadTheme(
         "/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json");
-    langId = loadLanguage("test.c").langId;
+    loadLanguage("test.c").langId;
   }
 
   List<LineDecoration> run(Block? block, int line, Document document) {
@@ -33,6 +41,7 @@ class TMParser extends HLEngine {
     b.prevBlockClass = prevBlock?.className ?? '';
 
     String text = b.text;
+    text += ' ';
 
     final nspans = FFIBridge.runHighlighter(
         text,
@@ -69,12 +78,14 @@ class TMParser extends HLEngine {
       d.end = s + l - 1;
       d.color = fg;
       d.italic = spn.italic > 0;
+
+      d.bracket = (spn.flags & SCOPE_BRACKET) == SCOPE_BRACKET;
+      d.open = (spn.flags & SCOPE_BEGIN) == SCOPE_BEGIN;
+
       decors.add(d);
 
-      if (l > 1) {
-        comment = spn.comment != 0;
-        string = spn.string != 0;
-      }
+      comment = (spn.flags & SCOPE_COMMENT_BLOCK) == SCOPE_COMMENT_BLOCK;
+      string = (spn.flags & SCOPE_STRING) == SCOPE_STRING;
 
       // print('$s $l ${spn.r}, ${spn.g}, ${spn.b}');
     }
@@ -84,23 +95,19 @@ class TMParser extends HLEngine {
 
     if (nextBlock != null) {
       if (nextBlock.prevBlockClass != b.className) {
-        nextBlock.makeDirty();
+        nextBlock.makeDirty(highlight: true);
       }
     }
 
     return decors;
   }
 
-  int getLanguageId(String filename) {
-    return 0;
-  }
-
-  int loadTheme(String filename) {
-    return 0;
+  HLLanguage? language(int id) {
+    return languages[id != 0 ? id : langId];
   }
 
   HLLanguage loadLanguage(String filename) {
-    int langId = FFIBridge.loadLanguage("test.c");
+    langId = FFIBridge.loadLanguage(filename);
     if (languages.containsKey(langId)) {
       return languages[langId] ?? TMParserLanguage();
     }
@@ -119,7 +126,6 @@ class TMParser extends HLEngine {
           for (final i in p) {
             pp.add(i as String);
           }
-
           l.brackets.add(pp);
         }
       }

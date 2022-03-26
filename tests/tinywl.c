@@ -26,7 +26,7 @@
 class MyClass {
 void test(int x, char* z) {
     for(int i=0;i<20;i++) {
-        if (i == 0) { printf("%d", i); }
+        if (i == 0) { printf("}%d", i); }
     }
 }
 }
@@ -993,6 +993,8 @@ int main(int argc, char* argv[])
     wl_display_destroy(server.wl_display);
     return 0;
 }
+
+
 
 
 

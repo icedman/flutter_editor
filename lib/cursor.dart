@@ -1,4 +1,5 @@
 import 'package:editor/document.dart';
+import 'package:flutter/material.dart';
 
 class Cursor {
   Cursor(
@@ -18,6 +19,7 @@ class Cursor {
   int column = 0;
   Block? anchorBlock;
   int anchorColumn = 0;
+  Color color = Colors.white;
 
   bool get isNull {
     return document == null;
@@ -217,7 +219,7 @@ class Cursor {
     if (res.length == 1) {
       cur.deleteText(numberOfCharacters: cur.anchorColumn - cur.column);
       cur.clearSelection();
-      cur.block?.makeDirty();
+      cur.block?.makeDirty(highlight: true);
       copyFrom(cur);
       return;
     }
@@ -235,7 +237,7 @@ class Cursor {
     }
     cur.block?.text = left + right;
     cur.clearSelection();
-    cur.block?.makeDirty();
+    cur.block?.makeDirty(highlight: true);
     copyFrom(cur);
   }
 
@@ -317,20 +319,18 @@ class Cursor {
     for (final m in matches) {
       var g = m.groups([0]);
       String t = g[0] ?? '';
-      if (t.length > 0) {
-        if (column >= m.start) {
-          breakNext = true;
-          continue;
+      if (column >= m.start) {
+        breakNext = true;
+        continue;
+      }
+      if (t.length > 0 && breakNext) {
+        column = m.start;
+        found = true;
+        if (!keepAnchor) {
+          anchorBlock = block;
+          anchorColumn = column;
         }
-        if (breakNext) {
-          column = m.start;
-          found = true;
-          if (!keepAnchor) {
-            anchorBlock = block;
-            anchorColumn = column;
-          }
-          break;
-        }
+        break;
       }
     }
     if (!found) moveCursorToEndOfLine(keepAnchor: keepAnchor);
@@ -350,16 +350,16 @@ class Cursor {
     for (final m in matches) {
       var g = m.groups([0]);
       String t = g[0] ?? '';
-      if (t.length > 0) {
-        if (column >= m.start && column < m.start + t.length && column != lastColumn) {
-          column = lastColumn;
-          found = true;
-          if (!keepAnchor) {
-            anchorBlock = block;
-            anchorColumn = column;
-          }
-          break;
+      if (m.start >= column && column > lastColumn) {
+        column = lastColumn;
+        found = true;
+        if (!keepAnchor) {
+          anchorBlock = block;
+          anchorColumn = column;
         }
+        break;
+      }
+      if (t.length > 0) {
         lastColumn = m.start;
       }
     }
@@ -407,7 +407,7 @@ class Cursor {
     String left = l.substring(0, column);
     String right = l.substring(column + numberOfCharacters);
     block?.text = left + right;
-    block?.makeDirty();
+    block?.makeDirty(highlight: true);
     advanceBlockCursors(-numberOfCharacters);
   }
 
@@ -415,7 +415,6 @@ class Cursor {
     deleteSelectedText();
     int line = block?.line ?? 0;
     String l = block?.text ?? '';
-
     if (column >= l.length) {
       column = l.length;
     }
@@ -425,7 +424,7 @@ class Cursor {
 
     // handle new line
     block?.text = left;
-    block?.makeDirty();
+    block?.makeDirty(highlight: true);
     Block? newBlock = document?.addBlockAtLine(line + 1);
     newBlock?.text = right;
     moveCursorDown();
@@ -444,7 +443,7 @@ class Cursor {
     String right = l.substring(column);
 
     block?.text = left + text + right;
-    block?.makeDirty();
+    block?.makeDirty(highlight: true);
     moveCursorRight(count: text.length);
     advanceBlockCursors(text.length);
   }

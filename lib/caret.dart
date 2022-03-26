@@ -44,3 +44,22 @@ class AnimatedCaret extends StatelessWidget {
         color: (!focus.hasFocus || !pulse.show) ? null : color);
   }
 }
+
+class BracketMatch extends StatelessWidget {
+  BracketMatch(
+      {this.width = 0, this.height = 0, Color this.color = Colors.yellow});
+
+  double width = 0;
+  double height = 0;
+  Color color = Colors.yellow;
+
+  @override
+  Widget build(BuildContext context) {
+    FocusNode focus = Focus.of(context);
+    return Container(
+      height: height,
+      width: width,
+      decoration: BoxDecoration(border: Border.all(color: color)),
+    );
+  }
+}

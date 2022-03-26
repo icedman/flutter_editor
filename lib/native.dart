@@ -32,12 +32,8 @@ class TextSpanStyle extends Struct {
   external int underline;
   @Int8()
   external int strike;
-  @Int8()
-  external int tab;
-  @Int8()
-  external int comment;
-  @Int8()
-  external int string;
+  @Int32()
+  external int flags;
 }
 
 class FFIBridge {
@@ -124,21 +120,15 @@ class FFIBridge {
   }
 
   // re-use pointers
-  static Pointer<Uint8> result = malloc<Uint8>(32);
-  static int resultLength = 32;
-
+  static Pointer<Uint8> result = malloc<Uint8>(1024);
   static Pointer<TextSpanStyle> runHighlighter(String text, int lang, int theme,
       int document, int block, int prev, int next) {
-    final units = utf8.encode(text);
-    int l = units.length + 1;
-
-    if (l > resultLength) {
-      calloc.free(result);
-
-      resultLength = resultLength + 32;
-      result = malloc<Uint8>(resultLength);
+    if (text.length > 1024 - 32) {
+      return _runHighlighter(text, lang, theme, document, block, prev, next);
     }
 
+    final units = utf8.encode(text);
+    int l = units.length + 1;
     final Uint8List nativeString = result.asTypedList(l);
     nativeString.setAll(0, units);
     nativeString[units.length] = 0;
@@ -146,6 +136,15 @@ class FFIBridge {
     Pointer<TextSpanStyle> res = run_highlighter(
         result.cast<Utf8>(), lang, theme, document, block, prev, next);
 
+    return res;
+  }
+
+  static Pointer<TextSpanStyle> _runHighlighter(String text, int lang,
+      int theme, int document, int block, int prev, int next) {
+    Pointer<Utf8> _t = text.toNativeUtf8();
+    Pointer<TextSpanStyle> res =
+        run_highlighter(_t, lang, theme, document, block, prev, next);
+    calloc.free(_t);
     return res;
   }
 }

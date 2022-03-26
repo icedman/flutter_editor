@@ -26,7 +26,15 @@
   cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
 
 #define MAX_STYLED_SPANS 512
-#define MAX_BUFFER_LENGTH (1024*4)
+#define MAX_BUFFER_LENGTH (1024 * 4)
+
+#define SCOPE_COMMENT 1 << 1
+#define SCOPE_COMMENT_BLOCK 1 << 2
+#define SCOPE_STRING 1 << 3
+#define SCOPE_BRACKET 1 << 4
+#define SCOPE_TAG 1 << 5
+#define SCOPE_BEGIN 1 << 6
+#define SCOPE_END 1 << 7
 
 struct theme_color_t {
   int8_t r;
@@ -63,9 +71,7 @@ struct textstyle_t {
   bool italic;
   bool underline;
   bool strike;
-  bool tab;
-  bool comment;
-  bool string;
+  int32_t flags;
 };
 
 struct rgba_t {
@@ -92,7 +98,7 @@ inline bool color_is_set(rgba_t clr) {
 
 inline textstyle_t construct_style(std::vector<span_info_t> &spans, int index) {
   textstyle_t res = {index, 1, 0,     0,     0,     0,     0,
-                     0,     0, false, false, false, false, false, false, false};
+                     0,     0, false, false, false, false, 0};
 
   for (auto span : spans) {
     if (index >= span.start && index < span.start + span.length) {
@@ -102,8 +108,28 @@ inline textstyle_t construct_style(std::vector<span_info_t> &spans, int index) {
         res.b = span.fg.b;
       }
       res.italic = res.italic || span.italic;
-      res.comment = span.scope.find("comment.block") == 0;
-      res.string = span.scope.find("string.quoted") == 0;
+
+      if (span.scope.find("comment.block") == 0) {
+        res.flags = res.flags | SCOPE_COMMENT_BLOCK;
+      }
+      if (span.scope.find("string.quoted") == 0) {
+        res.flags = res.flags | SCOPE_STRING;
+      }
+
+      if (index == span.start) {
+        if (span.scope.find(".bracket") > 0) {
+          res.flags = res.flags | SCOPE_BRACKET;
+        }
+        if (span.scope.find(".tag") > 0) {
+          res.flags = res.flags | SCOPE_TAG;
+        }
+        if (span.scope.find(".begin") > 0) {
+          res.flags = res.flags | SCOPE_BEGIN;
+        }
+        if (span.scope.find(".end") > 0) {
+          res.flags = res.flags | SCOPE_END;
+        }
+      }
     }
   }
   return res;
@@ -114,7 +140,7 @@ inline bool textstyles_equal(textstyle_t &first, textstyle_t &second) {
          first.r == second.r && first.g == second.g && first.b == second.b &&
          first.bg_r == second.bg_r && first.bg_g == second.bg_g &&
          first.bg_b == second.bg_b && first.caret == second.caret &&
-         !first.tab && !second.tab && first.comment == second.comment && first.string == second.string;
+         first.flags == second.flags;
 }
 
 static extension_list extensions;
@@ -273,24 +299,12 @@ void dump_tokens(std::map<size_t, scope::scope_t> &scopes) {
 std::map<size_t, parse::stack_ptr> parser_states;
 std::map<size_t, std::string> block_texts;
 
-enum block_state_e {
-  BLOCK_STATE_UNKNOWN,
-  BLOCK_STATE_COMMENT,
-  BLOCK_STATE_STRING
-};
-
 class Block {
 public:
-  Block()
-      : blockId(0),
-      parser_state(NULL),
-      state(BLOCK_STATE_UNKNOWN),
-      nextBlockState(BLOCK_STATE_UNKNOWN) {}
+  Block() : blockId(0), parser_state(NULL) {}
 
   int blockId;
   parse::stack_ptr parser_state;
-  block_state_e state;
-  block_state_e nextBlockState;
 };
 
 class Document {
@@ -335,11 +349,14 @@ void set_block(int blockId, char *text) {
 }
 
 EXPORT
-textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document, int block,
-                             int previous_block, int next_block) {
+textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
+                             int block, int previous_block, int next_block) {
   // end marker
   textstyle_buffer[0].start = 0;
   textstyle_buffer[0].length = 0;
+  // return textstyle_buffer;
+
+  printf("hl %d %s\n", block, _text);
 
   theme_ptr theme = themes[themeId];
   language_info_ptr lang = languages[langId];
@@ -365,7 +382,9 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
 
   parse::stack_ptr parser_state;
   if (documents[document]->blocks[previous_block] != NULL) {
-    parser_state = documents[document]->blocks[previous_block]->parser_state; // parser_states[previous_block];
+    parser_state = documents[document]
+                       ->blocks[previous_block]
+                       ->parser_state; // parser_states[previous_block];
   }
 
   bool firstLine = false;
@@ -466,7 +485,7 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
 }
 
 EXPORT
-char* language_definition(int langId) {
+char *language_definition(int langId) {
   language_info_ptr lang = languages[langId];
 
   std::ostringstream ss;

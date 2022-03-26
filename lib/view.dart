@@ -14,9 +14,10 @@ import 'dart:math';
 import 'package:editor/caret.dart';
 import 'package:editor/timer.dart';
 import 'package:editor/input.dart';
+import 'package:editor/cursor.dart';
 import 'package:editor/document.dart';
-import 'package:editor/theme.dart';
 import 'package:editor/native.dart';
+import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 
 class ViewLine extends StatelessWidget {
@@ -53,22 +54,34 @@ class ViewLine extends StatelessWidget {
     List<InlineSpan> spans = block?.spans ?? [];
     bool softWrap = doc.softWrap;
 
-    // render carets
-    List<Widget> carets = [];
-    if ((block?.carets ?? []).length > 0) {
-      RenderObject? obj = context.findRenderObject();
-      Size size = Size(0, 0);
-      if (obj != null) {
-        RenderBox? box = obj as RenderBox;
-        size = box.size;
-      }
-      if (size.width > 0 && spans.length > 0 && spans[0] is TextSpan) {
+    Size extents = Size(0, 0);
+    Size size = Size(0, 0);
+    RenderObject? obj = context.findRenderObject();
+    if (obj != null) {
+      RenderBox? box = obj as RenderBox;
+      size = box.size;
+    }
+
+    TextPainter? textPainter;
+    TextPainter? painter() {
+      if (size.width > 0 && !spans.isEmpty && spans[0] is TextSpan) {
         TextSpan ts = spans[0] as TextSpan;
-        Size sz = getTextExtents('|', ts.style ?? TextStyle());
-        final TextPainter textPainter = TextPainter(
+        extents = getTextExtents('|', ts.style ?? TextStyle());
+        return TextPainter(
             text: TextSpan(text: block?.text ?? '', style: ts.style),
             textDirection: TextDirection.ltr)
           ..layout(minWidth: 0, maxWidth: size.width - gutterWidth);
+      }
+      return null;
+    }
+
+    // render carets
+    List<Widget> carets = [];
+    if (!(block?.carets ?? []).isEmpty) {
+      if (textPainter == null) {
+        textPainter = painter();
+      }
+      if (textPainter != null) {
         for (final col in block?.carets ?? []) {
           Offset offsetForCaret = textPainter.getOffsetForCaret(
               TextPosition(offset: col.position), Offset(0, 0) & Size(0, 0));
@@ -76,7 +89,28 @@ class ViewLine extends StatelessWidget {
               left: gutterWidth + offsetForCaret.dx,
               top: offsetForCaret.dy,
               child: AnimatedCaret(
-                  width: 2, height: sz.height, color: col.color)));
+                  width: 2, height: extents.height, color: col.color)));
+        }
+      }
+    }
+
+    List<Cursor> extras = [...doc.doc.extraCursors, ...doc.doc.sectionCursors];
+    if (!extras.isEmpty) {
+      for (final e in extras) {
+        if (e.block != block) continue;
+        if (textPainter == null) {
+          textPainter = painter();
+        }
+        if (textPainter != null) {
+          Offset offsetForCaret = textPainter.getOffsetForCaret(
+              TextPosition(offset: e.column), Offset(0, 0) & Size(0, 0));
+          carets.add(Positioned(
+              left: gutterWidth + offsetForCaret.dx,
+              top: offsetForCaret.dy,
+              child: BracketMatch(
+                  width: extents.width,
+                  height: extents.height,
+                  color: e.color)));
         }
       }
     }
@@ -254,6 +288,7 @@ class _View extends State<View> {
 
   @override
   Widget build(BuildContext context) {
+    HLTheme theme = Provider.of<HLTheme>(context);
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
 
     final TextStyle style = TextStyle(
@@ -304,10 +339,6 @@ class _View extends State<View> {
 
     int docSize = doc.doc.blocks.length;
 
-    Widget _provider(BlockData? data, Widget? child) {
-      return child ?? Container();
-    }
-
     if ((!largeDoc && softWrap) || !softWrap) {
       return ListView.builder(
           controller: scroller,
@@ -316,14 +347,12 @@ class _View extends State<View> {
           itemBuilder: (BuildContext context, int line) {
             Block block = doc.doc.blockAtLine(line) ?? Block('');
             block.line = line;
-            return _provider(
-                block.data,
-                ViewLine(
-                    block: block,
-                    width: size.width - gutterWidth,
-                    height: fontHeight,
-                    gutterWidth: gutterWidth,
-                    gutterStyle: gutterStyle));
+            return ViewLine(
+                block: block,
+                width: size.width - gutterWidth,
+                height: fontHeight,
+                gutterWidth: gutterWidth,
+                gutterStyle: gutterStyle);
           });
     }
 

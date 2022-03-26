@@ -18,7 +18,20 @@ class BlockCaret {
   Color color = Colors.white;
 }
 
-class BlockData extends ChangeNotifier {}
+class BlockBracket {
+  BlockBracket(
+      {Block? this.block,
+      int this.position = 0,
+      String this.bracket = '',
+      bool this.open = true});
+  int position = 0;
+  Block? block;
+  String bracket = '';
+  bool open = true;
+  String toString() {
+    return '$position: $bracket';
+  }
+}
 
 class Block {
   Block(String this.text, {int this.line = 0, Document? this.document}) {
@@ -33,24 +46,26 @@ class Block {
   Block? previous;
   Block? next;
 
-  BlockData data = BlockData();
-
   bool waiting = false;
 
   List<LineDecoration> decors = [];
   List<InlineSpan>? spans;
   List<BlockCaret> carets = [];
-  int lineCount = 0;
+  List<BlockBracket> brackets = [];
 
   Mode? mode;
   String className = '';
   String prevBlockClass = '';
 
-  void makeDirty() {
-    prevBlockClass = '';
+  void makeDirty({bool highlight = false}) {
     mode = null;
     spans = null;
     carets = [];
+    if (highlight) {
+      prevBlockClass = '';
+      decors = [];
+    }
+    // brackets = [];
   }
 }
 
@@ -58,7 +73,9 @@ class Document {
   String docPath = '';
   List<Block> blocks = [];
   List<Cursor> cursors = [];
-  List<Cursor> folds = [];
+
+  List<Cursor> extraCursors = [];
+  List<Cursor> sectionCursors = [];
 
   int documentId = 0;
 
@@ -342,6 +359,72 @@ class Document {
       }
     }
     return false;
+  }
+
+  BlockBracket brackedUnderCursor(Cursor cursor, {bool openOnly: false}) {
+    BlockBracket lastBracket = BlockBracket();
+    List<BlockBracket> brackets = cursor.block?.brackets ?? [];
+    for (final b in brackets) {
+      if (openOnly && !b.open) continue;
+      if (b.position > cursor.column) {
+        return lastBracket;
+      }
+      lastBracket = b;
+    }
+    return lastBracket;
+  }
+
+  BlockBracket findUnclosedBracket(Cursor cursor) {
+    List<BlockBracket> brackets = cursor.block?.brackets ?? [];
+    List<BlockBracket> stack = [];
+    for (final b in brackets) {
+      if (b.position < cursor.column) continue;
+      if (b.open) {
+        stack.add(b);
+      } else {
+        if (stack.length > 0) {
+          stack.removeLast();
+        }
+      }
+    }
+
+    if (stack.length == 1) {
+      return stack[0];
+    }
+    return BlockBracket();
+  }
+
+  List<BlockBracket> findBracketPair(BlockBracket b) {
+    Cursor cur = cursor().copy();
+    cur.block = b.block;
+    cur.column = b.position;
+    List<BlockBracket> res = [b];
+    List<BlockBracket> stack = [];
+
+    bool found = false;
+    for (int l = 0; l < 200 && !found; l++) {
+      for (final bc in cur.block?.brackets ?? []) {
+        if (bc.position <= cur.column && l == 0) continue;
+        if (!bc.open) {
+          if (stack.length > 0) {
+            stack.removeLast();
+            continue;
+          }
+          res.add(bc);
+          found = true;
+          break;
+        } else {
+          if (bc.block == b.block && bc.position == b.position) {
+          } else {
+            stack.add(bc);
+          }
+        }
+      }
+      cur.moveCursorDown();
+      cur.moveCursorToStartOfLine();
+      if (cur.block == b.block) break;
+    }
+    return res;
   }
 }
 
