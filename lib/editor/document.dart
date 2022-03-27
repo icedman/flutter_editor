@@ -229,8 +229,13 @@ class Document {
   }
 
   void updateLineNumbers(int index) {
+    Block? prev;
     for (int i = index; i < blocks.length; i++) {
       blocks[i].line = i;
+      if (prev != null) {
+        prev.next = blocks[i];
+        blocks[i].previous = prev;
+      }
     }
   }
 
@@ -556,6 +561,9 @@ class DocumentProvider extends ChangeNotifier {
   bool softWrap = true;
   bool showGutters = true;
   bool showMinimap = true;
+
+  Offset cursorOffset = const Offset(0, 0);
+  Offset anchorOffset = const Offset(0, 0);
 
   Future<bool> openFile(String path) async {
     bool res = await doc.openFile(path);

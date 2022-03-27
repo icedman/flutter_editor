@@ -11,7 +11,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:editor/editor/caret.dart';
+import 'package:editor/editor/decorations.dart';
 import 'package:editor/editor/cursor.dart';
 import 'package:editor/editor/document.dart';
 import 'package:editor/services/timer.dart';
@@ -43,7 +43,6 @@ class ViewLine extends StatelessWidget {
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
     Highlighter hl = Provider.of<Highlighter>(context);
 
-    // String text = block?.text ?? '';
     int lineNumber = block?.line ?? 0;
 
     Block b = block ?? Block('', document: doc.doc);
@@ -61,12 +60,14 @@ class ViewLine extends StatelessWidget {
     List<InlineSpan> spans = block?.spans ?? [];
     bool softWrap = doc.softWrap;
 
+    Offset pos = const Offset(0, 0);
     Size extents = Size(0, 0);
     Size size = Size(0, 0);
     RenderObject? obj = context.findRenderObject();
     if (obj != null) {
       RenderBox? box = obj as RenderBox;
       size = box.size;
+      pos = box.localToGlobal(pos);
     }
 
     TextPainter? textPainter;
@@ -88,13 +89,39 @@ class ViewLine extends StatelessWidget {
       if (textPainter == null) {
         textPainter = painter();
       }
+
+      // position selection thumbs
+      Cursor cur = doc.doc.cursor();
+      if (textPainter != null && cur.hasSelection()) {
+        if (cur.block == block) {
+          Offset offsetForCaret = textPainter.getOffsetForCaret(
+              TextPosition(offset: cur.column), Offset(0, 0) & Size(0, 0));
+          double left = gutterWidth + offsetForCaret.dx;
+          double top = offsetForCaret.dy;
+
+          doc.cursorOffset = Offset(pos.dx + left, pos.dy + top);
+        }
+        if (cur.anchorBlock == block) {
+          Offset offsetForCaret = textPainter.getOffsetForCaret(
+              TextPosition(offset: cur.anchorColumn),
+              Offset(0, 0) & Size(0, 0));
+          double left = gutterWidth + offsetForCaret.dx;
+          double top = offsetForCaret.dy;
+
+          doc.anchorOffset = Offset(pos.dx + left, pos.dy + top);
+        }
+      }
+
       if (textPainter != null) {
         for (final col in block?.carets ?? []) {
           Offset offsetForCaret = textPainter.getOffsetForCaret(
               TextPosition(offset: col.position), Offset(0, 0) & Size(0, 0));
+
+          double left = gutterWidth + offsetForCaret.dx;
+          double top = offsetForCaret.dy;
           carets.add(Positioned(
-              left: gutterWidth + offsetForCaret.dx,
-              top: offsetForCaret.dy,
+              left: left,
+              top: top,
               child: AnimatedCaret(
                   width: 2, height: extents.height, color: col.color)));
         }

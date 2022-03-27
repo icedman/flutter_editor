@@ -76,7 +76,8 @@ class LineDecoration {
 
 class CustomWidgetSpan extends WidgetSpan {
   int line = 0;
-  CustomWidgetSpan({required Widget child, this.line = 0})
+  Block? block;
+  CustomWidgetSpan({required Widget child, this.line = 0, this.block})
       : super(child: child);
 }
 
@@ -216,8 +217,8 @@ class Highlighter {
 
     // res.add(TextSpan(text: '-- ${block?.previous?.line} [${block?.line}] ${block?.next?.line}', style: defaultStyle));
 
-    res.add(
-        CustomWidgetSpan(child: Container(height: 1, width: 1), line: line));
+    res.add(CustomWidgetSpan(
+        child: Container(height: 1, width: 1), line: line, block: block));
 
     if (cache) {
       block?.spans = res;

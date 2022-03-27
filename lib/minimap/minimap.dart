@@ -5,7 +5,7 @@ import 'package:editor/editor/document.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 
 int minimapLineSpacing = 3;
-int minimapSkipX = 1;
+int minimapSkipX = 2;
 double minimapScaleX = 0.5;
 
 class MapPainter extends CustomPainter {
@@ -15,7 +15,11 @@ class MapPainter extends CustomPainter {
       int this.start = 0,
       int this.perPage = 10,
       int this.hash = 0})
-      : super();
+      : super() {
+    _paint = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 2;
+  }
 
   int hash = -1;
   int start = 0;
@@ -23,15 +27,13 @@ class MapPainter extends CustomPainter {
   Document? doc;
   Highlighter? hl;
 
+  late Paint _paint;
+
   @override
   void paint(Canvas canvas, Size size) {
     canvas.save();
 
     canvas.scale(minimapScaleX, 1);
-
-    var paint = Paint()
-      ..color = Colors.white
-      ..strokeWidth = 2;
 
     Block? block = doc?.blockAtLine(start * perPage) ?? Block('');
     for (int l = 0; l < perPage; l++) {
@@ -44,8 +46,6 @@ class MapPainter extends CustomPainter {
         spans = hl?.run(block, lineNumber, doc ?? Document()) ?? [];
       }
 
-      bool inSelection = spans.length > 0 && (block?.spans ?? []).length == 0;
-
       for (final span in spans) {
         if (!(span is TextSpan)) break;
         int l = (span.text ?? '').length;
@@ -53,15 +53,12 @@ class MapPainter extends CustomPainter {
         for (int i = 0; i < l; i += minimapSkipX) {
           if (span.text?[i] == ' ') continue;
           Offset startingPoint = Offset((j + i), y);
-          Offset endingPoint = Offset((j + i + minimapSkipX), y);
+          Offset endingPoint = Offset((j + i + minimapSkipX / 1.5), y);
           Color clr = span.style?.color ?? Colors.yellow;
-          paint.color = clr;
-          if (inSelection) {
-            paint.color = clr.withOpacity(0.5);
-          }
-          canvas.drawLine(startingPoint, endingPoint, paint);
-          j++;
+          _paint.color = clr;
+          canvas.drawLine(startingPoint, endingPoint, _paint);
         }
+        j += l;
       }
 
       block = block?.next;
@@ -137,24 +134,31 @@ class _Minimap extends State<Minimap> {
   Widget build(BuildContext context) {
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
 
+    if (!doc.showMinimap) {
+      return Container();
+    }
+
     int perPage = 100;
     int pages = doc.doc.blocks.length ~/ perPage;
     if (pages <= 0) pages = 1;
 
-    return ListView.builder(
-        controller: scroller,
-        itemCount: pages,
-        itemExtent: (perPage * minimapLineSpacing).toDouble(),
-        itemBuilder: (context, index) {
-          int hash = 0;
-          Block? block = doc.doc.blockAtLine((index * perPage)) ?? Block('');
-          for (int i = 0; i < perPage; i++) {
-            hash += ((block?.text ?? '').length); // improve
-            hash += ((block?.spans ?? []).length) << 4;
-            block = block?.next;
-            if (block == null) break;
-          }
-          return MinimapPage(start: index, perPage: perPage, hash: hash);
-        });
+    return Container(
+        width: 80,
+        child: ListView.builder(
+            controller: scroller,
+            itemCount: pages,
+            itemExtent: (perPage * minimapLineSpacing).toDouble(),
+            itemBuilder: (context, index) {
+              int hash = 0;
+              Block? block =
+                  doc.doc.blockAtLine((index * perPage)) ?? Block('');
+              for (int i = 0; i < perPage; i++) {
+                hash += ((block?.text ?? '').length); // improve
+                hash += ((block?.spans ?? []).length) << 4;
+                block = block?.next;
+                if (block == null) break;
+              }
+              return MinimapPage(start: index, perPage: perPage, hash: hash);
+            }));
   }
 }

@@ -92,6 +92,8 @@ Offset screenToCursor(RenderObject? obj, Offset pos) {
 
   if (children.length > 0 && children.last is CustomWidgetSpan) {
     line = (children.last as CustomWidgetSpan).line;
+    Block? block = (children.last as CustomWidgetSpan).block;
+    line = block?.line ?? line;
   }
 
   if (!found) {

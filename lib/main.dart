@@ -57,6 +57,9 @@ class App extends StatelessWidget {
           Expanded(
               child: Padding(
                   padding: EdgeInsets.all(0), child: Editor(path: path))),
+          // Expanded(
+          //     child: Padding(
+          //         padding: EdgeInsets.all(0), child: Editor(path: path))),
         ])));
   }
 }

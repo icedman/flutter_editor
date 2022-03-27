@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import 'package:editor/editor/caret.dart';
+import 'package:editor/editor/decorations.dart';
 import 'package:editor/editor/cursor.dart';
 import 'package:editor/editor/document.dart';
 import 'package:editor/editor/view.dart';
@@ -319,22 +319,26 @@ class _Editor extends State<Editor> {
         d.moveCursorToEndOfDocument(keepAnchor: true);
         doScroll = true;
         break;
-      case 'settings-toggle-wrap':
-        doc.softWrap = !doc.softWrap;
-        doScroll = true;
-        break;
       case 'tab':
         d.insertText('    ');
         doScroll = true;
         break;
 
+      case 'settings-toggle-wrap':
+        doc.softWrap = !doc.softWrap;
+        // doScroll = true;
+        doc.touch();
+        break;
+
       case 'settings-toggle-gutter':
         doc.showGutters = !doc.showGutters;
-        doScroll = true;
+        // doScroll = true;
+        doc.touch();
         break;
       case 'settings-toggle-minimap':
         doc.showMinimap = !doc.showMinimap;
-        doScroll = true;
+        // doScroll = true;
+        doc.touch();
         break;
 
       case 'copy':
@@ -375,7 +379,7 @@ class _Editor extends State<Editor> {
       case 'select_all':
         d.moveCursorToStartOfDocument();
         d.moveCursorToEndOfDocument(keepAnchor: true);
-        doScroll = true;
+        doc.touch();
         break;
       case 'select_word':
         {
@@ -628,6 +632,7 @@ class _Editor extends State<Editor> {
               child: Row(children: [
             Expanded(
               child: InputListener(
+                  // child: Stack(children: [View(), SelectionThumb(), SelectionThumb(anchor: true)]),
                   child: View(),
                   onKeyDown: onKeyDown,
                   onKeyUp: onKeyUp,
@@ -636,7 +641,7 @@ class _Editor extends State<Editor> {
                   onPanUpdate: onPanUpdate,
                   showKeyboard: showKeyboard),
             ),
-            Container(width: 80, child: Minimap())
+            Minimap()
           ])),
 
           if (Platform.isAndroid) ...[
