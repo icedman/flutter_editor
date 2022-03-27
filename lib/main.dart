@@ -29,7 +29,7 @@ void main(List<String> args) async {
   FFIBridge.initialize(extPath);
 
   return runApp(MultiProvider(providers: [
-    ChangeNotifierProvider(create: (context) => HLTheme()),
+    ChangeNotifierProvider(create: (context) => HLTheme.instance()),
   ], child: App(path: path)));
 }
 

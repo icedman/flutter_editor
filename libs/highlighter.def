@@ -8,3 +8,5 @@ EXPORTS
     destroy_document
     add_block
     remove_block
+    theme_color
+    theme_info

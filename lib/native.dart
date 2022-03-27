@@ -5,6 +5,36 @@ import 'dart:typed_data';
 import 'dart:io' show Platform;
 import 'package:ffi/ffi.dart';
 
+class ThemeColor extends Struct {
+  @Int8()
+  external int r;
+  @Int8()
+  external int g;
+  @Int8()
+  external int b;
+}
+
+class ThemeInfo extends Struct {
+  @Int8()
+  external int r;
+  @Int8()
+  external int g;
+  @Int8()
+  external int b;
+  @Int8()
+  external int bg_r;
+  @Int8()
+  external int bg_g;
+  @Int8()
+  external int bg_b;
+  @Int8()
+  external int sel_r;
+  @Int8()
+  external int sel_g;
+  @Int8()
+  external int sel_b;
+}
+
 class TextSpanStyle extends Struct {
   @Int32()
   external int start;
@@ -47,6 +77,8 @@ class FFIBridge {
   static late Function add_block;
   static late Function remove_block;
   static late Function language_definition;
+  static late Function theme_color;
+  static late Function theme_info;
 
   static void load() {
     DynamicLibrary nativeEditorApiLib = Platform.isMacOS || Platform.isIOS
@@ -61,6 +93,16 @@ class FFIBridge {
     final _load_theme = nativeEditorApiLib
         .lookup<NativeFunction<Int32 Function(Pointer<Utf8>)>>('load_theme');
     load_theme = _load_theme.asFunction<int Function(Pointer<Utf8>)>();
+
+    final _thm_color = nativeEditorApiLib
+    .lookup<NativeFunction<ThemeColor Function(Pointer<Utf8>)>>(
+        'theme_color');
+    theme_color =
+        _thm_color.asFunction<ThemeColor Function(Pointer<Utf8>)>();
+
+    final _theme_info = nativeEditorApiLib
+    .lookup<NativeFunction<ThemeInfo Function()>>('theme_info');
+    theme_info = _theme_info.asFunction<ThemeInfo Function()>();
 
     final _load_language = nativeEditorApiLib
         .lookup<NativeFunction<Int32 Function(Pointer<Utf8>)>>('load_language');
@@ -147,6 +189,13 @@ class FFIBridge {
     Pointer<TextSpanStyle> res =
         run_highlighter(_t, lang, theme, document, block, prev, next);
     calloc.free(_t);
+    return res;
+  }
+
+  static ThemeColor themeColor(String scope) {
+    final _scope = scope.toNativeUtf8();
+    ThemeColor res = theme_color(_scope);
+    calloc.free(_scope);
     return res;
   }
 }

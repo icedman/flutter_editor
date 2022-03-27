@@ -199,14 +199,14 @@ class Highlighter {
     }
 
     if (block?.isFolded() ?? false) {
-      Paint paint = Paint()
-        ..color = theme.selection
-        ..style = PaintingStyle.stroke
-        // ..strokeCap = StrokeCap.round
-        ..strokeJoin = StrokeJoin.round
-        ..strokeWidth = 2.0;
+      // Paint paint = Paint()
+      //   ..color = theme.comment
+      //   ..style = PaintingStyle.stroke
+      //   // ..strokeCap = StrokeCap.round
+      //   ..strokeJoin = StrokeJoin.round
+      //   ..strokeWidth = 2.0;
       TextStyle moreStyle = defaultStyle.copyWith(
-          fontSize: theme.fontSize * 0.8, background: paint);
+          fontSize: theme.fontSize * 0.8, color: theme.string, backgroundColor: theme.selection);
       res.add(TextSpan(text: '...', style: moreStyle));
     }
 

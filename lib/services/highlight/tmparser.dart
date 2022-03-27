@@ -26,10 +26,37 @@ class TMParser extends HLEngine {
   Map<int, HLLanguage> languages = {};
 
   TMParser() {
-    themeId = FFIBridge.loadTheme(Platform.isAndroid
+    loadTheme(Platform.isAndroid
         ? '/sdcard/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json'
         : '/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json');
+
     loadLanguage("test.c").langId;
+  }
+
+  void loadTheme(String path) {
+    themeId = FFIBridge.loadTheme(path);
+
+    // modify global theme instance
+    HLTheme theme = HLTheme.instance();
+
+    ThemeInfo info = FFIBridge.theme_info();
+    theme.foreground = Color.fromRGBO(info.r, info.g, info.b, 1);
+    theme.background = Color.fromRGBO(info.bg_r, info.bg_g, info.bg_b, 1);
+    theme.selection =
+        Color.fromRGBO(info.sel_r, info.sel_g, info.sel_b, 1);
+
+    ThemeColor clr = FFIBridge.themeColor('comment');
+    theme.comment = Color.fromRGBO(clr.r, clr.g, clr.b, 1);
+    clr = FFIBridge.themeColor('entity.name.function');
+    theme.function = Color.fromRGBO(clr.r, clr.g, clr.b, 1);
+    clr = FFIBridge.themeColor('keyword');
+    theme.keyword = Color.fromRGBO(clr.r, clr.g, clr.b, 1);
+    clr = FFIBridge.themeColor('string');
+    theme.string = Color.fromRGBO(clr.r, clr.g, clr.b, 1);
+
+    Future.delayed(const Duration(milliseconds: 50), () {
+      theme.notifyListeners();
+    });
   }
 
   List<LineDecoration> run(Block? block, int line, Document document) {

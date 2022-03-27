@@ -431,7 +431,7 @@ class Cursor {
       moveCursorToEndOfLine();
 
       if (block?.isFolded() ?? true) {
-        block?.document?.unfold(block);
+        document?.unfold(block);
         return;
       }
 
@@ -448,7 +448,7 @@ class Cursor {
 
   void insertNewLine() {
     if (block?.isFolded() ?? true) {
-      block?.document?.unfold(block);
+      document?.unfold(block);
       return;
     }
     deleteSelectedText();

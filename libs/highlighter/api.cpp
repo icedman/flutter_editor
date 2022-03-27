@@ -206,7 +206,7 @@ theme_color_t theme_color_from_scope_fg_bg(char *scope, bool fore = true) {
 }
 
 EXPORT
-theme_color_t theme_color_from_scope(char *scope) {
+theme_color_t theme_color(char *scope) {
   return theme_color_from_scope_fg_bg(scope);
 }
 
