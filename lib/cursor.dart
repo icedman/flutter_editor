@@ -247,9 +247,12 @@ class Cursor {
 
     int blockLine = cur.block?.line ?? 0;
     String l = cur.block?.text ?? '';
-    String left = l.substring(0, cur.column);
+    String left = l;
+    if (l.length > cur.column) {
+      left = l.substring(0, cur.column);
+    }
     String al = cur.anchorBlock?.text ?? '';
-    String right = ''; //
+    String right = ''; 
     if (al.length > cur.anchorColumn) {
       right = al.substring(cur.anchorColumn);
     }
@@ -260,6 +263,7 @@ class Cursor {
       document?.removeBlockAtLine(blockLine + 1);
     }
     cur.block?.text = left + right;
+    cur.column = left.length;
     cur.clearSelection();
     cur.block?.makeDirty(highlight: true);
     copyFrom(cur);
