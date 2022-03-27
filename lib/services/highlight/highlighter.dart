@@ -117,12 +117,7 @@ class Highlighter {
     String prevText = '';
     for (int i = 0; i < text.length; i++) {
       String ch = text[i];
-      TextStyle style = defaultStyle.copyWith();
-
-      if (ch == '\t') {
-        ch = ' ';
-        // todo!
-      }
+      TextStyle style = defaultStyle.copyWith(letterSpacing: 0);
 
       // decorate
       for (final d in decors) {
@@ -179,6 +174,10 @@ class Highlighter {
       if (inCaret) {
         block?.carets
             .add(BlockCaret(position: i, color: style.color ?? Colors.white));
+      }
+
+      if (ch == '\t') {
+        ch = ' '; // todo!
       }
 
       if (res.length != 0 && !(res[res.length - 1] is WidgetSpan)) {
