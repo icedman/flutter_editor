@@ -10,6 +10,7 @@ import 'package:editor/document.dart';
 import 'package:editor/view.dart';
 import 'package:editor/input.dart';
 import 'package:editor/minimap.dart';
+import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 
 class Editor extends StatefulWidget {
@@ -518,6 +519,88 @@ class _Editor extends State<Editor> {
 
   @override
   Widget build(BuildContext context) {
+    HLTheme theme = Provider.of<HLTheme>(context);
+    double buttonSize = 16.0;
+    Color clr = theme.foreground;
+    Color hiColor = theme.selection;
+
+    List<Widget> buttons = <Widget>[
+      IconButton(
+          icon: Icon(showKeyboard ? Icons.keyboard_hide : Icons.keyboard,
+              size: buttonSize, color: clr),
+          onPressed: () {
+            setState(() {
+              showKeyboard = !showKeyboard;
+            });
+          }),
+      IconButton(
+          icon: Icon(Icons.undo, size: buttonSize, color: clr),
+          onPressed: () {
+            // mod.onToolbar?.call('undo');
+          }),
+      Container(
+          decoration: controlling ? BoxDecoration(color: hiColor) : null,
+          child: IconButton(
+              icon: Icon(Icons.south_west, size: buttonSize, color: clr),
+              onPressed: () {
+                setState(() {
+                  controlling = !controlling;
+                });
+              })),
+      Container(
+          decoration: shifting ? BoxDecoration(color: hiColor) : null,
+          child: IconButton(
+              icon: Icon(Icons.keyboard_capslock, size: buttonSize, color: clr),
+              onPressed: () {
+                // mod.onToolbar?.call('shift');
+              })),
+      IconButton(
+          icon: Icon(Icons.west, size: buttonSize, color: clr),
+          onPressed: () {
+            // mod.onToolbar?.call('left');
+          }),
+      IconButton(
+          icon: Icon(Icons.north, size: buttonSize, color: clr),
+          onPressed: () {
+            // mod.onToolbar?.call('up');
+          }),
+      IconButton(
+          icon: Icon(Icons.south, size: buttonSize, color: clr),
+          onPressed: () {
+            // mod.onToolbar?.call('down');
+          }),
+      IconButton(
+          icon: Icon(Icons.east, size: buttonSize, color: clr),
+          onPressed: () {
+            // mod.onToolbar?.call('right');
+          }),
+      IconButton(
+          icon: Icon(Icons.keyboard_tab, size: buttonSize, color: clr),
+          onPressed: () {
+            // mod.onToolbar?.call('tab');
+          }),
+      IconButton(
+          icon: Icon(Icons.highlight_alt, size: buttonSize, color: clr),
+          onPressed: () {
+            // mod.onToolbar?.call('sel');
+          }),
+      IconButton(
+          icon: Icon(Icons.copy, size: buttonSize, color: clr),
+          onPressed: () {
+            // mod.onToolbar?.call('copy');
+          }),
+      IconButton(
+          icon: Icon(Icons.cut, size: buttonSize, color: clr),
+          onPressed: () {
+            // mod.onToolbar?.call('cut');
+          }),
+      IconButton(
+          icon: Icon(Icons.paste, size: buttonSize, color: clr),
+          onPressed: () {
+            // mod.onToolbar?.call('paste');
+          }),
+    ];
+
     return MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (context) => doc),
@@ -537,22 +620,14 @@ class _Editor extends State<Editor> {
                   onPanUpdate: onPanUpdate,
                   showKeyboard: showKeyboard),
             ),
-            Container(width: 100, child: Minimap())
+            Container(width: 80, child: Minimap())
           ])),
 
           if (Platform.isAndroid) ...[
             Container(
-                child: Row(children: [
-              IconButton(
-                  icon: Icon(
-                      showKeyboard ? Icons.keyboard_hide : Icons.keyboard,
-                      color: Colors.white),
-                  onPressed: () {
-                    setState(() {
-                      showKeyboard = !showKeyboard;
-                    });
-                  }),
-            ]))
+                child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(children: buttons)))
           ], // toolbar
         ]));
   }

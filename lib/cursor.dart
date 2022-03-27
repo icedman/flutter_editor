@@ -148,7 +148,7 @@ class Cursor {
     block?.makeDirty();
   }
 
-  void moveCursorUp({int count = 1, bool keepAnchor = false}) {
+  void _moveCursorUp({int count = 1, bool keepAnchor = false}) {
     block?.makeDirty();
     block = block?.previous ?? block;
     if (!keepAnchor) {
@@ -158,7 +158,15 @@ class Cursor {
     block?.makeDirty();
   }
 
-  void moveCursorDown({int count = 1, bool keepAnchor = false}) {
+  void moveCursorUp({int count = 1, bool keepAnchor = false}) {
+    _moveCursorUp(count: count, keepAnchor: keepAnchor);
+    int idx = 0;
+    while ((block?.isHidden() ?? false) && idx++ < 1000) {
+      _moveCursorUp(count: count, keepAnchor: keepAnchor);
+    }
+  }
+
+  void _moveCursorDown({int count = 1, bool keepAnchor = false}) {
     block?.makeDirty();
     block = block?.next ?? block;
     if (!keepAnchor) {
@@ -166,6 +174,14 @@ class Cursor {
       anchorColumn = column;
     }
     block?.makeDirty();
+  }
+
+  void moveCursorDown({int count = 1, bool keepAnchor = false}) {
+    _moveCursorDown(count: count, keepAnchor: keepAnchor);
+    int idx = 0;
+    while ((block?.isHidden() ?? false) && idx++ < 1000) {
+      _moveCursorDown(count: count, keepAnchor: keepAnchor);
+    }
   }
 
   void moveCursorToStartOfLine({bool keepAnchor = false}) {
@@ -216,6 +232,11 @@ class Cursor {
 
     Cursor cur = normalized(inverse: true);
     List<Block> res = selectedBlocks();
+
+    for (final b in res) {
+      document?.unfold(b);
+    }
+
     if (res.length == 1) {
       cur.deleteText(numberOfCharacters: cur.anchorColumn - cur.column);
       cur.clearSelection();
@@ -228,7 +249,10 @@ class Cursor {
     String l = cur.block?.text ?? '';
     String left = l.substring(0, cur.column);
     String al = cur.anchorBlock?.text ?? '';
-    String right = al.substring(cur.anchorColumn);
+    String right = ''; //
+    if (al.length > cur.anchorColumn) {
+      right = al.substring(cur.anchorColumn);
+    }
 
     // print('${res.length}');
 
@@ -401,6 +425,12 @@ class Cursor {
     // handle join blocks
     if (column >= l.length) {
       moveCursorToEndOfLine();
+
+      if (block?.isFolded() ?? true) {
+        block?.document?.unfold(block);
+        return;
+      }
+
       mergeNextLine();
       return;
     }
@@ -413,6 +443,10 @@ class Cursor {
   }
 
   void insertNewLine() {
+    if (block?.isFolded() ?? true) {
+      block?.document?.unfold(block);
+      return;
+    }
     deleteSelectedText();
     int line = block?.line ?? 0;
     String l = block?.text ?? '';

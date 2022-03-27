@@ -57,9 +57,9 @@ class BracketMatch extends StatelessWidget {
   Widget build(BuildContext context) {
     FocusNode focus = Focus.of(context);
     return Container(
-      height: height,
-      width: width,
-      decoration: BoxDecoration(border: Border.all(color: color, width: 2.0)),
-    );
+        height: height,
+        width: width,
+        decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: color, width: 2.0))));
   }
 }

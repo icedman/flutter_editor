@@ -94,7 +94,7 @@ class ViewLine extends StatelessWidget {
       }
     }
 
-    List<Cursor> extras = [...doc.doc.extraCursors];
+    List<Cursor> extras = doc.doc.extraCursors;
     if (!extras.isEmpty) {
       for (final e in extras) {
         if (e.block != block) continue;
@@ -339,7 +339,7 @@ class _View extends State<View> {
 
     int docSize = doc.doc.computedSize();
 
-    if ((!largeDoc && softWrap) || !softWrap) {
+    if ((!largeDoc && softWrap)) {
       return ListView.builder(
           controller: scroller,
           itemCount: docSize,
@@ -347,6 +347,7 @@ class _View extends State<View> {
           itemBuilder: (BuildContext context, int line) {
             line = doc.doc.computedLine(line);
             Block block = doc.doc.blockAtLine(line) ?? Block('');
+            block.line = line;
             return ViewLine(
                 block: block,
                 width: size.width - gutterWidth,
@@ -379,6 +380,7 @@ class _View extends State<View> {
       }
       line = doc.doc.computedLine(line);
       Block block = doc.doc.blockAtLine(line) ?? Block('');
+      block.line = line;
 
       children.add(ViewLine(
           block: block,

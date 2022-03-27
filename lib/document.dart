@@ -76,6 +76,15 @@ class Block {
     }
     return false;
   }
+
+  bool isHidden() {
+    for (final f in document?.folds ?? []) {
+      int s = f.anchorBlock?.line ?? 0;
+      int e = f.block?.line ?? 0;
+      if (line > s && line < e) return true;
+    }
+    return false;
+  }
 }
 
 class Document {
@@ -411,6 +420,9 @@ class Document {
     List<BlockBracket> res = [b];
     List<BlockBracket> stack = [];
 
+    List<Cursor> _folds = folds;
+    folds = [];
+
     bool found = false;
     for (int l = 0; l < 1000 && !found; l++) {
       for (final bc in cur.block?.brackets ?? []) {
@@ -434,6 +446,8 @@ class Document {
       cur.moveCursorToStartOfLine();
       if (cur.block == b.block) break;
     }
+
+    folds = _folds;
     return res;
   }
 
@@ -459,6 +473,9 @@ class Document {
       start.anchorBlock = end.block;
       start.anchorColumn = end.column;
       start = start.normalized();
+      if (start.anchorBlock?.next == start.block) {
+        return;
+      }
       int size = folds.length;
       folds.removeWhere((f) {
         return f.block == start.block;
@@ -469,6 +486,12 @@ class Document {
     }
   }
 
+  void unfold(Block? block) {
+    folds.removeWhere((f) {
+      return f.anchorBlock == block;
+    });
+  }
+
   void unfoldAll() {
     folds.clear();
   }
@@ -476,7 +499,7 @@ class Document {
   int computedLine(int line) {
     for (final f in folds) {
       if (line > (f.anchorBlock?.line ?? 0)) {
-        line += (f.block?.line ?? 0) - (f.anchorBlock?.line ?? 0);
+        line += (f.block?.line ?? 0) - (f.anchorBlock?.line ?? 0) - 1;
       }
     }
     return line;
@@ -486,7 +509,7 @@ class Document {
     int l = blocks.length;
     int sz = 0;
     for (final f in folds) {
-      sz += (f.block?.line ?? 0) - (f.anchorBlock?.line ?? 0);
+      sz += (f.block?.line ?? 0) - (f.anchorBlock?.line ?? 0) - 1;
     }
     l -= sz;
     if (l < 1) {

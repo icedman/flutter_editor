@@ -137,7 +137,7 @@ class _Minimap extends State<Minimap> {
   Widget build(BuildContext context) {
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
 
-    int perPage = 60;
+    int perPage = 100;
     int pages = doc.doc.blocks.length ~/ perPage;
     if (pages <= 0) pages = 1;
 
