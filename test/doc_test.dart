@@ -1,4 +1,4 @@
-import 'document.dart';
+import 'package:editor/editor/document.dart';
 
 Document docTestRun() {
   Document d = Document();
@@ -6,33 +6,36 @@ Document docTestRun() {
   d.insertText('world');
   d.moveCursorLeft(count: 5);
   d.insertText('flutter');
+  d.show();
   d.deleteText(numberOfCharacters: 5);
   d.insertText('\n');
   d.insertText('another line');
   d.insertText('\n');
   d.insertText('and another line');
+  d.show();
   d.moveCursorUp();
   d.moveCursorToStartOfLine();
   d.deleteText(numberOfCharacters: 'another line'.length);
   d.moveCursorDown(count: 1);
   d.insertNewLine();
   d.insertText('and yet another line');
+  d.show();
   d.moveCursorUp(count: 2);
   d.moveCursorToStartOfLine();
   d.moveCursorRight(count: 4);
   d.moveCursorDown(count: 2, keepAnchor: true);
   d.moveCursorRight(count: 4, keepAnchor: true);
-  d.output();
+  d.show();
   //d.moveCursorToEndOfLine(keepAnchor: true);
   d.deleteSelectedText();
-  d.output();
+  // d.show();
   //d.deleteLine();
-  //d.output();
+  //d.show();
   //d.moveCursorRight(count: 2);
   //d.moveCursorRight(count: 5, keepAnchor: true);
-  //d.output();
+  //d.show();
   //d.deleteSelectedText();
-  //d.output();
+  //d.show();
   return d;
 }
 

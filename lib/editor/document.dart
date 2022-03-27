@@ -5,8 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:highlight/src/mode.dart';
 
-import 'package:editor/cursor.dart';
-import 'package:editor/native.dart';
+import 'package:editor/editor/cursor.dart';
+import 'package:editor/editor/history.dart';
+import 'package:editor/ffi/bridge.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 
 int _documentId = 0xffff;
@@ -41,10 +42,11 @@ class Block {
   int blockId = 0;
   int line = 0;
   String text = '';
-  String prevText = '';
   Document? document;
   Block? previous;
   Block? next;
+
+  String originalText = '';
 
   bool waiting = false;
 
@@ -96,12 +98,18 @@ class Document {
   List<Cursor> extraCursors = [];
   List<Cursor> sectionCursors = [];
 
+  History history = History();
+
   int documentId = 0;
 
   Document() {
     documentId = _documentId++;
-    FFIBridge.create_document(documentId);
+    FFIBridge.run(() => FFIBridge.create_document(documentId));
     clear();
+  }
+
+  void dispose() {
+    FFIBridge.run(() => FFIBridge.destroy_document(documentId));
   }
 
   Cursor cursor() {
@@ -152,6 +160,10 @@ class Document {
           .transform(const LineSplitter())
           .forEach((l) {
         insertText(l);
+
+        // save for history
+        cursor().block?.originalText = cursor().block?.text ?? '';
+
         insertNewLine();
       });
     } catch (err, msg) {
@@ -169,6 +181,12 @@ class Document {
     });
     f.writeAsString(content);
     return true;
+  }
+
+  void show() {
+    blocks.forEach((b) {
+      print(b.text);
+    });
   }
 
   void clear() {
@@ -189,9 +207,17 @@ class Document {
     });
   }
 
-  void beginEdit() {}
+  void begin() {
+    history.begin(this);
+  }
 
-  void endEdit() {}
+  void commit() {
+    history.commit();
+  }
+
+  void undo() {
+    history.undo(this);
+  }
 
   void addCursor() {
     cursors.add(cursor().copy());
@@ -199,7 +225,13 @@ class Document {
 
   Block? blockAtLine(int index) {
     if (index < 0 || index >= blocks.length) return null;
-    return blocks[index];
+    return blocks[index]..line = index;
+  }
+
+  void updateLineNumbers(int index) {
+    for (int i = index; i < blocks.length; i++) {
+      blocks[i].line = i;
+    }
   }
 
   Block? addBlockAtLine(int index) {
@@ -210,11 +242,10 @@ class Document {
     block.next = blockAtLine(index + 1);
     block.previous?.next = block;
     block.next?.previous = block;
-    for (int i = index; i < blocks.length; i++) {
-      blocks[i].line = i;
-    }
+    updateLineNumbers(index);
 
-    FFIBridge.add_block(documentId, block.blockId);
+    FFIBridge.run(() => FFIBridge.add_block(documentId, block.blockId));
+    history.add(block);
     return block;
   }
 
@@ -225,14 +256,13 @@ class Document {
     blocks.removeAt(index);
     previous?.next = next;
     next?.previous = previous;
-    for (int i = index; i < blocks.length; i++) {
-      blocks[i].line = i;
-    }
+    updateLineNumbers(index);
 
     if (block != null) {
-      FFIBridge.remove_block(documentId, block.blockId);
+      FFIBridge.run(() => FFIBridge.remove_block(documentId, block.blockId));
     }
 
+    history.remove(block);
     return block;
   }
 

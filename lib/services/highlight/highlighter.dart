@@ -3,12 +3,13 @@ import 'dart:ui' as ui;
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';
 
-import 'package:editor/cursor.dart';
-import 'package:editor/document.dart';
-import 'package:editor/view.dart';
-import 'package:editor/native.dart';
+import 'package:editor/editor/cursor.dart';
+import 'package:editor/editor/document.dart';
+import 'package:editor/editor/view.dart';
+import 'package:editor/ffi/bridge.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/fhl.dart';
 import 'package:editor/services/highlight/tmparser.dart';
@@ -83,7 +84,8 @@ class Highlighter {
   HLEngine engine = TMParser();
   // HLEngine engine = FlutterHighlight();
 
-  List<InlineSpan> run(Block? block, int line, Document document) {
+  List<InlineSpan> run(Block? block, int line, Document document,
+      {Function? onTap, Function? onHover}) {
     HLTheme theme = HLTheme.instance();
 
     TextStyle defaultStyle = TextStyle(
@@ -199,16 +201,20 @@ class Highlighter {
     }
 
     if (block?.isFolded() ?? false) {
-      // Paint paint = Paint()
-      //   ..color = theme.comment
-      //   ..style = PaintingStyle.stroke
-      //   // ..strokeCap = StrokeCap.round
-      //   ..strokeJoin = StrokeJoin.round
-      //   ..strokeWidth = 2.0;
       TextStyle moreStyle = defaultStyle.copyWith(
-          fontSize: theme.fontSize * 0.8, color: theme.string, backgroundColor: theme.selection);
-      res.add(TextSpan(text: '...', style: moreStyle));
+          fontSize: theme.fontSize * 0.8,
+          color: theme.string,
+          backgroundColor: theme.selection);
+      res.add(TextSpan(
+          text: '...',
+          style: moreStyle,
+          recognizer: TapGestureRecognizer()
+            ..onTap = () {
+              onTap?.call(':unfold');
+            }));
     }
+
+    // res.add(TextSpan(text: '-- ${block?.previous?.line} [${block?.line}] ${block?.next?.line}', style: defaultStyle));
 
     res.add(
         CustomWidgetSpan(child: Container(height: 1, width: 1), line: line));

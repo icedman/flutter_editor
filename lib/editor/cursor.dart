@@ -1,4 +1,5 @@
-import 'package:editor/document.dart';
+import 'package:editor/editor/document.dart';
+import 'package:editor/editor/history.dart';
 import 'package:flutter/material.dart';
 
 class Cursor {
@@ -252,7 +253,7 @@ class Cursor {
       left = l.substring(0, cur.column);
     }
     String al = cur.anchorBlock?.text ?? '';
-    String right = ''; 
+    String right = '';
     if (al.length > cur.anchorColumn) {
       right = al.substring(cur.anchorColumn);
     }
@@ -262,6 +263,8 @@ class Cursor {
     for (int i = 0; i < (res.length - 1); i++) {
       document?.removeBlockAtLine(blockLine + 1);
     }
+
+    document?.history.update(cur.block);
     cur.block?.text = left + right;
     cur.column = left.length;
     cur.clearSelection();
@@ -412,6 +415,7 @@ class Cursor {
 
     String ln = next.text;
     document?.removeBlockAtLine(next.line);
+    document?.history.update(block);
     block?.text = l + ln;
     block?.makeDirty(highlight: true);
 
@@ -441,6 +445,7 @@ class Cursor {
 
     String left = l.substring(0, column);
     String right = l.substring(column + numberOfCharacters);
+    document?.history.update(block);
     block?.text = left + right;
     block?.makeDirty(highlight: true);
     advanceBlockCursors(-numberOfCharacters);
@@ -462,9 +467,11 @@ class Cursor {
     String right = l.substring(column);
 
     // handle new line
+    document?.history.update(block);
     block?.text = left;
     block?.makeDirty(highlight: true);
     Block? newBlock = document?.addBlockAtLine(line + 1);
+    document?.history.update(newBlock);
     newBlock?.text = right;
     newBlock?.makeDirty(highlight: true);
     moveCursorDown();
@@ -482,6 +489,7 @@ class Cursor {
     String left = l.substring(0, column);
     String right = l.substring(column);
 
+    document?.history.update(block);
     block?.text = left + text + right;
     block?.makeDirty(highlight: true);
     moveCursorRight(count: text.length);

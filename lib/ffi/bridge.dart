@@ -5,66 +5,7 @@ import 'dart:typed_data';
 import 'dart:io' show Platform;
 import 'package:ffi/ffi.dart';
 
-class ThemeColor extends Struct {
-  @Int8()
-  external int r;
-  @Int8()
-  external int g;
-  @Int8()
-  external int b;
-}
-
-class ThemeInfo extends Struct {
-  @Int8()
-  external int r;
-  @Int8()
-  external int g;
-  @Int8()
-  external int b;
-  @Int8()
-  external int bg_r;
-  @Int8()
-  external int bg_g;
-  @Int8()
-  external int bg_b;
-  @Int8()
-  external int sel_r;
-  @Int8()
-  external int sel_g;
-  @Int8()
-  external int sel_b;
-}
-
-class TextSpanStyle extends Struct {
-  @Int32()
-  external int start;
-  @Int32()
-  external int length;
-  @Int32()
-  external int flags;
-  @Int8()
-  external int r;
-  @Int8()
-  external int g;
-  @Int8()
-  external int b;
-  @Int8()
-  external int bg_r;
-  @Int8()
-  external int bg_g;
-  @Int8()
-  external int bg_b;
-  @Int8()
-  external int caret;
-  @Int8()
-  external int bold;
-  @Int8()
-  external int italic;
-  @Int8()
-  external int underline;
-  @Int8()
-  external int strike;
-}
+import './highlighter.dart';
 
 class FFIBridge {
   static late final DynamicLibrary nativeEditorApiLib;
@@ -80,6 +21,8 @@ class FFIBridge {
   static late Function theme_color;
   static late Function theme_info;
 
+  static bool initialized = false;
+
   static void load() {
     DynamicLibrary nativeEditorApiLib = Platform.isMacOS || Platform.isIOS
         ? DynamicLibrary.process()
@@ -94,14 +37,12 @@ class FFIBridge {
         .lookup<NativeFunction<Int32 Function(Pointer<Utf8>)>>('load_theme');
     load_theme = _load_theme.asFunction<int Function(Pointer<Utf8>)>();
 
-    final _thm_color = nativeEditorApiLib
-    .lookup<NativeFunction<ThemeColor Function(Pointer<Utf8>)>>(
-        'theme_color');
-    theme_color =
-        _thm_color.asFunction<ThemeColor Function(Pointer<Utf8>)>();
+    final _thm_color = nativeEditorApiLib.lookup<
+        NativeFunction<ThemeColor Function(Pointer<Utf8>)>>('theme_color');
+    theme_color = _thm_color.asFunction<ThemeColor Function(Pointer<Utf8>)>();
 
     final _theme_info = nativeEditorApiLib
-    .lookup<NativeFunction<ThemeInfo Function()>>('theme_info');
+        .lookup<NativeFunction<ThemeInfo Function()>>('theme_info');
     theme_info = _theme_info.asFunction<ThemeInfo Function()>();
 
     final _load_language = nativeEditorApiLib
@@ -136,6 +77,8 @@ class FFIBridge {
         NativeFunction<Pointer<Utf8> Function(Int32)>>('language_definition');
     language_definition =
         _language_definition.asFunction<Pointer<Utf8> Function(int)>();
+
+    initialized = true;
   }
 
   static void initialize(String path) {
@@ -197,5 +140,10 @@ class FFIBridge {
     ThemeColor res = theme_color(_scope);
     calloc.free(_scope);
     return res;
+  }
+
+  static void run(Function f) {
+    if (!initialized) return;
+    f.call();
   }
 }

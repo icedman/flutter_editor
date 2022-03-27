@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import 'package:editor/caret.dart';
-import 'package:editor/cursor.dart';
-import 'package:editor/document.dart';
-import 'package:editor/view.dart';
-import 'package:editor/input.dart';
-import 'package:editor/minimap.dart';
+import 'package:editor/editor/caret.dart';
+import 'package:editor/editor/cursor.dart';
+import 'package:editor/editor/document.dart';
+import 'package:editor/editor/view.dart';
+import 'package:editor/services/input.dart';
+import 'package:editor/minimap/minimap.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 
@@ -84,6 +84,10 @@ class _Editor extends State<Editor> {
   void onShortcut(String keys) {
     String cmd = keys;
     switch (keys) {
+      case 'ctrl+z':
+        cmd = 'undo';
+        break;
+
       case 'ctrl+c':
         cmd = 'copy';
         break;
@@ -151,10 +155,18 @@ class _Editor extends State<Editor> {
 
     _makeDirty();
 
+    d.begin();
+
     switch (cmd) {
       case 'cancel':
         d.clearCursors();
         doScroll = true;
+        break;
+
+      case 'undo':
+        d.undo();
+        doScroll = true;
+        d.begin(); // erase pending history writes
         break;
 
       case 'insert':
@@ -426,6 +438,8 @@ class _Editor extends State<Editor> {
       doc.scrollTo = d.cursor().block?.line ?? -1;
       doc.touch();
     }
+
+    d.commit();
   }
 
   void onKeyDown(String key,
@@ -464,7 +478,8 @@ class _Editor extends State<Editor> {
             String ch =
                 String.fromCharCode(97 + k - LogicalKeyboardKey.keyA.keyId);
             if (control || alt) {
-              onShortcut(_buildKeys(ch, control: true, shift: shift, alt: alt));
+              onShortcut(
+                  _buildKeys(ch, control: control, shift: shift, alt: alt));
               break;
             }
             command('insert', params: [ch]);
@@ -473,7 +488,8 @@ class _Editor extends State<Editor> {
         }
         if (key.length == 1 || softKeyboard) {
           if (control || alt) {
-            onShortcut(_buildKeys(key, control: true, shift: shift, alt: alt));
+            onShortcut(
+                _buildKeys(key, control: control, shift: shift, alt: alt));
           } else {
             command('insert', params: [key]);
           }

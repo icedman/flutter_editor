@@ -6,8 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 
-import 'package:editor/document.dart';
-import 'package:editor/view.dart';
+import 'package:editor/editor/document.dart';
+import 'package:editor/editor/view.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 
 Offset screenToCursor(RenderObject? obj, Offset pos) {
@@ -25,7 +25,7 @@ Offset screenToCursor(RenderObject? obj, Offset pos) {
     Offset offsetForCaret = par.localToGlobal(
         par.getOffsetForCaret(const TextPosition(offset: 0), bounds));
     Rect parBounds =
-        offsetForCaret & Size(par.size.width * 10, par.size.height);
+        offsetForCaret & Size(par.size.width * 100, par.size.height);
     if (parBounds.inflate(2).contains(pos)) {
       targetPar = par;
       break;

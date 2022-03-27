@@ -11,12 +11,12 @@ import 'dart:io';
 import 'dart:convert';
 import 'dart:math';
 
-import 'package:editor/caret.dart';
-import 'package:editor/timer.dart';
-import 'package:editor/input.dart';
-import 'package:editor/cursor.dart';
-import 'package:editor/document.dart';
-import 'package:editor/native.dart';
+import 'package:editor/editor/caret.dart';
+import 'package:editor/editor/cursor.dart';
+import 'package:editor/editor/document.dart';
+import 'package:editor/services/timer.dart';
+import 'package:editor/services/input.dart';
+import 'package:editor/ffi/bridge.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 
@@ -24,6 +24,7 @@ class ViewLine extends StatelessWidget {
   ViewLine({
     Key? key,
     Block? this.block,
+    int this.line = 0,
     double this.gutterWidth = 0,
     TextStyle? this.gutterStyle,
     double this.width = 0,
@@ -31,6 +32,7 @@ class ViewLine extends StatelessWidget {
   }) : super(key: key);
 
   Block? block;
+  int line = 0;
   double width = 0;
   double height = 0;
   double gutterWidth = 0;
@@ -40,7 +42,6 @@ class ViewLine extends StatelessWidget {
   Widget build(BuildContext context) {
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
     Highlighter hl = Provider.of<Highlighter>(context);
-    // BlockData data = Provider.of<BlockData>(context);
 
     // String text = block?.text ?? '';
     int lineNumber = block?.line ?? 0;
@@ -48,7 +49,13 @@ class ViewLine extends StatelessWidget {
     Block b = block ?? Block('', document: doc.doc);
     if (b.spans == null) {
       Highlighter hl = Provider.of<Highlighter>(context, listen: false);
-      hl.run(b, b.line, b.document ?? Document());
+      hl.run(b, b.line, b.document ?? Document(), onTap: (text) {
+        if (text == ':unfold') {
+          doc.doc.unfold(b);
+          b.makeDirty();
+          doc.touch();
+        }
+      });
     }
 
     List<InlineSpan> spans = block?.spans ?? [];
@@ -347,8 +354,8 @@ class _View extends State<View> {
           itemBuilder: (BuildContext context, int line) {
             line = doc.doc.computedLine(line);
             Block block = doc.doc.blockAtLine(line) ?? Block('');
-            block.line = line;
             return ViewLine(
+                line: line,
                 block: block,
                 width: size.width - gutterWidth,
                 height: fontHeight,
@@ -380,9 +387,8 @@ class _View extends State<View> {
       }
       line = doc.doc.computedLine(line);
       Block block = doc.doc.blockAtLine(line) ?? Block('');
-      block.line = line;
-
       children.add(ViewLine(
+          line: line,
           block: block,
           width: size.width - gutterWidth,
           height: fontHeight,

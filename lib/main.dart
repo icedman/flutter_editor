@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:editor/editor.dart';
-import 'package:editor/native.dart';
+import 'package:editor/editor/editor.dart';
+import 'package:editor/ffi/bridge.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 

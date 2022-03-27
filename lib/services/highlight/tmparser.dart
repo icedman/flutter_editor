@@ -4,8 +4,9 @@ import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
 
-import 'package:editor/document.dart';
-import 'package:editor/native.dart';
+import 'package:editor/editor/document.dart';
+import 'package:editor/ffi/bridge.dart';
+import 'package:editor/ffi/highlighter.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 
@@ -42,8 +43,7 @@ class TMParser extends HLEngine {
     ThemeInfo info = FFIBridge.theme_info();
     theme.foreground = Color.fromRGBO(info.r, info.g, info.b, 1);
     theme.background = Color.fromRGBO(info.bg_r, info.bg_g, info.bg_b, 1);
-    theme.selection =
-        Color.fromRGBO(info.sel_r, info.sel_g, info.sel_b, 1);
+    theme.selection = Color.fromRGBO(info.sel_r, info.sel_g, info.sel_b, 1);
 
     ThemeColor clr = FFIBridge.themeColor('comment');
     theme.comment = Color.fromRGBO(clr.r, clr.g, clr.b, 1);
@@ -54,7 +54,7 @@ class TMParser extends HLEngine {
     clr = FFIBridge.themeColor('string');
     theme.string = Color.fromRGBO(clr.r, clr.g, clr.b, 1);
 
-    Future.delayed(const Duration(milliseconds: 50), () {
+    Future.delayed(const Duration(milliseconds: 0), () {
       theme.notifyListeners();
     });
   }

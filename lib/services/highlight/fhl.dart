@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:editor/document.dart';
+import 'package:editor/editor/document.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 import 'package:editor/services/highlight/theme.dart';
 
