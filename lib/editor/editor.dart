@@ -20,9 +20,12 @@ class Editor extends StatefulWidget {
   _Editor createState() => _Editor();
 }
 
-class _Editor extends State<Editor> {
+class _Editor extends State<Editor> with WidgetsBindingObserver {
   late DocumentProvider doc;
   late Highlighter highlighter;
+
+  bool _isKeyboardVisible =
+      WidgetsBinding.instance!.window.viewInsets.bottom > 0.0;
 
   bool shifting = false;
   bool controlling = false;
@@ -35,13 +38,26 @@ class _Editor extends State<Editor> {
     doc = DocumentProvider();
     doc.openFile(widget.path);
 
-    highlighter.engine.loadLanguage(widget.path);
+    doc.doc.langId = highlighter.engine.loadLanguage(widget.path).langId;
     super.initState();
+    WidgetsBinding.instance!.addObserver(this);
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance!.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didChangeMetrics() {
+    final bottomInset = WidgetsBinding.instance!.window.viewInsets.bottom;
+    final newValue = bottomInset > 0.0;
+    if (newValue != _isKeyboardVisible) {
+      setState(() {
+        _isKeyboardVisible = newValue;
+      });
+    }
   }
 
   String _buildKeys(String keys,
@@ -459,9 +475,14 @@ class _Editor extends State<Editor> {
       bool control = false,
       bool alt = false,
       bool softKeyboard = false}) {
-    shifting |= shift;
-    controlling |= control;
-    alting |= alt;
+    if (!softKeyboard) {
+      shifting = shift;
+      controlling = control;
+      alting = alt;
+    }
+
+    // print('$softKeyboard $key ${key.length} ${controlling}');
+
     Document d = doc.doc;
 
     switch (key) {
@@ -477,7 +498,8 @@ class _Editor extends State<Editor> {
       case 'End':
       case 'Enter':
       case '\n':
-        command(_buildKeys(key, control: control, shift: shift, alt: alt));
+        command(_buildKeys(key,
+            control: controlling, shift: shifting, alt: alting));
         break;
       default:
         {
@@ -489,8 +511,8 @@ class _Editor extends State<Editor> {
             String ch =
                 String.fromCharCode(97 + k - LogicalKeyboardKey.keyA.keyId);
             if (control || alt) {
-              onShortcut(
-                  _buildKeys(ch, control: control, shift: shift, alt: alt));
+              onShortcut(_buildKeys(ch,
+                  control: controlling, shift: shifting, alt: alting));
               break;
             }
             command('insert', params: [ch]);
@@ -498,9 +520,9 @@ class _Editor extends State<Editor> {
           }
         }
         if (key.length == 1 || softKeyboard) {
-          if (control || alt) {
-            onShortcut(
-                _buildKeys(key, control: control, shift: shift, alt: alt));
+          if (controlling || alting) {
+            onShortcut(_buildKeys(key,
+                control: controlling, shift: shifting, alt: alting));
           } else {
             command('insert', params: [key]);
           }
@@ -510,9 +532,13 @@ class _Editor extends State<Editor> {
   }
 
   void onKeyUp() {
-    shifting = false;
-    controlling = false;
-    alting = false;
+    if (shifting || controlling || alting) {
+      setState(() {
+        shifting = false;
+        controlling = false;
+        alting = false;
+      });
+    }
   }
 
   void onTapDown(RenderObject? obj, Offset globalPosition) {

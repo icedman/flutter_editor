@@ -162,12 +162,7 @@ class _InputListener extends State<InputListener> {
     controller.addListener(() {
       final t = controller.text;
       if (t.isNotEmpty) {
-        widget.onKeyDown?.call(t,
-            keyId: 0,
-            shift: false,
-            control: false,
-            alt: false,
-            softKeyboard: true);
+        widget.onKeyDown?.call(t, keyId: 0, softKeyboard: true);
       }
       controller.text = '';
     });

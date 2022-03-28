@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -143,7 +144,7 @@ class _Minimap extends State<Minimap> {
     if (pages <= 0) pages = 1;
 
     return Container(
-        width: 80,
+        width: Platform.isAndroid ? 60 : 80,
         child: ListView.builder(
             controller: scroller,
             itemCount: pages,

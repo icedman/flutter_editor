@@ -426,10 +426,10 @@ static bool load_language_configuration(const std::string path,
       lang->hasCurly = false;
       lang->hasRound = false;
       lang->hasSquare = false;
-      if (lang->brackets) {
-        lang->hasCurly = (lang->bracketOpen[0] == "{");
-        lang->hasRound = (lang->bracketOpen[0] == "(");
-        lang->hasSquare = (lang->bracketOpen[0] == "[");
+      for (auto &b : lang->bracketOpen) {
+        lang->hasCurly |= (b == "{");
+        lang->hasRound |= (b == "(");
+        lang->hasSquare |= (b == "[");
       }
     }
   }

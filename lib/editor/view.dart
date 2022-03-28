@@ -20,6 +20,36 @@ import 'package:editor/ffi/bridge.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 
+class GutterLine extends StatelessWidget {
+  GutterLine(
+      {Block? this.block,
+      TextStyle? this.style,
+      String this.text = '',
+      double this.width = 0,
+      double this.height = 0,
+      Color? this.color});
+
+  TextStyle? style;
+  Block? block;
+  String text = '';
+  double width = 0;
+  double height = 0;
+  Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    HLTheme theme = Provider.of<HLTheme>(context);
+    return Container(
+        color: (block?.carets ?? []).length > 0
+            ? theme.selection
+            : theme.background,
+        height: height,
+        width: width,
+        alignment: Alignment.centerRight,
+        child: Text(text, style: style));
+  }
+}
+
 class ViewLine extends StatelessWidget {
   ViewLine({
     Key? key,
@@ -128,7 +158,7 @@ class ViewLine extends StatelessWidget {
       }
     }
 
-    List<Cursor> extras = [ ...doc.doc.extraCursors, ...doc.doc.sectionCursors ];
+    List<Cursor> extras = [...doc.doc.extraCursors, ...doc.doc.sectionCursors];
     if (!extras.isEmpty) {
       for (final e in extras) {
         if (e.block != block) continue;
@@ -153,11 +183,12 @@ class ViewLine extends StatelessWidget {
       Padding(
           padding: EdgeInsets.only(left: gutterWidth),
           child: RichText(text: TextSpan(children: spans), softWrap: softWrap)),
-      Container(
+      GutterLine(
+          block: block,
           height: height,
           width: gutterWidth,
-          alignment: Alignment.centerRight,
-          child: Text('${lineNumber + 1} ', style: gutterStyle)),
+          text: '${lineNumber + 1} ',
+          style: gutterStyle),
       ...carets,
     ]);
   }
@@ -423,12 +454,12 @@ class _View extends State<View> {
           gutterStyle: gutterStyle));
 
       if (!softWrap && gutterWidth > 0) {
-        gutters.add(Container(
-            color: theme.background,
-            height: fontHeight,
+        gutters.add(GutterLine(
+            block: block,
             width: gutterWidth,
-            alignment: Alignment.centerRight,
-            child: Text('${block.line + 1} ', style: gutterStyle)));
+            height: fontHeight,
+            text: '${block.line + 1} ',
+            style: gutterStyle));
       }
     }
 

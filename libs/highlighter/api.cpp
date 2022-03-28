@@ -6,6 +6,8 @@
 
 #include <time.h>
 
+#define SKIP_PARSE_THRESHOLD 500
+
 #ifdef WIN64
 #define EXPORT __declspec(dllexport)
 #else
@@ -149,15 +151,6 @@ inline textstyle_t construct_style(std::vector<span_info_t> &spans, int index) {
           }
           if (span.scope.find(".end") != -1) {
             res.flags = res.flags | SCOPE_END;
-          }
-          if (span.scope.find(".curly") != -1) {
-            res.flags = res.flags | SCOPE_BRACKET_CURLY;
-          }
-          if (span.scope.find(".round") != -1) {
-            res.flags = res.flags | SCOPE_BRACKET_ROUND;
-          }
-          if (span.scope.find(".square") != -1) {
-            res.flags = res.flags | SCOPE_BRACKET_SQUARE;
           }
         }
         if (span.scope.find("variable") != -1) {
@@ -406,7 +399,7 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
   // end marker
   textstyle_buffer[0].start = 0;
   textstyle_buffer[0].length = 0;
-  if (strlen(_text) > 500) {
+  if (strlen(_text) > SKIP_PARSE_THRESHOLD) {
     return textstyle_buffer;
   }
 
@@ -436,9 +429,7 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
 
   parse::stack_ptr parser_state;
   if (documents[document]->blocks[previous_block] != NULL) {
-    parser_state = documents[document]
-                       ->blocks[previous_block]
-                       ->parser_state; // parser_states[previous_block];
+    parser_state = documents[document]->blocks[previous_block]->parser_state;
   }
 
   bool firstLine = false;
@@ -516,10 +507,21 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
     textstyle_t *ts = &textstyle_buffer[idx];
 
     // brackets hack - use language info
+    if (ts->flags & SCOPE_BRACKET &&
+        (lang->hasCurly || lang->hasRound || lang->hasSquare)) {
+      ts->flags &= ~SCOPE_BRACKET;
+    }
     if (!(ts->flags & SCOPE_COMMENT || ts->flags & SCOPE_COMMENT_BLOCK ||
-          ts->flags & SCOPE_STRING) &&
-        !(ts->flags & SCOPE_BRACKET)) {
+          ts->flags & SCOPE_STRING)) { //&&
+      // (!(ts->flags & SCOPE_BRACKET_CURLY) &&
+      //   !(ts->flags & SCOPE_BRACKET_ROUND) &&
+      //   !(ts->flags & SCOPE_BRACKET_SQUARE))) {
+
       char ch = _text[ts->start];
+
+      // #define _P() printf(">%c %d %d %d\n", ch, lang->hasCurly,
+      // lang->hasRound, lang->hasSquare);
+
       if (lang->hasCurly && ch == '{') {
         ts->flags =
             ts->flags | SCOPE_BRACKET | SCOPE_BRACKET_CURLY | SCOPE_BEGIN;

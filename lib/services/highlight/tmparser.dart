@@ -83,7 +83,7 @@ class TMParser extends HLEngine {
 
     final nspans = FFIBridge.runHighlighter(
         text,
-        langId,
+        document.langId,
         themeId,
         b.document?.documentId ?? 0,
         b.blockId,

@@ -99,6 +99,8 @@ class Document {
   List<Cursor> extraCursors = [];
   List<Cursor> sectionCursors = [];
 
+  int langId = 0;
+
   History history = History();
 
   int documentId = 0;

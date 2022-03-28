@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:editor/editor/editor.dart';
 import 'package:editor/ffi/bridge.dart';
 import 'package:editor/services/highlight/theme.dart';
+import 'package:editor/services/highlight/tmparser.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 
 void main(List<String> args) async {
@@ -27,6 +28,7 @@ void main(List<String> args) async {
   }
 
   FFIBridge.initialize(extPath);
+  TMParser(); // loads the theme
 
   return runApp(MultiProvider(providers: [
     ChangeNotifierProvider(create: (context) => HLTheme.instance()),

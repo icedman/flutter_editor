@@ -1,7 +1,7 @@
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 
-final HLTheme theme = HLTheme();
+final HLTheme _theme = HLTheme();
 
 class HLTheme extends ChangeNotifier {
   String fontFamily = 'FiraCode';
@@ -17,6 +17,6 @@ class HLTheme extends ChangeNotifier {
   Color string = Colors.yellow;
 
   static HLTheme instance() {
-    return theme;
+    return _theme;
   }
 }
