@@ -23,14 +23,6 @@
 #include <wlr/util/log.h>
 #include <xkbcommon/xkbcommon.h>
 
-class MyClass {
-void test(int x, char* z) {
-    for(int i=0;i<20;i++) {
-        if (i == 0) { printf("}%d", i); }
-    }
-}
-}
-
 /* For brevity's sake, struct members are annotated where they are used. */
 enum tinywl_cursor_mode {
     TINYWL_CURSOR_PASSTHROUGH,
@@ -993,6 +985,7 @@ int main(int argc, char* argv[])
     wl_display_destroy(server.wl_display);
     return 0;
 }
+
 
 
 

@@ -41,7 +41,7 @@ class GutterLine extends StatelessWidget {
     HLTheme theme = Provider.of<HLTheme>(context);
     return Container(
         color: (block?.carets ?? []).length > 0
-            ? theme.selection
+            ? theme.selection.withOpacity(0.7)
             : theme.background,
         height: height,
         width: width,

@@ -338,13 +338,13 @@ class Cursor {
   }
 
   void moveCursorNextWord({bool keepAnchor = false}) {
-    RegExp regExp = new RegExp(
-      r'[a-z_\-0-9]*',
-      caseSensitive: false,
-      multiLine: false,
-    );
+    // RegExp regExp = new RegExp(
+    //   r'[a-z_\-0-9]*',
+    //   caseSensitive: false,
+    //   multiLine: false,
+    // );
     String l = block?.text ?? '';
-    var matches = regExp.allMatches(l);
+    var matches = block?.words ?? []; // regExp.allMatches(l);
     bool breakNext = false;
     bool found = false;
     for (final m in matches) {
@@ -369,15 +369,15 @@ class Cursor {
   }
 
   void moveCursorPreviousWord({bool keepAnchor = false}) {
-    RegExp regExp = new RegExp(
-      r'[a-z_\-0-9]*',
-      caseSensitive: false,
-      multiLine: false,
-    );
+    // RegExp regExp = new RegExp(
+    //   r'[a-z_\-0-9]*',
+    //   caseSensitive: false,
+    //   multiLine: false,
+    // );
     int lastColumn = column;
     bool found = false;
     String l = block?.text ?? '';
-    var matches = regExp.allMatches(l);
+    var matches = block?.words ?? []; // regExp.allMatches(l);
     for (final m in matches) {
       var g = m.groups([0]);
       String t = g[0] ?? '';

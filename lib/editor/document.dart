@@ -13,6 +13,12 @@ import 'package:editor/services/highlight/highlighter.dart';
 int _documentId = 0xffff;
 int _blockId = 0xffff;
 
+RegExp _wordRegExp = new RegExp(
+      r'[a-z_\-0-9]*',
+      caseSensitive: false,
+      multiLine: false,
+    );
+
 class BlockCaret {
   BlockCaret({int this.position = 0, Color this.color = Colors.white});
   int position = 0;
@@ -46,7 +52,9 @@ class Block {
   Block? previous;
   Block? next;
 
+  int originalLine = 0;
   String originalText = '';
+  Iterable<RegExpMatch> words = [];
 
   bool waiting = false;
 
@@ -68,7 +76,12 @@ class Block {
       prevBlockClass = '';
       decors = null;
       brackets = [];
+      findWords();
     }
+  }
+
+  Future<void> findWords() async {
+    words = _wordRegExp.allMatches(text);
   }
 
   bool isFolded() {
@@ -90,6 +103,17 @@ class Block {
   }
 }
 
+class SearchResultEntry {
+  SearchResultEntry(String this.string);
+  String string = '';
+  int score = 0;
+
+  @override
+  String toString() {
+    return string;
+  }
+}
+
 class Document {
   String docPath = '';
   List<Block> blocks = [];
@@ -102,6 +126,7 @@ class Document {
   int langId = 0;
 
   History history = History();
+  Map<String, List<SearchResultEntry>> search = {};
 
   int documentId = 0;
 
@@ -165,6 +190,7 @@ class Document {
         insertText(l);
 
         // save for history
+        cursor().block?.originalLine = cursor().block?.line ?? 0;
         cursor().block?.originalText = cursor().block?.text ?? '';
 
         insertNewLine();
@@ -536,6 +562,27 @@ class Document {
 
   void unfoldAll() {
     folds.clear();
+  }
+
+  // todo run in isolate
+  Future<int> findMatches(String text) async {
+    if (search.containsKey(text)) {
+      return search[text]?.length ?? 0;
+    }
+    List<String> res = [];
+    for(final b in blocks) {
+      for (final m in b.words) {
+        var g = m.groups([0]);
+        var t = g[0] ?? '';
+        if (t.length > text.length) {
+          if (t.startsWith(text)) {
+            res.add(t);
+          }
+        }
+      }
+    }
+    search[text] = res.toSet().toList().map((t) => SearchResultEntry(t)).toList();
+    return search[text]?.length ?? 0;
   }
 
   int computedLine(int line) {

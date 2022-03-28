@@ -165,6 +165,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
 
   void command(String cmd, {List<String> params = const <String>[]}) async {
     bool doScroll = false;
+    bool didInputText = false;
     Document d = doc.doc;
 
     Cursor cursor = d.cursor().copy();
@@ -188,6 +189,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       case 'insert':
         d.insertText(params[0]);
         doScroll = true;
+        didInputText = true;
         break;
 
       case 'newline':
@@ -467,6 +469,20 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     }
 
     d.commit();
+
+    if (didInputText) {
+      Future.delayed(const Duration(milliseconds: 50), () {
+        Cursor cur = d.cursor().copy();
+        cur.moveCursorLeft();
+        cur.selectWord();
+        if (cur.column == d.cursor().column) {
+          String t = cur.selectedText();
+          d.findMatches(t).then((res) {
+            print(d.search[t]);
+            });
+        }
+        });
+    }
   }
 
   void onKeyDown(String key,

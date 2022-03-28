@@ -7,13 +7,13 @@ class Action {
   Block? block;
 }
 
-class Entry {
+class HistoryEntry {
   List<Cursor> cursors = [];
   List<Action> actions = [];
 }
 
 class History {
-  List<Entry> entries = [];
+  List<HistoryEntry> entries = [];
   List<Cursor> cursors = [];
   List<Action> actions = [];
 
@@ -27,7 +27,7 @@ class History {
 
   void commit() {
     if (actions.length > 0) {
-      Entry entry = Entry();
+      HistoryEntry entry = HistoryEntry();
       entry.cursors = cursors;
       entry.actions = actions;
       entries.add(entry);
@@ -80,7 +80,7 @@ class History {
   void undo(Document doc) {
     if (entries.length == 0) return;
 
-    Entry last = entries.removeLast();
+    HistoryEntry last = entries.removeLast();
     for (final a in last.actions.reversed) {
       switch (a.type) {
         case 'update':
