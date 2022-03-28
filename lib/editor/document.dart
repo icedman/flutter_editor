@@ -489,10 +489,14 @@ class Document {
 
   void toggleFold() {
     Cursor cur = cursor().copy();
-    cur.column = 0;
     sectionCursors = [];
     BlockBracket b = findUnclosedBracket(cur);
-    final res = findBracketPair(b);
+    var res = findBracketPair(b);
+    if (res.length != 2) {
+      cur.column = 0;
+      b = findUnclosedBracket(cur);
+      res = findBracketPair(b);
+    }
     if (res.length == 2) {
       for (int i = 0; i < 2; i++) {
         Cursor c = cursor().copy();
