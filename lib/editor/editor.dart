@@ -393,6 +393,13 @@ class _Editor extends State<Editor> {
             d.selectWord();
             d.cursor().block?.makeDirty();
           }
+
+          Cursor cur = d.cursor().normalized();
+          bool? _hasScope = cur.block?.scopes.containsKey(cur.anchorColumn);
+          bool hasScope = _hasScope ?? false;
+          if (hasScope) {
+            print(cur.block?.scopes[cur.anchorColumn]);
+          }
           doScroll = true;
           break;
         }

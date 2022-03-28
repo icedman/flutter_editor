@@ -28,13 +28,22 @@
 #define MAX_STYLED_SPANS 512
 #define MAX_BUFFER_LENGTH (1024 * 4)
 
-#define SCOPE_COMMENT 1 << 1
-#define SCOPE_COMMENT_BLOCK 1 << 2
-#define SCOPE_STRING 1 << 3
-#define SCOPE_BRACKET 1 << 4
-#define SCOPE_TAG 1 << 5
-#define SCOPE_BEGIN 1 << 6
-#define SCOPE_END 1 << 7
+#define SCOPE_COMMENT (1 << 1)
+#define SCOPE_COMMENT_BLOCK (1 << 2)
+#define SCOPE_STRING (1 << 3)
+#define SCOPE_BRACKET (1 << 4)
+#define SCOPE_BRACKET_CURLY (1 << 4)
+#define SCOPE_BRACKET_ROUND (1 << 5)
+#define SCOPE_BRACKET_SQUARE (1 << 6)
+#define SCOPE_BEGIN (1 << 7)
+#define SCOPE_END (1 << 8)
+#define SCOPE_TAG (1 << 9)
+#define SCOPE_VARIABLE (1 << 10)
+#define SCOPE_CONSTANT (1 << 11)
+#define SCOPE_KEYWORD (1 << 12)
+#define SCOPE_ENTITY (1 << 13)
+#define SCOPE_ENTITY_CLASS (1 << 14)
+#define SCOPE_ENTITY_FUNCTION (1 << 15)
 
 struct theme_color_t {
   int8_t r;
@@ -133,15 +142,41 @@ inline textstyle_t construct_style(std::vector<span_info_t> &spans, int index) {
       }
 
       if (index == span.start) {
-        // printf("%s\n", span.scope.c_str());
         if (span.scope.find(".bracket") != -1) {
           res.flags = res.flags | SCOPE_BRACKET;
+          if (span.scope.find(".begin") != -1) {
+            res.flags = res.flags | SCOPE_BEGIN;
+          }
+          if (span.scope.find(".end") != -1) {
+            res.flags = res.flags | SCOPE_END;
+          }
+          if (span.scope.find(".curly") != -1) {
+            res.flags = res.flags | SCOPE_BRACKET_CURLY;
+          }
+          if (span.scope.find(".round") != -1) {
+            res.flags = res.flags | SCOPE_BRACKET_ROUND;
+          }
+          if (span.scope.find(".square") != -1) {
+            res.flags = res.flags | SCOPE_BRACKET_SQUARE;
+          }
         }
-        if (span.scope.find(".begin") != -1) {
-          res.flags = res.flags | SCOPE_BEGIN;
+        if (span.scope.find("variable") != -1) {
+          res.flags = res.flags | SCOPE_VARIABLE;
         }
-        if (span.scope.find(".end") != -1) {
-          res.flags = res.flags | SCOPE_END;
+        if (span.scope.find("constant") != -1) {
+          res.flags = res.flags | SCOPE_CONSTANT;
+        }
+        if (span.scope.find("keyword") != -1) {
+          res.flags = res.flags | SCOPE_KEYWORD;
+        }
+        if (span.scope.find("entity") != -1) {
+          res.flags = res.flags | SCOPE_ENTITY;
+          if (span.scope.find("entity.name.class") != -1) {
+            res.flags = res.flags | SCOPE_ENTITY_CLASS;
+          }
+          if (span.scope.find("entity.name.function") != -1) {
+            res.flags = res.flags | SCOPE_ENTITY_FUNCTION;
+          }
         }
       }
     }
@@ -150,6 +185,9 @@ inline textstyle_t construct_style(std::vector<span_info_t> &spans, int index) {
 }
 
 inline bool textstyles_equal(textstyle_t &first, textstyle_t &second) {
+  if (first.flags & SCOPE_BEGIN || second.flags & SCOPE_BEGIN ||
+      first.flags & SCOPE_END || second.flags & SCOPE_END)
+    return false;
   return first.italic == second.italic && first.underline == second.underline &&
          first.r == second.r && first.g == second.g && first.b == second.b &&
          first.bg_r == second.bg_r && first.bg_g == second.bg_g &&
@@ -368,7 +406,9 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
   // end marker
   textstyle_buffer[0].start = 0;
   textstyle_buffer[0].length = 0;
-  // return textstyle_buffer;
+  if (strlen(_text) > 500) {
+    return textstyle_buffer;
+  }
 
   // printf("hl %d %s\n", block, _text);
 
@@ -431,7 +471,7 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
     style_t style = theme->styles_for_scope(scopeName);
 
     scopeName = scope.back();
-    // printf(">%s\n", scopeName.c_str());
+    printf(">%s\n", scopeName.c_str());
 
     span_info_t span = {.start = (int)n,
                         .length = (int)(l - n),
@@ -475,6 +515,36 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
     textstyle_buffer[idx] = construct_style(spans, i);
     textstyle_t *ts = &textstyle_buffer[idx];
 
+    // brackets hack - use language info
+    if (lang->hasCTypeBrackets &&
+        !(ts->flags & SCOPE_COMMENT || ts->flags & SCOPE_COMMENT_BLOCK ||
+          ts->flags & SCOPE_STRING) &&
+        !(ts->flags & SCOPE_BRACKET)) {
+      char ch = _text[ts->start];
+      if (ch == '{') {
+        ts->flags =
+            ts->flags | SCOPE_BRACKET | SCOPE_BRACKET_CURLY | SCOPE_BEGIN;
+      }
+      if (ch == '(') {
+        ts->flags =
+            ts->flags | SCOPE_BRACKET | SCOPE_BRACKET_ROUND | SCOPE_BEGIN;
+      }
+      if (ch == '[') {
+        ts->flags =
+            ts->flags | SCOPE_BRACKET | SCOPE_BRACKET_SQUARE | SCOPE_BEGIN;
+      }
+      if (ch == '}') {
+        ts->flags = ts->flags | SCOPE_BRACKET | SCOPE_BRACKET_CURLY | SCOPE_END;
+      }
+      if (ch == ')') {
+        ts->flags = ts->flags | SCOPE_BRACKET | SCOPE_BRACKET_ROUND | SCOPE_END;
+      }
+      if (ch == ']') {
+        ts->flags =
+            ts->flags | SCOPE_BRACKET | SCOPE_BRACKET_SQUARE | SCOPE_END;
+      }
+    }
+
     if (!color_is_set({ts->r, ts->g, ts->b, 0})) {
       if (ts->r + ts->g + ts->b == 0) {
         ts->r = themeInfo.fg_r;
@@ -501,11 +571,8 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
 EXPORT
 char *language_definition(int langId) {
   language_info_ptr lang = languages[langId];
-
   std::ostringstream ss;
   ss << lang->definition;
-
   strcpy(text_buffer, ss.str().c_str());
-
   return text_buffer;
 }

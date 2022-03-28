@@ -14,9 +14,18 @@ const int SCOPE_COMMENT = (1 << 1);
 const int SCOPE_COMMENT_BLOCK = (1 << 2);
 const int SCOPE_STRING = (1 << 3);
 const int SCOPE_BRACKET = (1 << 4);
-const int SCOPE_TAG = (1 << 5);
-const int SCOPE_BEGIN = (1 << 6);
-const int SCOPE_END = (1 << 7);
+const int SCOPE_BRACKET_CURLY = (1 << 4);
+const int SCOPE_BRACKET_ROUND = (1 << 5);
+const int SCOPE_BRACKET_SQUARE = (1 << 6);
+const int SCOPE_BEGIN = (1 << 7);
+const int SCOPE_END = (1 << 8);
+const int SCOPE_TAG = (1 << 9);
+const int SCOPE_VARIABLE = (1 << 10);
+const int SCOPE_CONSTANT = (1 << 11);
+const int SCOPE_KEYWORD = (1 << 12);
+const int SCOPE_ENTITY = (1 << 13);
+const int SCOPE_ENTITY_CLASS = (1 << 14);
+const int SCOPE_ENTITY_FUNCTION = (1 << 15);
 
 class TMParserLanguage extends HLLanguage {}
 
@@ -67,6 +76,7 @@ class TMParser extends HLEngine {
     Block? nextBlock = b.next;
 
     b.prevBlockClass = prevBlock?.className ?? '';
+    b.scopes = {};
 
     String text = b.text;
     text += ' ';
@@ -114,6 +124,11 @@ class TMParser extends HLEngine {
 
       comment = (spn.flags & SCOPE_COMMENT_BLOCK) == SCOPE_COMMENT_BLOCK;
       string = (spn.flags & SCOPE_STRING) == SCOPE_STRING;
+
+      if (spn.flags != 0) {
+        b.scopes[s] = spn.flags;
+        b.scopes[s + l + 1] = 0;
+      }
 
       // print('$s $l ${spn.r}, ${spn.g}, ${spn.b}');
     }

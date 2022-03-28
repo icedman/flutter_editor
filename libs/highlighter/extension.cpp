@@ -423,6 +423,11 @@ static bool load_language_configuration(const std::string path,
         }
       }
       lang->brackets = lang->bracketOpen.size();
+      if (lang->brackets) {
+        lang->hasCTypeBrackets =
+            (lang->bracketOpen[0] == "{" || lang->bracketOpen[0] == "(" ||
+             lang->bracketOpen[0] == "[");
+      }
     }
   }
 

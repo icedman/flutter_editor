@@ -54,6 +54,7 @@ class Block {
   List<InlineSpan>? spans;
   List<BlockCaret> carets = [];
   List<BlockBracket> brackets = [];
+  Map<int, int> scopes = {};
 
   Mode? mode;
   String className = '';

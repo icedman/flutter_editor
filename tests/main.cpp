@@ -22,3 +22,4 @@ bool handle_keybinding(struct tinywl_server* server, xkb_keysym_t sym)
 }
 
 
+
