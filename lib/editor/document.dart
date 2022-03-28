@@ -71,10 +71,9 @@ class Block {
       prevBlockClass = '';
       decors = null;
       brackets = [];
-      document?.indexer.indexWords(text);
     }
   }
-  
+
   bool isFolded() {
     for (final f in document?.folds ?? []) {
       if (f.anchorBlock == this) {
@@ -120,7 +119,7 @@ class Document {
   Map<String, List<SearchResultEntry>> search = {};
   Map<String, Map<Block, int>> index = {};
 
-  Indexer indexer = Indexer();
+  IndexerIsolate indexer = IndexerIsolate();
 
   int documentId = 0;
 
@@ -174,6 +173,8 @@ class Document {
   Future<bool> openFile(String path) async {
     clear();
     docPath = path;
+
+    blocks = [];
     File f = File(docPath);
     try {
       await f
@@ -181,18 +182,22 @@ class Document {
           .map(utf8.decode)
           .transform(const LineSplitter())
           .forEach((l) {
-        insertText(l);
-
-        // save for history
-        cursor().block?.originalLine = cursor().block?.line ?? 0;
-        cursor().block?.originalText = cursor().block?.text ?? '';
-
-        insertNewLine();
+        Block block = Block(l, document: this);
+        blocks.add(block);
+        FFIBridge.run(() => FFIBridge.add_block(documentId, block.blockId));
       });
     } catch (err, msg) {
       //
     }
+
+    updateLineNumbers(0);
+
+    for (int i = 0; i < blocks.length; i++) {
+      blocks[i].makeDirty(highlight: true);
+    }
+
     moveCursorToStartOfDocument();
+    indexer.indexFile(path);
     return true;
   }
 
@@ -259,6 +264,7 @@ class Document {
         prev.next = blocks[i];
         blocks[i].previous = prev;
       }
+      prev = blocks[i];
     }
   }
 
@@ -563,7 +569,7 @@ class Document {
     return indexer.find(text).then((res) {
       print(res);
       return Future.value(res.length);
-      });
+    });
   }
 
   int computedLine(int line) {
@@ -596,14 +602,17 @@ class DocumentProvider extends ChangeNotifier {
   bool softWrap = true;
   bool showGutters = true;
   bool showMinimap = true;
+  bool ready = false;
 
   Offset cursorOffset = const Offset(0, 0);
   Offset anchorOffset = const Offset(0, 0);
 
   Future<bool> openFile(String path) async {
-    bool res = await doc.openFile(path);
-    notifyListeners();
-    return res;
+    doc.openFile(path).then((r) {
+      ready = true;
+      notifyListeners();
+    });
+    return true;
   }
 
   void touch() {

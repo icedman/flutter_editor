@@ -110,6 +110,20 @@ class Highlighter {
 
     if (block?.decors == null) {
       block?.decors = engine.run(block, line, document);
+
+      // for(final s in res) {
+      //   if (s is TextSpan) {
+      //     if (s.style?.color != theme.comment) {
+      //       if (s.text != null) {
+      //         String txt = s.text ?? '';
+      //         if (block?.document != null) {
+      //           block?.document?.indexer.indexWords(txt);
+      //         }
+      //       }
+      //     }
+      //   }
+      // }
+
     }
     List<LineDecoration> decors = block?.decors ?? [];
 

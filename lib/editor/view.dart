@@ -356,6 +356,8 @@ class _View extends State<View> {
     HLTheme theme = Provider.of<HLTheme>(context);
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
 
+    if (!doc.ready) return Container();
+
     final TextStyle style = TextStyle(
         fontFamily: theme.fontFamily,
         fontSize: theme.fontSize,

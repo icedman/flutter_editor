@@ -135,7 +135,7 @@ class _Minimap extends State<Minimap> {
   Widget build(BuildContext context) {
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
 
-    if (!doc.showMinimap) {
+    if (!doc.showMinimap || !doc.ready) {
       return Container();
     }
 

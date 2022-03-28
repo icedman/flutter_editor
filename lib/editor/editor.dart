@@ -481,7 +481,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
             print(r);
           });
         }
-        });
+      });
     }
   }
 
