@@ -8,16 +8,11 @@ import 'package:highlight/src/mode.dart';
 import 'package:editor/editor/cursor.dart';
 import 'package:editor/editor/history.dart';
 import 'package:editor/ffi/bridge.dart';
+import 'package:editor/services/indexer/indexer.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 
 int _documentId = 0xffff;
 int _blockId = 0xffff;
-
-RegExp _wordRegExp = new RegExp(
-      r'[a-z_\-0-9]*',
-      caseSensitive: false,
-      multiLine: false,
-    );
 
 class BlockCaret {
   BlockCaret({int this.position = 0, Color this.color = Colors.white});
@@ -76,14 +71,10 @@ class Block {
       prevBlockClass = '';
       decors = null;
       brackets = [];
-      findWords();
+      document?.indexer.indexWords(text);
     }
   }
-
-  Future<void> findWords() async {
-    words = _wordRegExp.allMatches(text);
-  }
-
+  
   bool isFolded() {
     for (final f in document?.folds ?? []) {
       if (f.anchorBlock == this) {
@@ -127,6 +118,9 @@ class Document {
 
   History history = History();
   Map<String, List<SearchResultEntry>> search = {};
+  Map<String, Map<Block, int>> index = {};
+
+  Indexer indexer = Indexer();
 
   int documentId = 0;
 
@@ -566,23 +560,10 @@ class Document {
 
   // todo run in isolate
   Future<int> findMatches(String text) async {
-    if (search.containsKey(text)) {
-      return search[text]?.length ?? 0;
-    }
-    List<String> res = [];
-    for(final b in blocks) {
-      for (final m in b.words) {
-        var g = m.groups([0]);
-        var t = g[0] ?? '';
-        if (t.length > text.length) {
-          if (t.startsWith(text)) {
-            res.add(t);
-          }
-        }
-      }
-    }
-    search[text] = res.toSet().toList().map((t) => SearchResultEntry(t)).toList();
-    return search[text]?.length ?? 0;
+    return indexer.find(text).then((res) {
+      print(res);
+      return Future.value(res.length);
+      });
   }
 
   int computedLine(int line) {

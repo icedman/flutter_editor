@@ -477,9 +477,9 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
         cur.selectWord();
         if (cur.column == d.cursor().column) {
           String t = cur.selectedText();
-          d.findMatches(t).then((res) {
-            print(d.search[t]);
-            });
+          d.findMatches(t).then((r) {
+            print(r);
+          });
         }
         });
     }
