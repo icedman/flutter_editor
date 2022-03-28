@@ -471,7 +471,7 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
     style_t style = theme->styles_for_scope(scopeName);
 
     scopeName = scope.back();
-    printf(">%s\n", scopeName.c_str());
+    // printf(">%s\n", scopeName.c_str());
 
     span_info_t span = {.start = (int)n,
                         .length = (int)(l - n),
@@ -516,30 +516,29 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
     textstyle_t *ts = &textstyle_buffer[idx];
 
     // brackets hack - use language info
-    if (lang->hasCTypeBrackets &&
-        !(ts->flags & SCOPE_COMMENT || ts->flags & SCOPE_COMMENT_BLOCK ||
+    if (!(ts->flags & SCOPE_COMMENT || ts->flags & SCOPE_COMMENT_BLOCK ||
           ts->flags & SCOPE_STRING) &&
         !(ts->flags & SCOPE_BRACKET)) {
       char ch = _text[ts->start];
-      if (ch == '{') {
+      if (lang->hasCurly && ch == '{') {
         ts->flags =
             ts->flags | SCOPE_BRACKET | SCOPE_BRACKET_CURLY | SCOPE_BEGIN;
       }
-      if (ch == '(') {
+      if (lang->hasRound && ch == '(') {
         ts->flags =
             ts->flags | SCOPE_BRACKET | SCOPE_BRACKET_ROUND | SCOPE_BEGIN;
       }
-      if (ch == '[') {
+      if (lang->hasSquare && ch == '[') {
         ts->flags =
             ts->flags | SCOPE_BRACKET | SCOPE_BRACKET_SQUARE | SCOPE_BEGIN;
       }
-      if (ch == '}') {
+      if (lang->hasCurly && ch == '}') {
         ts->flags = ts->flags | SCOPE_BRACKET | SCOPE_BRACKET_CURLY | SCOPE_END;
       }
-      if (ch == ')') {
+      if (lang->hasRound && ch == ')') {
         ts->flags = ts->flags | SCOPE_BRACKET | SCOPE_BRACKET_ROUND | SCOPE_END;
       }
-      if (ch == ']') {
+      if (lang->hasSquare && ch == ']') {
         ts->flags =
             ts->flags | SCOPE_BRACKET | SCOPE_BRACKET_SQUARE | SCOPE_END;
       }

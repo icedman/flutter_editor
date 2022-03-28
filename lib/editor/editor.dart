@@ -563,7 +563,7 @@ class _Editor extends State<Editor> {
       IconButton(
           icon: Icon(Icons.undo, size: buttonSize, color: clr),
           onPressed: () {
-            // mod.onToolbar?.call('undo');
+            command('undo');
           }),
       Container(
           decoration: controlling ? BoxDecoration(color: hiColor) : null,
@@ -579,52 +579,54 @@ class _Editor extends State<Editor> {
           child: IconButton(
               icon: Icon(Icons.keyboard_capslock, size: buttonSize, color: clr),
               onPressed: () {
-                // mod.onToolbar?.call('shift');
+                setState(() {
+                  shifting = !shifting;
+                });
               })),
       IconButton(
           icon: Icon(Icons.west, size: buttonSize, color: clr),
           onPressed: () {
-            // mod.onToolbar?.call('left');
+            command(_buildKeys('left', control: controlling, shift: shifting));
           }),
       IconButton(
           icon: Icon(Icons.north, size: buttonSize, color: clr),
           onPressed: () {
-            // mod.onToolbar?.call('up');
+            command(_buildKeys('up', control: controlling, shift: shifting));
           }),
       IconButton(
           icon: Icon(Icons.south, size: buttonSize, color: clr),
           onPressed: () {
-            // mod.onToolbar?.call('down');
+            command(_buildKeys('down', control: controlling, shift: shifting));
           }),
       IconButton(
           icon: Icon(Icons.east, size: buttonSize, color: clr),
           onPressed: () {
-            // mod.onToolbar?.call('right');
+            command(_buildKeys('right', control: controlling, shift: shifting));
           }),
       IconButton(
           icon: Icon(Icons.keyboard_tab, size: buttonSize, color: clr),
           onPressed: () {
-            // mod.onToolbar?.call('tab');
+            command('tab');
           }),
       IconButton(
           icon: Icon(Icons.highlight_alt, size: buttonSize, color: clr),
           onPressed: () {
-            // mod.onToolbar?.call('sel');
+            command('select_word');
           }),
       IconButton(
           icon: Icon(Icons.copy, size: buttonSize, color: clr),
           onPressed: () {
-            // mod.onToolbar?.call('copy');
+            command('copy');
           }),
       IconButton(
           icon: Icon(Icons.cut, size: buttonSize, color: clr),
           onPressed: () {
-            // mod.onToolbar?.call('cut');
+            command('cut');
           }),
       IconButton(
           icon: Icon(Icons.paste, size: buttonSize, color: clr),
           onPressed: () {
-            // mod.onToolbar?.call('paste');
+            command('paste');
           }),
     ];
 

@@ -34,7 +34,9 @@ struct language_info_t {
   std::vector<std::string> bracketOpen;
   std::vector<std::string> bracketClose;
 
-  bool hasCTypeBrackets;
+  bool hasCurly;
+  bool hasRound;
+  bool hasSquare;
 
   bool pairs;
   std::vector<std::string> pairOpen;
