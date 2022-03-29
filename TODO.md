@@ -30,3 +30,6 @@ editor
 decorations
 console
 
+# bug
+
+nowrap -> scoll to right -> tap => (vertical autoscroll gets lost)

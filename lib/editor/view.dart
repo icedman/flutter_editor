@@ -72,6 +72,7 @@ class ViewLine extends StatelessWidget {
   Widget build(BuildContext context) {
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
     Highlighter hl = Provider.of<Highlighter>(context);
+    DecorInfo decor = Provider.of<DecorInfo>(context, listen: false);
 
     int lineNumber = block?.line ?? 0;
 
@@ -120,28 +121,6 @@ class ViewLine extends StatelessWidget {
         textPainter = painter();
       }
 
-      // position selection thumbs
-      Cursor cur = doc.doc.cursor();
-      if (textPainter != null && cur.hasSelection()) {
-        if (cur.block == block) {
-          Offset offsetForCaret = textPainter.getOffsetForCaret(
-              TextPosition(offset: cur.column), Offset(0, 0) & Size(0, 0));
-          double left = gutterWidth + offsetForCaret.dx;
-          double top = offsetForCaret.dy;
-
-          doc.cursorOffset = Offset(pos.dx + left, pos.dy + top);
-        }
-        if (cur.anchorBlock == block) {
-          Offset offsetForCaret = textPainter.getOffsetForCaret(
-              TextPosition(offset: cur.anchorColumn),
-              Offset(0, 0) & Size(0, 0));
-          double left = gutterWidth + offsetForCaret.dx;
-          double top = offsetForCaret.dy;
-
-          doc.anchorOffset = Offset(pos.dx + left, pos.dy + top);
-        }
-      }
-
       if (textPainter != null) {
         for (final col in block?.carets ?? []) {
           Offset offsetForCaret = textPainter.getOffsetForCaret(
@@ -154,6 +133,17 @@ class ViewLine extends StatelessWidget {
               top: top,
               child: AnimatedCaret(
                   width: 2, height: extents.height, color: col.color)));
+
+          Offset cursorOffset = Offset(pos.dx + left, pos.dy + top);
+          decor.setCaret(cursorOffset, doc.doc.cursor());
+          // thumbs
+          /*
+          if (col.color == Colors.red) {
+            decor.setThumb(cursorOffset, Offset(0, 0), doc.doc.cursor());
+          } else {
+            decor.setThumb(Offset(0, 0), cursorOffset, doc.doc.cursor()); 
+          }
+          */
         }
       }
     }
@@ -195,9 +185,7 @@ class ViewLine extends StatelessWidget {
 }
 
 class View extends StatefulWidget {
-  View({Key? key, Function? this.onScroll}) : super(key: key);
-
-  Function? onScroll;
+  View({Key? key}) : super(key: key);
 
   @override
   _View createState() => _View();
@@ -238,13 +226,17 @@ class _View extends State<View> {
           });
         }
 
-        widget.onScroll?.call(Offset(0, scroller.position.pixels));
+        Offset scroll = Offset(0, scroller.position.pixels);
+        DecorInfo decor = Provider.of<DecorInfo>(context, listen: false);
+        decor.onScroll(scroll);
       }
     });
 
     hscroller.addListener(() {
       if (!hscroller.positions.isEmpty) {
-        widget.onScroll?.call(Offset(hscroller.position.pixels, 0));
+        Offset scroll = Offset(0, hscroller.position.pixels);
+        DecorInfo decor = Provider.of<DecorInfo>(context, listen: false);
+        decor.onScroll(scroll);
       }
     });
 
@@ -395,6 +387,10 @@ class _View extends State<View> {
     largeDoc = (doc.doc.blocks.length > 10000);
     if (!softWrap) {
       extent = fontHeight;
+    } else {
+      if (!hscroller.positions.isEmpty) {
+        hscroller.jumpTo(0);
+      }
     }
 
     if (doc.scrollTo != -1) {

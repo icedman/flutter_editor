@@ -109,6 +109,7 @@ class Document {
   IndexerIsolate indexer = IndexerIsolate();
 
   List<Block> indexingQueue = [];
+  dynamic search;
 
   Document() {
     documentId = _documentId++;
@@ -116,7 +117,7 @@ class Document {
     clear();
 
     indexer.onResult = (res) {
-      print(res);
+      search = res;
     };
   }
 
@@ -584,7 +585,9 @@ class Document {
   }
 
   Future<void> findMatches(String text) async {
-    indexer.find(text);
+    if (text.length > 1) {
+      indexer.find(text);
+    }
   }
 
   int computedLine(int line) {
@@ -618,9 +621,6 @@ class DocumentProvider extends ChangeNotifier {
   bool showGutters = true;
   bool showMinimap = true;
   bool ready = false;
-
-  Offset cursorOffset = const Offset(0, 0);
-  Offset anchorOffset = const Offset(0, 0);
 
   Future<bool> openFile(String path) async {
     doc.openFile(path).then((r) {

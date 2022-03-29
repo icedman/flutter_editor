@@ -22,6 +22,8 @@ class Editor extends StatefulWidget {
 
 class _Editor extends State<Editor> with WidgetsBindingObserver {
   late DocumentProvider doc;
+  late CaretPulse pulse;
+  late DecorInfo decor;
   late Highlighter highlighter;
 
   bool _isKeyboardVisible =
@@ -37,8 +39,10 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     highlighter = Highlighter();
     doc = DocumentProvider();
     doc.openFile(widget.path);
-
     doc.doc.langId = highlighter.engine.loadLanguage(widget.path).langId;
+
+    decor = DecorInfo();
+    pulse = CaretPulse();
     super.initState();
     WidgetsBinding.instance!.addObserver(this);
   }
@@ -221,6 +225,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
 
       case 'cursor':
         {
+          if (decor.showCaretBased) return;
           String x = params[1];
           String y = params[0];
           d.moveCursor(int.parse(y), int.parse(x));
@@ -493,11 +498,12 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
         cur.selectWord();
         if (cur.column == d.cursor().column) {
           String t = cur.selectedText();
-          d.findMatches(t).then((r) {
-            // print(r);
-          });
+          d.findMatches(t);
+          decor.setSearch(t);
         }
       });
+    } else {
+      decor.setSearch('');
     }
   }
 
@@ -691,7 +697,8 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     return MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (context) => doc),
-          ChangeNotifierProvider(create: (context) => CaretPulse()),
+          ChangeNotifierProvider(create: (context) => pulse),
+          ChangeNotifierProvider(create: (context) => decor),
           Provider(create: (context) => highlighter),
         ],
         child: Column(children: [
@@ -700,11 +707,10 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
             Expanded(
               child: InputListener(
                   child: Stack(children: [
-                    View(onScroll: (offset) {
-                      print(offset);
-                    }),
-
-                    // SelectionThumb(), SelectionThumb(anchor: true)
+                    View(),
+                    // SelectionThumb(),
+                    // SelectionThumb(anchor: true),
+                    AutoCompletePopup(),
                   ]),
                   onKeyDown: onKeyDown,
                   onKeyUp: onKeyUp,

@@ -14,6 +14,35 @@ import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/fhl.dart';
 import 'package:editor/services/highlight/tmparser.dart';
 
+const double sidebarDarken = 0.0425;
+const double tabbarDarken = 0.025;
+const double statusbarDarken = tabbarDarken;
+
+bool isDark(Color clr) {
+  return clr.computeLuminance() <= 0.5;
+}
+
+Color darken(Color color, [double amount = .1]) {
+  assert(amount >= 0 && amount <= 1);
+
+  final hsl = HSLColor.fromColor(color);
+  final hslDark = hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0));
+  return hslDark.toColor();
+}
+
+Color lighten(Color color, [double amount = .1]) {
+  assert(amount >= 0 && amount <= 1);
+
+  final hsl = HSLColor.fromColor(color);
+  final hslLight = hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0));
+
+  return hslLight.toColor();
+}
+
+Color darkenOrLighten(Color color, [double amount = .1]) {
+  return !isDark(color) ? lighten(color, amount) : darken(color, amount);
+}
+
 Color colorCombine(Color a, Color b, {int aw = 1, int bw = 1}) {
   int red = (a.red * aw + b.red * bw) ~/ (aw + bw);
   int green = (a.green * aw + b.green * bw) ~/ (aw + bw);
@@ -160,20 +189,23 @@ class Highlighter {
       }
 
       // is within caret
-      bool inCaret = false;
       for (final c in document.cursors) {
         if (line == (c.block?.line ?? 0)) {
           int l = (c.block?.text ?? '').length;
           if (i == c.column || (i == l && c.column > l)) {
-            inCaret = true;
+            block?.carets.add(
+                BlockCaret(position: i, color: style.color ?? Colors.white));
             break;
           }
         }
-      }
-
-      if (inCaret) {
-        block?.carets
-            .add(BlockCaret(position: i, color: style.color ?? Colors.white));
+        // if (line == (c.anchorBlock?.line ?? 0)) {
+        //   int l = (c.anchorBlock?.text ?? '').length;
+        //   if (i == c.anchorColumn || (i == l && c.anchorColumn > l)) {
+        //     block?.carets
+        //     .add(BlockCaret(position: i, color: Colors.red));
+        //     break;
+        //   }
+        // }
       }
 
       if (ch == '\t') {

@@ -24,7 +24,17 @@ class Cursor {
 
   @override
   String toString() {
-    return '${block?.line}:$column';
+    return '${block?.line}:$column ${anchorBlock?.line}:$anchorColumn}';
+  }
+
+  @override
+  bool operator ==(_other) {
+    if (!(_other is Cursor)) return false;
+    Cursor other = _other as Cursor;
+    return other.block == block &&
+        other.column == column &&
+        other.anchorBlock == anchorBlock &&
+        other.anchorColumn == anchorColumn;
   }
 
   bool get isNull {
