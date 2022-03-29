@@ -225,7 +225,6 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
 
       case 'cursor':
         {
-          if (decor.showCaretBased) return;
           String x = params[1];
           String y = params[0];
           d.moveCursor(int.parse(y), int.parse(x));
@@ -703,23 +702,20 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
         ],
         child: Column(children: [
           Expanded(
-              child: Row(children: [
-            Expanded(
-              child: InputListener(
-                  child: Stack(children: [
-                    View(),
-                    // SelectionThumb(),
-                    // SelectionThumb(anchor: true),
-                    AutoCompletePopup(),
-                  ]),
-                  onKeyDown: onKeyDown,
-                  onKeyUp: onKeyUp,
-                  onTapDown: onTapDown,
-                  onDoubleTapDown: onDoubleTapDown,
-                  onPanUpdate: onPanUpdate,
-                  showKeyboard: showKeyboard),
-            ),
-            Minimap()
+              child: Stack(children: [
+            Row(children: [
+              Expanded(
+                  child: InputListener(
+                      child: View(),
+                      onKeyDown: onKeyDown,
+                      onKeyUp: onKeyUp,
+                      onTapDown: onTapDown,
+                      onDoubleTapDown: onDoubleTapDown,
+                      onPanUpdate: onPanUpdate,
+                      showKeyboard: showKeyboard)),
+              Minimap()
+            ]),
+            AutoCompletePopup()
           ])),
 
           if (Platform.isAndroid) ...[

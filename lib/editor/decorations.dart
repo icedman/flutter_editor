@@ -214,7 +214,7 @@ class AutoCompletePopup extends StatelessWidget {
     const double maxWidth = 220;
     const double maxHeight = 200;
 
-    Size size = getTextExtents(decor.searchText, style);
+    Size size = getTextExtents('123', style);
     double itemHeight = (size.height + 2);
     double height = itemHeight * _result.length;
     if (height > maxHeight) height = maxHeight;
@@ -225,7 +225,7 @@ class AutoCompletePopup extends StatelessWidget {
     pos = Offset(pos.dx + dx, pos.dy + dy + itemHeight);
     return Positioned(
         top: pos.dy,
-        left: pos.dx,
+        left: pos.dx - size.width,
         child: Container(
             width: maxWidth,
             height: height,
@@ -243,10 +243,12 @@ class AutoCompletePopup extends StatelessWidget {
                       onTap: () {
                         decor.setSearch('');
                         Document d = doc.doc;
+                        d.begin();
                         d.clearCursors();
                         d.moveCursorLeft();
                         d.selectWord();
                         d.insertText(text); // todo.. command!
+                        d.commit();
                         doc.notifyListeners();
                       });
                 })));
