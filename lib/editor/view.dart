@@ -195,7 +195,9 @@ class ViewLine extends StatelessWidget {
 }
 
 class View extends StatefulWidget {
-  View({Key? key}) : super(key: key);
+  View({Key? key, Function? this.onScroll}) : super(key: key);
+
+  Function? onScroll;
 
   @override
   _View createState() => _View();
@@ -235,6 +237,14 @@ class _View extends State<View> {
             visibleLine = line;
           });
         }
+
+        widget.onScroll?.call(Offset(0, scroller.position.pixels));
+      }
+    });
+
+    hscroller.addListener(() {
+      if (!hscroller.positions.isEmpty) {
+        widget.onScroll?.call(Offset(hscroller.position.pixels, 0));
       }
     });
 

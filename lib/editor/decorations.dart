@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 
+import 'package:editor/editor/cursor.dart';
 import 'package:editor/editor/document.dart';
 import 'package:editor/services/highlight/theme.dart';
 
@@ -27,6 +28,13 @@ class CaretPulse extends ChangeNotifier {
       flipCaret();
     });
   }
+}
+
+class DecorInfo extends ChangeNotifier {
+    Offset scrollPosition = const Offset(0, 0);
+    Offset thumbPosition = const Offset(0, 0);
+    Offset thumbAnchorPosition = const Offset(0, 0);
+    Cursor thumb = Cursor();
 }
 
 class AnimatedCaret extends StatelessWidget {

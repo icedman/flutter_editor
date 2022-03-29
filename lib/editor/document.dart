@@ -93,44 +93,36 @@ class Block {
   }
 }
 
-class SearchResultEntry {
-  SearchResultEntry(String this.string);
-  String string = '';
-  int score = 0;
-
-  @override
-  String toString() {
-    return string;
-  }
-}
-
 class Document {
   String docPath = '';
+  int documentId = 0;
+  int langId = 0;
+
   List<Block> blocks = [];
   List<Cursor> cursors = [];
+  
   List<Cursor> folds = [];
-
   List<Cursor> extraCursors = [];
   List<Cursor> sectionCursors = [];
 
-  int langId = 0;
-
   History history = History();
-  Map<String, List<SearchResultEntry>> search = {};
-  Map<String, Map<Block, int>> index = {};
-
   IndexerIsolate indexer = IndexerIsolate();
 
-  int documentId = 0;
+  List<Block> indexingQueue = [];
 
   Document() {
     documentId = _documentId++;
     FFIBridge.run(() => FFIBridge.create_document(documentId));
     clear();
+
+    indexer.onResult = (res) {
+      print(res);
+      };
   }
 
   void dispose() {
     FFIBridge.run(() => FFIBridge.destroy_document(documentId));
+    indexer.dispose();
   }
 
   Cursor cursor() {
@@ -240,7 +232,19 @@ class Document {
   }
 
   void commit() {
+    for(final a in history.actions) {
+      if (!indexingQueue.contains(a.block)) {
+        indexingQueue.add(a.block!);
+      }
+    }
     history.commit();
+
+    while(indexingQueue.length > 0) {
+      Block l = indexingQueue.last;
+      if (cursor().block == l) break;
+      indexingQueue.removeLast();
+      indexer.indexWords(l.text);
+    }
   }
 
   void undo() {
@@ -564,12 +568,8 @@ class Document {
     folds.clear();
   }
 
-  // todo run in isolate
-  Future<int> findMatches(String text) async {
-    return indexer.find(text).then((res) {
-      print(res);
-      return Future.value(res.length);
-    });
+  Future<void> findMatches(String text) async {
+    indexer.find(text);
   }
 
   int computedLine(int line) {

@@ -11,6 +11,7 @@ Document docTestRun() {
   d.insertText('\n');
   d.insertText('another line');
   d.insertText('\n');
+  d.begin();
   d.insertText('and another line');
   d.show();
   d.moveCursorUp();
@@ -26,8 +27,12 @@ Document docTestRun() {
   d.moveCursorDown(count: 2, keepAnchor: true);
   d.moveCursorRight(count: 4, keepAnchor: true);
   d.show();
+  d.commit();
+  d.undo();
+  print('------');
+  d.show();
   //d.moveCursorToEndOfLine(keepAnchor: true);
-  d.deleteSelectedText();
+  // d.deleteSelectedText();
   // d.show();
   //d.deleteLine();
   //d.show();

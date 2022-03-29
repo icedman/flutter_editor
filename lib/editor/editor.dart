@@ -478,7 +478,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
         if (cur.column == d.cursor().column) {
           String t = cur.selectedText();
           d.findMatches(t).then((r) {
-            print(r);
+            // print(r);
           });
         }
       });
@@ -683,8 +683,14 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
               child: Row(children: [
             Expanded(
               child: InputListener(
-                  // child: Stack(children: [View(), SelectionThumb(), SelectionThumb(anchor: true)]),
-                  child: View(),
+                  child: Stack(children: [
+                  View(onScroll: (offset) {
+                    print(offset);
+                    }),
+
+                  // SelectionThumb(), SelectionThumb(anchor: true)
+                  
+                  ]),
                   onKeyDown: onKeyDown,
                   onKeyUp: onKeyUp,
                   onTapDown: onTapDown,

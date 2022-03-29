@@ -3,25 +3,31 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 
+import 'package:editor/services/indexer/levenshtein.dart';
+
+const int maxLevel = 4;
+
 RegExp _wordRegExp = new RegExp(
   r'[a-z_0-9]*',
   caseSensitive: false,
   multiLine: false,
 );
 
-int _nodeId = 0;
-
 class IndexNode {
-  IndexNode({String this.text = '', int this.level = 0}) {
-    id = _nodeId++;
-  }
+  IndexNode({String this.text = '', int this.level = 0});
 
   int id = 0;
   int level = 0;
   String text = '';
-  bool word = false;
+  List<String> words = [];
 
   Map<String, IndexNode> nodes = {};
+
+  void addWord(String text) {
+    if (!words.contains(text)) {
+        words.add(text);
+    }
+  }
 
   IndexNode? push(String text) {
     if (text.length < level) {
@@ -32,27 +38,27 @@ class IndexNode {
     if (!nodes.containsKey(_prefix)) {
       nodes[_prefix] = IndexNode(text: prefix, level: level + 1);
     }
-    if (prefix != text) {
+    if (prefix != text && level <= maxLevel) {
       nodes[_prefix]?.push(text);
     } else {
-      nodes[_prefix]?.word = true;
+      nodes[_prefix]?.addWord(text);
     }
 
     return nodes[_prefix];
   }
 
   void dump({String pad = ''}) {
-    print('-$pad ${word ? text : '.'}');
+    print('-$pad ${(words.length > 0) ? words : '.'}');
     pad += '  ';
     for (final t in nodes.keys) {
-      print('>$level $pad $t');
+      // print('>$level $pad $t');
       nodes[t]?.dump(pad: pad);
     }
   }
 
   void collect({List<String>? result}) {
-    if (word && result != null) {
-      result.add(text);
+    if (words.length > 0 && result != null) {
+      words.forEach((w) => result.add(w));
     }
     for (final t in nodes.keys) {
       nodes[t]?.collect(result: result);
@@ -89,8 +95,12 @@ class Indexer {
 
   Future<List<String>> find(String text) async {
     List<String> result = [];
+    if (text.length > maxLevel) {
+       text = text.substring(0, maxLevel);
+    }
+
+    // result - sort levens
     root.find(text, result: result);
-    print(result);
     return result;
   }
 
@@ -120,6 +130,12 @@ class IndexerIsolate {
     spawnIsolate();
   }
 
+  void dispose() {
+    _receivePort?.close();
+    _isolate?.kill();
+  }
+
+  Function? onResult;
   ReceivePort? _receivePort;
   Isolate? _isolate;
   SendPort? _isolateSendPort;
@@ -143,13 +159,27 @@ class IndexerIsolate {
     Indexer isolateIndexer = Indexer();
     ReceivePort _isolateReceivePort = ReceivePort();
     sendPort.send(_isolateReceivePort.sendPort);
-    _isolateReceivePort.listen((message) {
+    _isolateReceivePort.listen((message) async {
       if (message.startsWith('index::')) {
         String text = message.substring(7);
         isolateIndexer.indexWords(text);
       } else if (message.startsWith('find::')) {
         String text = message.substring(6);
-        isolateIndexer.find(text);
+        final result = await isolateIndexer.find(text);
+        result.sort((a,b) {
+            if (a.length == b.length) {
+                return 0;
+            }
+            return (a.length < b.length) ? -1 : 1;
+            });
+
+        final ranked = rankList(result, text);
+
+        Object obj = {
+            'search': text,
+            'result': ranked
+        };
+        sendPort.send(jsonEncode(obj));
       } else if (message.startsWith('file::')) {
         String path = message.substring(6);
         isolateIndexer.file(path);
@@ -165,7 +195,10 @@ class IndexerIsolate {
     _receivePort?.listen((msg) {
       if (msg is SendPort) {
         _isolateSendPort = msg;
-      } else {}
+      } else {
+        // incoming here!
+        onResult?.call(jsonDecode(msg));
+      }
     });
   }
 }

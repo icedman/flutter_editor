@@ -155,8 +155,9 @@ class TMParser extends HLEngine {
       return languages[langId] ?? TMParserLanguage();
     }
 
-    String res = FFIBridge.languageDefinition(langId);
-    final j = jsonDecode(res);
+    // todo.. try.. could fail
+    // String res = FFIBridge.languageDefinition(langId);
+    // final j = jsonDecode(res);
 
     HLLanguage l = TMParserLanguage();
     l.langId = langId;
