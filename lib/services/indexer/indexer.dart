@@ -25,7 +25,7 @@ class IndexNode {
 
   void addWord(String text) {
     if (!words.contains(text)) {
-        words.add(text);
+      words.add(text);
     }
   }
 
@@ -96,7 +96,7 @@ class Indexer {
   Future<List<String>> find(String text) async {
     List<String> result = [];
     if (text.length > maxLevel) {
-       text = text.substring(0, maxLevel);
+      text = text.substring(0, maxLevel);
     }
 
     // result - sort levens
@@ -166,19 +166,16 @@ class IndexerIsolate {
       } else if (message.startsWith('find::')) {
         String text = message.substring(6);
         final result = await isolateIndexer.find(text);
-        result.sort((a,b) {
-            if (a.length == b.length) {
-                return 0;
-            }
-            return (a.length < b.length) ? -1 : 1;
-            });
+        result.sort((a, b) {
+          if (a.length == b.length) {
+            return 0;
+          }
+          return (a.length < b.length) ? -1 : 1;
+        });
 
         final ranked = rankList(result, text);
 
-        Object obj = {
-            'search': text,
-            'result': ranked
-        };
+        Object obj = {'search': text, 'result': ranked};
         sendPort.send(jsonEncode(obj));
       } else if (message.startsWith('file::')) {
         String path = message.substring(6);

@@ -223,7 +223,7 @@ class Highlighter {
       block?.spans = res;
     }
 
-    // move to commit ... 
+    // move to commit ...
     // for (final s in res) {
     //   if (s is TextSpan) {
     //     if (s.style?.color != theme.comment) {

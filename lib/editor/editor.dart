@@ -99,6 +99,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
 
   void onShortcut(String keys) {
     String cmd = keys;
+
     switch (keys) {
       case 'ctrl+z':
         cmd = 'undo';
@@ -121,6 +122,9 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
         break;
       case 'ctrl+l':
         cmd = 'select_line';
+        break;
+      case 'ctrl+shift+d':
+        cmd = 'duplicate_selection';
         break;
       case 'ctrl+s':
         cmd = 'save';
@@ -394,11 +398,13 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       case 'save':
         d.saveFile();
         break;
+
       case 'select_all':
         d.moveCursorToStartOfDocument();
         d.moveCursorToEndOfDocument(keepAnchor: true);
         doc.touch();
         break;
+
       case 'select_word':
         {
           if (d.cursor().hasSelection()) {
@@ -421,8 +427,18 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
           doScroll = true;
           break;
         }
+
       case 'select_line':
         d.selectLine();
+        doScroll = true;
+        break;
+
+      case 'duplicate_selection':
+        if (!d.hasSelection()) {
+          d.duplicateLine();
+        } else {
+          d.duplicateSelection();
+        }
         doScroll = true;
         break;
     }
@@ -684,12 +700,11 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
             Expanded(
               child: InputListener(
                   child: Stack(children: [
-                  View(onScroll: (offset) {
-                    print(offset);
+                    View(onScroll: (offset) {
+                      print(offset);
                     }),
 
-                  // SelectionThumb(), SelectionThumb(anchor: true)
-                  
+                    // SelectionThumb(), SelectionThumb(anchor: true)
                   ]),
                   onKeyDown: onKeyDown,
                   onKeyUp: onKeyUp,

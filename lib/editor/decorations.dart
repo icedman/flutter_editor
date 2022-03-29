@@ -31,10 +31,10 @@ class CaretPulse extends ChangeNotifier {
 }
 
 class DecorInfo extends ChangeNotifier {
-    Offset scrollPosition = const Offset(0, 0);
-    Offset thumbPosition = const Offset(0, 0);
-    Offset thumbAnchorPosition = const Offset(0, 0);
-    Cursor thumb = Cursor();
+  Offset scrollPosition = const Offset(0, 0);
+  Offset thumbPosition = const Offset(0, 0);
+  Offset thumbAnchorPosition = const Offset(0, 0);
+  Cursor thumb = Cursor();
 }
 
 class AnimatedCaret extends StatelessWidget {

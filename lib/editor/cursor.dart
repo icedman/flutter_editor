@@ -22,6 +22,11 @@ class Cursor {
   int anchorColumn = 0;
   Color color = Colors.white;
 
+  @override
+  String toString() {
+    return '${block?.line}:$column';
+  }
+
   bool get isNull {
     return document == null;
   }
@@ -78,6 +83,35 @@ class Cursor {
   void clearSelection() {
     anchorBlock = block;
     anchorColumn = column;
+  }
+
+  void duplicateLine() {
+    selectLine();
+    String text = selectedText();
+    clearSelection();
+    insertNewLine();
+    insertText(text);
+  }
+
+  void duplicateSelection() {
+    Cursor cur = copy();
+    String text = selectedText();
+    bool isn = isNormalized;
+    clearSelection();
+
+    insertText(text);
+
+    if (isn) {
+      moveCursorLeft(count: text.length, keepAnchor: true);
+      copyFrom(normalized());
+    } else {
+      moveCursorRight(count: text.length, keepAnchor: true);
+      copyFrom(cur);
+    }
+
+    if (text.contains('\n')) {
+      clearSelection();
+    }
   }
 
   void moveCursor(int l, int c, {bool keepAnchor = false}) {
@@ -478,7 +512,22 @@ class Cursor {
     moveCursorToStartOfLine();
   }
 
+  void _insertText(String text) {
+    List<String> lines = text.split('\n');
+    int i = 0;
+    for (final l in lines) {
+      if (i++ > 0) {
+        insertNewLine();
+      }
+      insertText(l);
+    }
+  }
+
   void insertText(String text) {
+    if (text.contains('\n')) {
+      _insertText(text);
+      return;
+    }
     deleteSelectedText();
     String l = block?.text ?? '';
 

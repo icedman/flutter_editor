@@ -100,7 +100,7 @@ class Document {
 
   List<Block> blocks = [];
   List<Cursor> cursors = [];
-  
+
   List<Cursor> folds = [];
   List<Cursor> extraCursors = [];
   List<Cursor> sectionCursors = [];
@@ -117,7 +117,7 @@ class Document {
 
     indexer.onResult = (res) {
       print(res);
-      };
+    };
   }
 
   void dispose() {
@@ -188,8 +188,11 @@ class Document {
       blocks[i].makeDirty(highlight: true);
     }
 
+    cursor();
     moveCursorToStartOfDocument();
     indexer.indexFile(path);
+
+    print(cursor());
     return true;
   }
 
@@ -227,19 +230,31 @@ class Document {
     });
   }
 
+  void duplicateSelection() {
+    cursors.forEach((c) {
+      c.duplicateSelection();
+    });
+  }
+
+  void duplicateLine() {
+    cursors.forEach((c) {
+      c.duplicateLine();
+    });
+  }
+
   void begin() {
     history.begin(this);
   }
 
   void commit() {
-    for(final a in history.actions) {
+    for (final a in history.actions) {
       if (!indexingQueue.contains(a.block)) {
         indexingQueue.add(a.block!);
       }
     }
     history.commit();
 
-    while(indexingQueue.length > 0) {
+    while (indexingQueue.length > 0) {
       Block l = indexingQueue.last;
       if (cursor().block == l) break;
       indexingQueue.removeLast();
