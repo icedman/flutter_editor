@@ -1,17 +1,17 @@
 # auto
 auto close
-auto indent
+auto indent (done)
 
 # commands
 indent
 unindent
-indexer
+indexer (done)
 comment
 uncomment
 comment block
 
 # popups
-auto complete
+auto complete (done)
 search
 
 # file explorer
@@ -33,3 +33,4 @@ console
 # bug
 
 nowrap -> scoll to right -> tap => (vertical autoscroll gets lost)
+
