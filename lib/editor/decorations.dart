@@ -279,7 +279,9 @@ class AutoCompletePopup extends StatelessWidget {
                   child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Text(' $s ',
-                          style: index == decor.menuIndex ? style.copyWith(color: theme.foreground) : style,
+                          style: index == decor.menuIndex
+                              ? style.copyWith(color: theme.foreground)
+                              : style,
                           softWrap: false,
                           overflow: TextOverflow.clip)))));
     }

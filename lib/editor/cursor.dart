@@ -592,4 +592,21 @@ class Cursor {
     String tab = List.generate(c, (_) => ' ').join();
     insertText(tab);
   }
+
+  void indent() {
+    Cursor cur = copy();
+    cur.moveCursorToStartOfLine();
+    String tab = cur.document?.tabString ?? ' ';
+    cur.insertText(tab);
+  }
+
+  void unindent() {
+    Cursor cur = copy();
+    cur.moveCursorToStartOfLine();
+    String tab = cur.document?.tabString ?? ' ';
+    String t = cur.block?.text ?? '';
+    if (t.startsWith(tab)) {
+      cur.deleteText(numberOfCharacters: tab.length);
+    }
+  }
 }

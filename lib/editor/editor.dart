@@ -137,6 +137,14 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
         cmd = 'undo';
         break;
 
+      case 'ctrl+]':
+        cmd = 'indent';
+        break;
+
+      case 'ctrl+[':
+        cmd = 'unindent';
+        break;
+
       case 'ctrl+c':
         cmd = 'copy';
         break;
@@ -426,6 +434,16 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
         doc.touch();
         break;
 
+      case 'indent':
+        d.indent();
+        doc.touch();
+        break;
+
+      case 'unindent':
+        d.unindent();
+        doc.touch();
+        break;
+
       case 'copy':
         Clipboard.setData(ClipboardData(text: d.selectedText()));
         break;
@@ -487,7 +505,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
           // if (hasScope) {
           //   print(cur.block?.scopes[cur.anchorColumn]);
           // }
-          
+
           doScroll = true;
           break;
         }

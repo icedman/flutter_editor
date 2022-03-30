@@ -434,6 +434,18 @@ class Document {
     });
   }
 
+  void indent() {
+    cursors.forEach((c) {
+      c.indent();
+    });
+  }
+
+  void unindent() {
+    cursors.forEach((c) {
+      c.unindent();
+    });
+  }
+
   void backspace() {
     cursors.forEach((c) {
       // print('${c.block?.line} ${c.column}');
