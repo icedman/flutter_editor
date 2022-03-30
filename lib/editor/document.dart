@@ -109,6 +109,9 @@ class Document {
   String tabString = '    ';
   int detectedTabSpaces = 0;
 
+  String lineComment = '';
+  List<String> blockComment = [];
+
   History history = History();
   IndexerIsolate indexer = IndexerIsolate();
 
@@ -431,6 +434,12 @@ class Document {
   void moveCursorPreviousWord({bool keepAnchor = false}) {
     cursors.forEach((c) {
       c.moveCursorPreviousWord(keepAnchor: keepAnchor);
+    });
+  }
+
+  void toggleComment() {
+    cursors.forEach((c) {
+      c.toggleComment();
     });
   }
 

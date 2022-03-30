@@ -71,10 +71,10 @@ abstract class HLEngine {
 
 abstract class HLLanguage {
   int langId = 0;
-  List<List<String>> brackets = [];
-  // List<List<String>> autoClose = [];
-  // List<String> blockComment = [];
-  // String lineComment = '';
+  List<String> blockComment = [];
+  String lineComment = '';
+  List<List<String>> brackets = []; // todo
+  List<List<String>> autoClose = []; // todo
 }
 
 class LineDecoration {

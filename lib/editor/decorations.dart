@@ -117,9 +117,6 @@ class DecorInfo extends ChangeNotifier {
       thumbAnchorPosition = start;
     }
     thumbCursor = cursor.copy();
-
-    print(thumbCursor);
-
     notifyLater();
   }
 }

@@ -43,6 +43,13 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     doc.doc.langId = highlighter.engine.loadLanguage(widget.path).langId;
 
     Document d = doc.doc;
+
+    HLLanguage? lang = highlighter.engine.language(d.langId);
+    if (lang != null) {
+      d.lineComment = lang.lineComment;
+      d.blockComment = lang.blockComment;
+    }
+
     d.addListener('onCreate', (documentId) {
       FFIBridge.run(() => FFIBridge.create_document(documentId));
     });
@@ -143,6 +150,10 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
 
       case 'ctrl+[':
         cmd = 'unindent';
+        break;
+
+      case 'ctrl+/':
+        cmd = 'toggle_comment';
         break;
 
       case 'ctrl+c':
@@ -431,6 +442,11 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       case 'settings-toggle-minimap':
         doc.showMinimap = !doc.showMinimap;
         // doScroll = true;
+        doc.touch();
+        break;
+
+      case 'toggle_comment':
+        d.toggleComment();
         doc.touch();
         break;
 

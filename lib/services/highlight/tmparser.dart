@@ -155,12 +155,24 @@ class TMParser extends HLEngine {
       return languages[langId] ?? TMParserLanguage();
     }
 
-    // todo.. try.. could fail
-    // String res = FFIBridge.languageDefinition(langId);
-    // final j = jsonDecode(res);
-
     HLLanguage l = TMParserLanguage();
     l.langId = langId;
+
+    try {
+      String res = FFIBridge.languageDefinition(langId);
+      dynamic j = jsonDecode(res);
+      // comments
+      if (j['comments'] != null) {
+        if (j['comments']['lineComment'] != null) {
+          l.lineComment = j['comments']['lineComment'];
+        }
+        if (j['comments']['blockComment'] != null) {
+          l.blockComment = j['comments']['blockComment'];
+        }
+      }
+    } catch (err) {
+      //
+    }
 
     /*
     if (j['brackets'] is List) {

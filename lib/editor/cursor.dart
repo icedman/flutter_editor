@@ -593,6 +593,42 @@ class Cursor {
     insertText(tab);
   }
 
+  void _toggleComment() {
+    Cursor cur = copy();
+    cur.moveCursorToStartOfLine();
+    String comment = cur.document?.lineComment ?? '';
+    if (comment == '') return;
+
+    comment += ' ';
+
+    String t = cur.block?.text ?? '';
+    String tt = t.trim();
+    if (tt == '') return;
+    if (tt.startsWith(comment)) {
+      cur.moveCursorRight(count: t.indexOf(comment));
+      cur.deleteText(numberOfCharacters: comment.length);
+      return;
+    }
+    int c = Document.countIndentSize(t);
+    cur.moveCursorRight(count: c);
+    cur.insertText(comment);
+  }
+
+  void toggleComment() {
+    if (hasSelection()) {
+      List<Block> blocks = selectedBlocks();
+      blocks = blocks.toSet().toList();
+      for (final b in blocks) {
+        Cursor c = copy();
+        c.block = b;
+        c.moveCursorToStartOfLine();
+        c._toggleComment();
+      }
+      return;
+    }
+    _toggleComment();
+  }
+
   void indent() {
     Cursor cur = copy();
     cur.moveCursorToStartOfLine();
