@@ -316,9 +316,12 @@ class _View extends State<View> {
       double sw = doc.scrollAreaSize.width - gutterWidth;
 
       final _jump = (target) {
-        // hscroller.jumpTo(target);
-        hscroller.animateTo(target,
-            duration: const Duration(milliseconds: 200), curve: Curves.easeIn);
+        // if (doc.doc.hasSelection()) {
+          hscroller.jumpTo(target);
+        // } else {
+        //   hscroller.animateTo(target,
+        //       duration: const Duration(milliseconds: 100), curve: Curves.easeIn);
+        // }
       };
 
       double back = offsetForCaret - (fontWidth * 8);
