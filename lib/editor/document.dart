@@ -7,8 +7,6 @@ import 'package:highlight/src/mode.dart';
 
 import 'package:editor/editor/cursor.dart';
 import 'package:editor/editor/history.dart';
-import 'package:editor/ffi/bridge.dart';
-import 'package:editor/services/indexer/indexer.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 
 int _documentId = 0xffff;
@@ -113,9 +111,6 @@ class Document {
   List<String> blockComment = [];
 
   History history = History();
-  IndexerIsolate indexer = IndexerIsolate();
-
-  List<Block> indexingQueue = [];
 
   Document() {
     documentId = _documentId++;
@@ -132,12 +127,16 @@ class Document {
       l?.call(documentId);
     });
 
-    indexer.dispose();
+    // indexer.dispose();
   }
 
   void addListener(String event, Function? func) {
     listeners[event] = listeners[event] ?? [];
     listeners[event]?.add(func);
+  }
+
+  void removeListener(String event, Function? func) {
+    // !todo
   }
 
   Cursor cursor() {
@@ -209,7 +208,6 @@ class Document {
         }
 
         blocks.add(block);
-        // FFIBridge.run(() => FFIBridge.add_block(documentId, block.blockId));
       });
     } catch (err, msg) {
       //
@@ -226,7 +224,10 @@ class Document {
 
     cursor();
     moveCursorToStartOfDocument();
-    indexer.indexFile(path);
+
+    listeners['onReady']?.forEach((l) {
+      l?.call();
+    });
     return true;
   }
 
@@ -281,19 +282,7 @@ class Document {
   }
 
   void commit() {
-    for (final a in history.actions) {
-      if (!indexingQueue.contains(a.block)) {
-        indexingQueue.add(a.block!);
-      }
-    }
     history.commit();
-
-    while (indexingQueue.length > 0) {
-      Block l = indexingQueue.last;
-      if (cursor().block == l) break;
-      indexingQueue.removeLast();
-      indexer.indexWords(l.text);
-    }
   }
 
   void undo() {
@@ -331,7 +320,6 @@ class Document {
     block.next?.previous = block;
     updateLineNumbers(index);
 
-    // FFIBridge.run(() => FFIBridge.add_block(documentId, block.blockId));
     listeners['onAddBlock']?.forEach((l) {
       l?.call(documentId, block.blockId);
     });
@@ -350,7 +338,6 @@ class Document {
     updateLineNumbers(index);
 
     if (block != null) {
-      // FFIBridge.run(() => FFIBridge.remove_block(documentId, block.blockId));
       listeners['onRemoveBlock']?.forEach((l) {
         l?.call(documentId, block.blockId);
       });
@@ -668,13 +655,6 @@ class Document {
     folds.clear();
   }
 
-  // todo - make indexer as service
-  Future<void> findMatches(String text) async {
-    if (text.length > 1) {
-      indexer.find(text);
-    }
-  }
-
   Cursor? find(Cursor cur, String s,
       {int direction = 1, bool regex = false, bool caseSensitive = false}) {
     RegExp _wordRegExp = new RegExp(
@@ -762,10 +742,13 @@ class DocumentProvider extends ChangeNotifier {
   Document doc = Document();
 
   int scrollTo = -1;
-  bool softWrap = true;
+  bool softWrap = false;
   bool showGutters = true;
   bool showMinimap = true;
   bool ready = false;
+
+  Offset offsetForCaret = Offset.zero;
+  Size scrollAreaSize = Size.zero;
 
   Future<bool> openFile(String path) async {
     doc.openFile(path).then((r) {

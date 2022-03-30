@@ -2,11 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
-
 import 'package:editor/services/indexer/levenshtein.dart';
 
 const int maxLevel = 8;
-const int maxCollection = 100;
+const int maxStringLength = 20;
+const int maxCollection = 64;
 
 RegExp _wordRegExp = new RegExp(
   r'[a-z_0-9]*',
@@ -25,6 +25,7 @@ class IndexNode {
   Map<String, IndexNode> nodes = {};
 
   void addWord(String text) {
+    if (text.length > maxStringLength) return;
     if (!words.contains(text)) {
       words.add(text);
     }
@@ -37,6 +38,9 @@ class IndexNode {
     String prefix = text.substring(0, level);
     String _prefix = prefix.toLowerCase();
     if (!nodes.containsKey(_prefix)) {
+      if (prefix.length == 1 && '0123456789_'.indexOf(prefix) != -1) {
+        return null;
+      }
       nodes[_prefix] = IndexNode(text: prefix, level: level + 1);
     }
     if (prefix != text && level <= maxLevel) {
@@ -165,6 +169,7 @@ class IndexerIsolate {
       if (message.startsWith('index::')) {
         String text = message.substring(7);
         isolateIndexer.indexWords(text);
+        // isolateIndexer.dump();
       } else if (message.startsWith('find::')) {
         String text = message.substring(6);
         final result = await isolateIndexer.find(text);
@@ -195,7 +200,6 @@ class IndexerIsolate {
       if (msg is SendPort) {
         _isolateSendPort = msg;
       } else {
-        // incoming here!
         onResult?.call(jsonDecode(msg));
       }
     });

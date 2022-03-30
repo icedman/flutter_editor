@@ -1,18 +1,19 @@
 # auto
 auto close
 auto indent (done)
+auto scroll - horizontal
 
 # commands
-indent
-unindent
+indent (done)
+unindent (done)
 indexer (done)
-comment
-uncomment
+comment (done)
+uncomment (done)
 comment block
 
 # popups
 auto complete (done)
-search
+search (partial)
 
 # file explorer
 directory & file watcher

@@ -41,7 +41,7 @@ class GutterLine extends StatelessWidget {
     HLTheme theme = Provider.of<HLTheme>(context);
     return Container(
         color: (block?.carets ?? []).length > 0
-            ? theme.selection.withOpacity(0.7)
+            ? theme.selection
             : theme.background,
         height: height,
         width: width,
@@ -53,6 +53,7 @@ class GutterLine extends StatelessWidget {
 class ViewLine extends StatelessWidget {
   ViewLine({
     Key? key,
+    Key? this.caretKey,
     Block? this.block,
     int this.line = 0,
     double this.gutterWidth = 0,
@@ -61,6 +62,7 @@ class ViewLine extends StatelessWidget {
     double this.height = 0,
   }) : super(key: key);
 
+  Key? caretKey;
   Block? block;
   int line = 0;
   double width = 0;
@@ -114,6 +116,15 @@ class ViewLine extends StatelessWidget {
       return null;
     }
 
+    Size scrollAreaSize = Size.zero;
+
+    if (obj != null) {
+      // traverse the render tree (todo! must be changed with widget tree configuration)
+      obj = obj.parent?.parent as RenderObject;
+      RenderBox? scrollAreaBox = obj as RenderBox;
+      scrollAreaSize = scrollAreaBox.size;
+    }
+
     // render carets
     List<Widget> carets = [];
     if (!(block?.carets ?? []).isEmpty) {
@@ -136,14 +147,9 @@ class ViewLine extends StatelessWidget {
 
           Offset cursorOffset = Offset(pos.dx + left, pos.dy + top);
           decor.setCaret(cursorOffset, doc.doc.cursor());
-          // thumbs
-          /*
-          if (col.color == Colors.red) {
-            decor.setThumb(cursorOffset, Offset(0, 0), doc.doc.cursor());
-          } else {
-            decor.setThumb(Offset(0, 0), cursorOffset, doc.doc.cursor()); 
-          }
-          */
+
+          doc.offsetForCaret = offsetForCaret;
+          doc.scrollAreaSize = scrollAreaSize;
         }
       }
     }
@@ -201,7 +207,9 @@ class _View extends State<View> {
   bool largeDoc = false;
 
   int visibleLine = 0;
+  double fontWidth = 0;
   double fontHeight = 0;
+  double gutterWidth = 0;
 
   @override
   void initState() {
@@ -267,6 +275,7 @@ class _View extends State<View> {
     for (final p in pars) {
       RenderBox? pBox = p as RenderBox;
       Offset pOffset = pBox.localToGlobal(Offset.zero);
+      pOffset = Offset(0, pOffset.dy);
       Rect globalPBox = pOffset & pBox.size;
       if (globalBounds.contains(pOffset) &&
           globalBounds.contains(pOffset.translate(0, pBox.size.height))) {
@@ -292,6 +301,44 @@ class _View extends State<View> {
   bool isLineVisible(int line) {
     bool res = (line >= visibleStart && line <= visibleEnd);
     return res;
+  }
+
+  void scrollToCursor() {
+    DocumentProvider doc =
+        Provider.of<DocumentProvider>(context, listen: false);
+    if (doc.softWrap) return;
+
+    if (!hscroller.positions.isEmpty && doc.scrollAreaSize.width > 0) {
+      int col = doc.doc.cursor().column;
+      double offsetForCaret = doc.offsetForCaret.dx - hscroller.position.pixels;
+      // double offsetForCaret = (col * fontWidth).toDouble() - hscroller.position.pixels;
+
+      double sw = doc.scrollAreaSize.width - gutterWidth;
+
+      final _jump = (target) {
+        // hscroller.jumpTo(target);
+        hscroller.animateTo(target,
+            duration: const Duration(milliseconds: 200), curve: Curves.easeIn);
+      };
+
+      double back = offsetForCaret - (fontWidth * 8);
+      if (back < 0) {
+        double target = hscroller.position.pixels + back;
+        if (target < 0) {
+          target = 0;
+        }
+        _jump(target);
+      } else {
+        double fwd = offsetForCaret - sw + (fontWidth * 8);
+        if (fwd > 0) {
+          double target = hscroller.position.pixels + fwd;
+          if (target > hscroller.position.maxScrollExtent) {
+            target = hscroller.position.maxScrollExtent;
+          }
+          _jump(target);
+        }
+      }
+    }
   }
 
   void scrollToLine(int line) {
@@ -369,16 +416,17 @@ class _View extends State<View> {
         fontSize: theme.gutterFontSize,
         color: theme.comment);
 
-    double gutterWidth = 0;
+    gutterWidth = 0;
     if (doc.showGutters) {
       gutterWidth =
           getTextExtents(' ${doc.doc.blocks.length} ', gutterStyle).width;
     }
 
     if (fontHeight == 0) {
-      fontHeight = getTextExtents('X',
-              TextStyle(fontFamily: theme.fontFamily, fontSize: theme.fontSize))
-          .height;
+      Size sz = getTextExtents('X',
+          TextStyle(fontFamily: theme.fontFamily, fontSize: theme.fontSize));
+      fontWidth = sz.width * 0.9;
+      fontHeight = sz.height;
     }
 
     bool softWrap = doc.softWrap;
@@ -395,6 +443,7 @@ class _View extends State<View> {
 
     if (doc.scrollTo != -1) {
       scrollToLine(doc.scrollTo);
+      Future.delayed(const Duration(milliseconds: 50), scrollToCursor);
       doc.scrollTo = -1;
     }
 

@@ -163,7 +163,8 @@ class Cursor {
     column = column - count;
     if (column < 0) {
       if (line > 0) {
-        moveCursorPreviousLine(keepAnchor: keepAnchor);
+        moveCursorUp(keepAnchor: keepAnchor);
+        moveCursorToEndOfLine(keepAnchor: keepAnchor);
       } else {
         column = 0;
       }

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:editor/editor/decorations.dart';
+import 'package:editor/editor/autocomplete.dart';
 import 'package:editor/editor/cursor.dart';
 import 'package:editor/editor/document.dart';
 import 'package:editor/editor/view.dart';
@@ -13,6 +14,7 @@ import 'package:editor/services/input.dart';
 import 'package:editor/minimap/minimap.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
+import 'package:editor/services/indexer/indexer.dart';
 
 class Editor extends StatefulWidget {
   Editor({Key? key, String this.path = ''}) : super(key: key);
@@ -26,6 +28,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
   late CaretPulse pulse;
   late DecorInfo decor;
   late Highlighter highlighter;
+  late IndexerIsolate indexer;
 
   bool _isKeyboardVisible =
       WidgetsBinding.instance!.window.viewInsets.bottom > 0.0;
@@ -35,9 +38,12 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
   bool alting = false;
   bool showKeyboard = false;
 
+  List<Block> indexingQueue = [];
+
   @override
   void initState() {
     highlighter = Highlighter();
+    indexer = IndexerIsolate();
     doc = DocumentProvider();
     doc.openFile(widget.path);
     doc.doc.langId = highlighter.engine.loadLanguage(widget.path).langId;
@@ -70,11 +76,16 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       d.autoIndent();
       d.commit();
     });
+    d.addListener('onReady', () {
+      Future.delayed(const Duration(seconds: 2), () {
+        indexer.indexFile(widget.path);
+      });
+    });
 
     decor = DecorInfo();
     pulse = CaretPulse();
 
-    doc.doc.indexer.onResult = (res) {
+    indexer.onResult = (res) {
       decor.setSearchResult(res);
     };
 
@@ -84,6 +95,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    indexer.dispose();
     WidgetsBinding.instance!.removeObserver(this);
     super.dispose();
   }
@@ -582,7 +594,21 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       doc.touch();
     }
 
+    // enque block for indexing
+    for (final a in d.history.actions) {
+      if (!indexingQueue.contains(a.block)) {
+        indexingQueue.add(a.block!);
+      }
+    }
+
     d.commit();
+
+    while (indexingQueue.length > 0) {
+      Block l = indexingQueue.last;
+      if (d.cursor().block == l) break;
+      indexingQueue.removeLast();
+      indexer.indexWords(l.text);
+    }
 
     if (didInputText) {
       Cursor cur = d.cursor().copy();
@@ -591,7 +617,9 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       if (cur.column == d.cursor().column) {
         String t = cur.selectedText();
         decor.setSearch(t);
-        d.findMatches(t);
+        if (t.length > 1) {
+          indexer.find(t);
+        }
       } else {
         decor.setSearch('');
       }
