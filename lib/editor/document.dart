@@ -401,6 +401,18 @@ class Document {
     });
   }
 
+  void moveCursorPreviousLine({bool keepAnchor = false}) {
+    cursors.forEach((c) {
+      c.moveCursorPreviousLine(keepAnchor: keepAnchor);
+    });
+  }
+
+  void moveCursorNextLine({bool keepAnchor = false}) {
+    cursors.forEach((c) {
+      c.moveCursorNextLine(keepAnchor: keepAnchor);
+    });
+  }
+
   void moveCursorToStartOfLine({bool keepAnchor = false}) {
     cursors.forEach((c) {
       c.moveCursorToStartOfLine(keepAnchor: keepAnchor);
@@ -656,10 +668,71 @@ class Document {
     folds.clear();
   }
 
+  // todo - make indexer as service
   Future<void> findMatches(String text) async {
     if (text.length > 1) {
       indexer.find(text);
     }
+  }
+
+  Cursor? find(Cursor cur, String s,
+      {int direction = 1, bool regex = false, bool caseSensitive = false}) {
+    RegExp _wordRegExp = new RegExp(
+      s,
+      caseSensitive: caseSensitive,
+      multiLine: false,
+    );
+
+    if (!caseSensitive && !regex) {
+      s = s.toLowerCase();
+    }
+
+    Block? block = cur.block;
+    while (block != null) {
+      String t = block.text;
+      if (!caseSensitive && !regex) {
+        t = t.toLowerCase();
+      }
+      int l = s.length;
+      String left = t.substring(0, cur.column);
+      String right = t.substring(cur.column);
+      int idx = -1;
+      if (regex) {
+        final matches = _wordRegExp.allMatches(t);
+        for (final m in matches) {
+          var g = m.groups([0]);
+          var t = g[0] ?? '';
+          l = m.end - m.start;
+          idx = m.start;
+          break;
+        }
+      } else {
+        idx = (direction == 1 ? right : left).indexOf(s);
+      }
+
+      // found
+      if (idx != -1) {
+        Cursor res = cur.copy();
+        res.moveCursorToStartOfLine();
+        res.moveCursorRight(count: l, keepAnchor: true);
+        return res;
+      }
+
+      if (direction == 1) {
+        if (block.next == null) {
+          break;
+        }
+        cur.moveCursorNextLine();
+      } else {
+        if (block.previous == null) {
+          break;
+        }
+        cur.moveCursorPreviousLine();
+      }
+
+      block = cur.block;
+    }
+    return null;
   }
 
   int computedLine(int line) {

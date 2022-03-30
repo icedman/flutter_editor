@@ -163,8 +163,7 @@ class Cursor {
     column = column - count;
     if (column < 0) {
       if (line > 0) {
-        moveCursorUp(keepAnchor: keepAnchor);
-        moveCursorToEndOfLine(keepAnchor: keepAnchor);
+        moveCursorPreviousLine(keepAnchor: keepAnchor);
       } else {
         column = 0;
       }
@@ -188,8 +187,7 @@ class Cursor {
     column = column + count;
     if (column > l.length) {
       if (line < blocks.length - 1) {
-        moveCursorDown(keepAnchor: keepAnchor);
-        moveCursorToStartOfLine(keepAnchor: keepAnchor);
+        moveCursorNextLine(keepAnchor: keepAnchor);
       }
     }
     if (!keepAnchor) {
@@ -438,6 +436,24 @@ class Cursor {
     block?.makeDirty();
   }
 
+  bool moveCursorPreviousLine({bool keepAnchor = false}) {
+    if (block?.previous == null) {
+      return false;
+    }
+    moveCursorUp(keepAnchor: keepAnchor);
+    moveCursorToStartOfLine(keepAnchor: keepAnchor);
+    return true;
+  }
+
+  bool moveCursorNextLine({bool keepAnchor = false}) {
+    if (block?.next == null) {
+      return false;
+    }
+    moveCursorDown(keepAnchor: keepAnchor);
+    moveCursorToStartOfLine(keepAnchor: keepAnchor);
+    return true;
+  }
+
   void mergeNextLine() {
     String l = block?.text ?? '';
     Block? next = block?.next;
@@ -514,8 +530,7 @@ class Cursor {
     document?.history.update(newBlock);
     newBlock?.text = right;
     newBlock?.makeDirty(highlight: true);
-    moveCursorDown();
-    moveCursorToStartOfLine();
+    moveCursorNextLine();
   }
 
   void _insertText(String text) {
@@ -564,8 +579,7 @@ class Cursor {
         cur.anchorColumn = idx + text.length;
         return cur.normalized(inverse: !isNormalized);
       } else {
-        cur.moveCursorDown();
-        cur.moveCursorToStartOfLine();
+        cur.moveCursorNextLine();
       }
       b = b.next;
     }
@@ -629,14 +643,29 @@ class Cursor {
     _toggleComment();
   }
 
-  void indent() {
+  void _indent() {
     Cursor cur = copy();
     cur.moveCursorToStartOfLine();
     String tab = cur.document?.tabString ?? ' ';
     cur.insertText(tab);
   }
 
-  void unindent() {
+  void indent() {
+    if (hasSelection()) {
+      List<Block> blocks = selectedBlocks();
+      blocks = blocks.toSet().toList();
+      for (final b in blocks) {
+        Cursor c = copy();
+        c.block = b;
+        c.moveCursorToStartOfLine();
+        c._indent();
+      }
+      return;
+    }
+    _indent();
+  }
+
+  void _unindent() {
     Cursor cur = copy();
     cur.moveCursorToStartOfLine();
     String tab = cur.document?.tabString ?? ' ';
@@ -644,5 +673,20 @@ class Cursor {
     if (t.startsWith(tab)) {
       cur.deleteText(numberOfCharacters: tab.length);
     }
+  }
+
+  void unindent() {
+    if (hasSelection()) {
+      List<Block> blocks = selectedBlocks();
+      blocks = blocks.toSet().toList();
+      for (final b in blocks) {
+        Cursor c = copy();
+        c.block = b;
+        c.moveCursorToStartOfLine();
+        c._unindent();
+      }
+      return;
+    }
+    _unindent();
   }
 }
