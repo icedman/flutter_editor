@@ -104,26 +104,37 @@ class Document {
   List<Cursor> folds = [];
   List<Cursor> extraCursors = [];
   List<Cursor> sectionCursors = [];
+  Map<String, List<Function?>> listeners = {};
+
+  String tabString = '    ';
+  int detectedTabSpaces = 0;
 
   History history = History();
   IndexerIsolate indexer = IndexerIsolate();
 
   List<Block> indexingQueue = [];
-  dynamic search;
 
   Document() {
     documentId = _documentId++;
-    FFIBridge.run(() => FFIBridge.create_document(documentId));
-    clear();
 
-    indexer.onResult = (res) {
-      search = res;
-    };
+    listeners['onCreate']?.forEach((l) {
+      l?.call(documentId);
+    });
+
+    clear();
   }
 
   void dispose() {
-    FFIBridge.run(() => FFIBridge.destroy_document(documentId));
+    listeners['onDestroy']?.forEach((l) {
+      l?.call(documentId);
+    });
+
     indexer.dispose();
+  }
+
+  void addListener(String event, Function? func) {
+    listeners[event] = listeners[event] ?? [];
+    listeners[event]?.add(func);
   }
 
   Cursor cursor() {
@@ -163,9 +174,19 @@ class Document {
     return _cursors;
   }
 
+  static int countIndentSize(String s) {
+    for (int i = 0; i < s.length; i++) {
+      if (s[i] != ' ') {
+        return i;
+      }
+    }
+    return 0;
+  }
+
   Future<bool> openFile(String path) async {
     clear();
     docPath = path;
+    detectedTabSpaces = 0;
 
     blocks = [];
     File f = File(docPath);
@@ -176,13 +197,24 @@ class Document {
           .transform(const LineSplitter())
           .forEach((l) {
         Block block = Block(l, document: this);
+
+        if (blocks.length < 100) {
+          int c = countIndentSize(l);
+          if (c > 0 && (c < detectedTabSpaces || detectedTabSpaces == 0)) {
+            detectedTabSpaces = c;
+          }
+        }
+
         blocks.add(block);
-        FFIBridge.run(() => FFIBridge.add_block(documentId, block.blockId));
+        // FFIBridge.run(() => FFIBridge.add_block(documentId, block.blockId));
       });
     } catch (err, msg) {
       //
     }
 
+    if (detectedTabSpaces > 0) {
+      tabString = List.generate(detectedTabSpaces, (_) => ' ').join();
+    }
     updateLineNumbers(0);
 
     for (int i = 0; i < blocks.length; i++) {
@@ -192,8 +224,6 @@ class Document {
     cursor();
     moveCursorToStartOfDocument();
     indexer.indexFile(path);
-
-    print(cursor());
     return true;
   }
 
@@ -298,7 +328,11 @@ class Document {
     block.next?.previous = block;
     updateLineNumbers(index);
 
-    FFIBridge.run(() => FFIBridge.add_block(documentId, block.blockId));
+    // FFIBridge.run(() => FFIBridge.add_block(documentId, block.blockId));
+    listeners['onAddBlock']?.forEach((l) {
+      l?.call(documentId, block.blockId);
+    });
+
     history.add(block);
     return block;
   }
@@ -313,7 +347,10 @@ class Document {
     updateLineNumbers(index);
 
     if (block != null) {
-      FFIBridge.run(() => FFIBridge.remove_block(documentId, block.blockId));
+      // FFIBridge.run(() => FFIBridge.remove_block(documentId, block.blockId));
+      listeners['onRemoveBlock']?.forEach((l) {
+        l?.call(documentId, block.blockId);
+      });
     }
 
     history.remove(block);
@@ -411,11 +448,19 @@ class Document {
     cursorsSorted(inverse: true).forEach((c) {
       c.insertNewLine();
     });
+
+    listeners['onInsertNewLine']?.forEach((l) {
+      l?.call();
+    });
   }
 
   void insertText(String text) {
     cursorsSorted(inverse: true).forEach((c) {
       c.insertText(text);
+    });
+
+    listeners['onInsertText']?.forEach((l) {
+      l?.call(text);
     });
   }
 
@@ -572,6 +617,12 @@ class Document {
         folds.add(start);
       }
     }
+  }
+
+  void autoIndent() {
+    cursors.forEach((c) {
+      c.autoIndent();
+    });
   }
 
   void unfold(Block? block) {

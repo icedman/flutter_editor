@@ -100,7 +100,7 @@ class MinimapPage extends StatelessWidget {
         onTapDown: (TapDownDetails details) {
           RenderObject? obj = context.findRenderObject();
           RenderBox box = obj as RenderBox;
-          Offset pos = box.localToGlobal(const Offset(0, 0));
+          Offset pos = box.localToGlobal(Offset.zero);
           double dy = details.globalPosition.dy - pos.dy;
           double p = dy * 100 / (box.size.height + 0.001);
           int lead = p > 50 ? 8 : -8;

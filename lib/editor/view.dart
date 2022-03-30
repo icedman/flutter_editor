@@ -91,9 +91,9 @@ class ViewLine extends StatelessWidget {
     List<InlineSpan> spans = block?.spans ?? [];
     bool softWrap = doc.softWrap;
 
-    Offset pos = const Offset(0, 0);
-    Size extents = Size(0, 0);
-    Size size = Size(0, 0);
+    Offset pos = Offset.zero;
+    Size extents = Size.zero;
+    Size size = Size.zero;
     RenderObject? obj = context.findRenderObject();
     if (obj != null) {
       RenderBox? box = obj as RenderBox;
@@ -124,7 +124,7 @@ class ViewLine extends StatelessWidget {
       if (textPainter != null) {
         for (final col in block?.carets ?? []) {
           Offset offsetForCaret = textPainter.getOffsetForCaret(
-              TextPosition(offset: col.position), Offset(0, 0) & Size(0, 0));
+              TextPosition(offset: col.position), Offset(0, 0) & Size.zero);
 
           double left = gutterWidth + offsetForCaret.dx;
           double top = offsetForCaret.dy;
@@ -157,7 +157,7 @@ class ViewLine extends StatelessWidget {
         }
         if (textPainter != null) {
           Offset offsetForCaret = textPainter.getOffsetForCaret(
-              TextPosition(offset: e.column), Offset(0, 0) & Size(0, 0));
+              TextPosition(offset: e.column), Offset(0, 0) & Size.zero);
           carets.add(Positioned(
               left: gutterWidth + offsetForCaret.dx,
               top: offsetForCaret.dy,
@@ -254,7 +254,7 @@ class _View extends State<View> {
   void updateVisibleRange(BuildContext context) {
     RenderObject? obj = context.findRenderObject();
     RenderBox? box = obj as RenderBox;
-    Offset offset = box.localToGlobal(const Offset(0, 0));
+    Offset offset = box.localToGlobal(Offset.zero);
     Rect bounds = obj.paintBounds;
     Rect globalBounds = offset & bounds.size;
 
@@ -266,7 +266,7 @@ class _View extends State<View> {
 
     for (final p in pars) {
       RenderBox? pBox = p as RenderBox;
-      Offset pOffset = pBox.localToGlobal(const Offset(0, 0));
+      Offset pOffset = pBox.localToGlobal(Offset.zero);
       Rect globalPBox = pOffset & pBox.size;
       if (globalBounds.contains(pOffset) &&
           globalBounds.contains(pOffset.translate(0, pBox.size.height))) {
@@ -399,7 +399,7 @@ class _View extends State<View> {
     }
 
     RenderObject? obj = context.findRenderObject();
-    Size size = Size(0, 0);
+    Size size = Size.zero;
     if (obj != null) {
       RenderBox? box = obj as RenderBox;
       size = box.size;

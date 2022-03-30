@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:editor/editor/document.dart';
 import 'package:editor/editor/history.dart';
 import 'package:flutter/material.dart';
@@ -24,7 +25,12 @@ class Cursor {
 
   @override
   String toString() {
-    return '${block?.line}:$column ${anchorBlock?.line}:$anchorColumn}';
+    return jsonEncode({
+      'line': (block?.line ?? 0),
+      'column': column,
+      'anchorLine': (anchorBlock?.line ?? 0),
+      'anchorColumn': anchorColumn
+    });
   }
 
   @override
@@ -382,13 +388,8 @@ class Cursor {
   }
 
   void moveCursorNextWord({bool keepAnchor = false}) {
-    // RegExp regExp = new RegExp(
-    //   r'[a-z_\-0-9]*',
-    //   caseSensitive: false,
-    //   multiLine: false,
-    // );
     String l = block?.text ?? '';
-    var matches = block?.words ?? []; // regExp.allMatches(l);
+    var matches = block?.words ?? [];
     bool breakNext = false;
     bool found = false;
     for (final m in matches) {
@@ -413,15 +414,10 @@ class Cursor {
   }
 
   void moveCursorPreviousWord({bool keepAnchor = false}) {
-    // RegExp regExp = new RegExp(
-    //   r'[a-z_\-0-9]*',
-    //   caseSensitive: false,
-    //   multiLine: false,
-    // );
     int lastColumn = column;
     bool found = false;
     String l = block?.text ?? '';
-    var matches = block?.words ?? []; // regExp.allMatches(l);
+    var matches = block?.words ?? [];
     for (final m in matches) {
       var g = m.groups([0]);
       String t = g[0] ?? '';
@@ -586,5 +582,14 @@ class Cursor {
     });
   }
 
-  void validateCursor() {}
+  void autoIndent() {
+    Cursor cur = copy();
+    cur.moveCursorUp();
+    if (cur.block == block) return;
+    String t = cur.block?.text ?? '';
+    int c = Document.countIndentSize(t);
+    if (c == 0) return;
+    String tab = List.generate(c, (_) => ' ').join();
+    insertText(tab);
+  }
 }

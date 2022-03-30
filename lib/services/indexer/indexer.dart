@@ -5,7 +5,8 @@ import 'dart:isolate';
 
 import 'package:editor/services/indexer/levenshtein.dart';
 
-const int maxLevel = 4;
+const int maxLevel = 8;
+const int maxCollection = 100;
 
 RegExp _wordRegExp = new RegExp(
   r'[a-z_0-9]*',
@@ -57,6 +58,7 @@ class IndexNode {
   }
 
   void collect({List<String>? result}) {
+    if (words.length >= maxCollection) return;
     if (words.length > 0 && result != null) {
       words.forEach((w) => result.add(w));
     }

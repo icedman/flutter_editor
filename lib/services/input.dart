@@ -21,7 +21,7 @@ Offset screenToCursor(RenderObject? obj, Offset pos) {
   for (final par in pars) {
     if (((par.text as TextSpan).children?.length ?? 0) > 0) lastPar = par;
     TextSpan t = par.text as TextSpan;
-    Rect bounds = const Offset(0, 0) & par.size;
+    Rect bounds = Offset.zero & par.size;
     Offset offsetForCaret = par.localToGlobal(
         par.getOffsetForCaret(const TextPosition(offset: 0), bounds));
     Rect parBounds =
@@ -43,7 +43,7 @@ Offset screenToCursor(RenderObject? obj, Offset pos) {
   }
   if (targetPar == null) return Offset(-1, -1);
 
-  Rect bounds = const Offset(0, 0) & targetPar.size;
+  Rect bounds = Offset.zero & targetPar.size;
   List<InlineSpan> children =
       (targetPar.text as TextSpan).children ?? <InlineSpan>[];
   Size fontCharSize = Size(0, 0);
@@ -150,7 +150,7 @@ class _InputListener extends State<InputListener> {
   late FocusNode textFocusNode;
   late TextEditingController controller;
 
-  Offset lastTap = const Offset(0, 0);
+  Offset lastTap = Offset.zero;
 
   @override
   void initState() {

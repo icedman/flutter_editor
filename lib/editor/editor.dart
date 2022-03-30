@@ -8,6 +8,7 @@ import 'package:editor/editor/decorations.dart';
 import 'package:editor/editor/cursor.dart';
 import 'package:editor/editor/document.dart';
 import 'package:editor/editor/view.dart';
+import 'package:editor/ffi/bridge.dart';
 import 'package:editor/services/input.dart';
 import 'package:editor/minimap/minimap.dart';
 import 'package:editor/services/highlight/theme.dart';
@@ -41,8 +42,35 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     doc.openFile(widget.path);
     doc.doc.langId = highlighter.engine.loadLanguage(widget.path).langId;
 
+    Document d = doc.doc;
+    d.addListener('onCreate', (documentId) {
+      FFIBridge.run(() => FFIBridge.create_document(documentId));
+    });
+    d.addListener('onDestroy', (documentId) {
+      FFIBridge.run(() => FFIBridge.destroy_document(documentId));
+    });
+    d.addListener('onAddBlock', (documentId, blockId) {
+      FFIBridge.run(() => FFIBridge.add_block(documentId, blockId));
+    });
+    d.addListener('onRemoveBlock', (documentId, blockId) {
+      FFIBridge.run(() => FFIBridge.remove_block(documentId, blockId));
+    });
+    d.addListener('onInsertText', (text) {
+      // print('auto close');
+    });
+    d.addListener('onInsertNewLine', () {
+      d.begin();
+      d.autoIndent();
+      d.commit();
+    });
+
     decor = DecorInfo();
     pulse = CaretPulse();
+
+    doc.doc.indexer.onResult = (res) {
+      decor.setSearchResult(res);
+    };
+
     super.initState();
     WidgetsBinding.instance!.addObserver(this);
   }
@@ -74,8 +102,8 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     if (keys == 'escape') {
       keys = 'cancel';
     }
-    if (keys == '\n' || keys == 'enter') {
-      keys = 'newline';
+    if (keys == '\n') {
+      keys = 'enter';
     }
     if (keys.startsWith('arrow')) {
       keys = keys.substring(6);
@@ -178,6 +206,37 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
 
     Cursor cursor = d.cursor().copy();
 
+    // todo!
+    if (decor.showCaretBased) {
+      switch (cmd) {
+        case 'up':
+          if (decor.menuIndex > 0) {
+            decor.menuIndex--;
+            decor.notifyListeners();
+          }
+          return;
+        case 'down':
+          if (decor.menuIndex + 1 < decor.resultItems?.length) {
+            decor.menuIndex++;
+            decor.notifyListeners();
+          }
+          return;
+        case 'enter':
+          {
+            String s = decor.resultItems[decor.menuIndex] ?? '';
+            d.begin();
+            d.clearCursors();
+            d.moveCursorLeft();
+            d.selectWord();
+            d.insertText(s); // todo.. command!
+            d.commit();
+            doc.notifyListeners();
+            decor.setSearch('');
+            return;
+          }
+      }
+    }
+
     _makeDirty();
 
     d.begin();
@@ -200,7 +259,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
         didInputText = true;
         break;
 
-      case 'newline':
+      case 'enter':
         d.deleteSelectedText();
         d.insertNewLine();
         doScroll = true;
@@ -346,7 +405,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
         doScroll = true;
         break;
       case 'tab':
-        d.insertText('    ');
+        d.insertText(d.tabString);
         doScroll = true;
         break;
 
@@ -491,16 +550,16 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     d.commit();
 
     if (didInputText) {
-      Future.delayed(const Duration(milliseconds: 50), () {
-        Cursor cur = d.cursor().copy();
-        cur.moveCursorLeft();
-        cur.selectWord();
-        if (cur.column == d.cursor().column) {
-          String t = cur.selectedText();
-          d.findMatches(t);
-          decor.setSearch(t);
-        }
-      });
+      Cursor cur = d.cursor().copy();
+      cur.moveCursorLeft();
+      cur.selectWord();
+      if (cur.column == d.cursor().column) {
+        String t = cur.selectedText();
+        decor.setSearch(t);
+        d.findMatches(t);
+      } else {
+        decor.setSearch('');
+      }
     } else {
       decor.setSearch('');
     }

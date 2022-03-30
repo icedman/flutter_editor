@@ -32,20 +32,23 @@ class CaretPulse extends ChangeNotifier {
 }
 
 class DecorInfo extends ChangeNotifier {
-  Offset scrollPosition = const Offset(0, 0);
+  Offset scrollPosition = Offset.zero;
 
-  Offset thumbScrollStart = const Offset(0, 0);
-  Offset thumbPosition = const Offset(0, 0);
-  Offset thumbAnchorPosition = const Offset(0, 0);
+  Offset thumbScrollStart = Offset.zero;
+  Offset thumbPosition = Offset.zero;
+  Offset thumbAnchorPosition = Offset.zero;
   Cursor thumbCursor = Cursor();
 
-  Offset caretScrollStart = const Offset(0, 0);
-  Offset caretPosition = const Offset(0, 0);
+  Offset caretScrollStart = Offset.zero;
+  Offset caretPosition = Offset.zero;
   Cursor caret = Cursor();
   bool showCaretBased = false;
 
   List<String> menu = [];
+  int menuIndex = 0;
   String searchText = '';
+  dynamic result;
+  dynamic resultItems;
 
   void notifyLater() {
     Future.delayed(const Duration(milliseconds: 0), () => notifyListeners());
@@ -77,8 +80,15 @@ class DecorInfo extends ChangeNotifier {
   void setSearch(String text) {
     if (searchText != text) {
       searchText = text;
+      menuIndex = 0;
       notifyLater();
     }
+  }
+
+  void setSearchResult(dynamic res) {
+    result = res;
+    resultItems = res['result']!;
+    notifyLater();
   }
 
   void setMenu(List<String> strings) {
@@ -191,13 +201,23 @@ class AutoCompletePopup extends StatelessWidget {
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
     DecorInfo decor = Provider.of<DecorInfo>(context);
 
+    Size windowSize = Size.zero;
+    Offset windowPos = Offset.zero;
+    RenderObject? obj = context.findRenderObject();
+    if (obj != null) {
+      obj = obj.parent as RenderObject;
+      RenderBox? box = obj as RenderBox;
+      windowSize = box.size;
+      windowPos = box.localToGlobal(windowPos);
+    }
+
     Widget _hide() {
       decor.showCaretBased = false;
       return Container();
     }
 
-    if (!decor.showCaretBased || doc.doc.search == null) return _hide();
-    dynamic json = doc.doc.search;
+    if (!decor.showCaretBased || decor.result == null) return _hide();
+    dynamic json = decor.result;
 
     String _search = json['search'] ?? '';
     dynamic _result = json['result']!;
@@ -212,45 +232,72 @@ class AutoCompletePopup extends StatelessWidget {
     Color bg = darken(theme.background, 0.04);
 
     const double maxWidth = 220;
-    const double maxHeight = 200;
+    const int maxItems = 8;
 
-    Size size = getTextExtents('123', style);
-    double itemHeight = (size.height + 2);
+    double padding = 2;
+    Size size = getTextExtents('  ', style);
+    double itemHeight = (size.height + 2 + (padding * 2));
     double height = itemHeight * _result.length;
+    double maxHeight = itemHeight * maxItems;
     if (height > maxHeight) height = maxHeight;
 
     Offset pos = decor.caretPosition;
-    double dx = decor.caretScrollStart.dx - decor.scrollPosition.dx;
-    double dy = decor.caretScrollStart.dy - decor.scrollPosition.dy;
-    pos = Offset(pos.dx + dx, pos.dy + dy + itemHeight);
+    double dx = pos.dx;
+    double dy = pos.dy + itemHeight;
+    if (dx + maxWidth > windowSize.width && windowSize.width > 0) {
+      dx = windowSize.width - maxWidth;
+    }
+    if (dy + height + (windowSize.height / 8) > windowSize.height &&
+        windowSize.height > 0) {
+      dy = pos.dy - height - padding * 2;
+    }
+    pos = Offset(dx, dy);
+
+    if (decor.menuIndex >= _result.length) {
+      decor.menuIndex = _result.length - 1;
+    }
+
+    Widget _item(BuildContext context, int index) {
+      String s = _result[index];
+      return GestureDetector(
+          onTap: () {
+            decor.setSearch('');
+            Document d = doc.doc;
+            d.begin();
+            d.clearCursors();
+            d.moveCursorLeft();
+            d.selectWord();
+            d.insertText(s); // todo.. command!
+            d.commit();
+            doc.notifyListeners();
+          },
+          child: Padding(
+              padding: EdgeInsets.all(padding),
+              child: Container(
+                  color: index == decor.menuIndex ? theme.background : null,
+                  width: maxWidth,
+                  child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Text(' $s ',
+                          style: style,
+                          softWrap: false,
+                          overflow: TextOverflow.clip)))));
+    }
+
     return Positioned(
         top: pos.dy,
         left: pos.dx - size.width,
         child: Container(
-            width: maxWidth,
-            height: height,
-            color: bg,
-            child: ListView.builder(
-                itemCount: _result.length,
-                itemExtent: itemHeight,
-                itemBuilder: (BuildContext context, int index) {
-                  String text = _result[index] ?? '';
-                  return GestureDetector(
-                      child: Text('$text',
-                          style: style,
-                          softWrap: false,
-                          overflow: TextOverflow.clip),
-                      onTap: () {
-                        decor.setSearch('');
-                        Document d = doc.doc;
-                        d.begin();
-                        d.clearCursors();
-                        d.moveCursorLeft();
-                        d.selectWord();
-                        d.insertText(text); // todo.. command!
-                        d.commit();
-                        doc.notifyListeners();
-                      });
-                })));
+            decoration: BoxDecoration(
+                color: bg, border: Border.all(color: theme.comment)),
+            width: maxWidth + padding,
+            height: height + padding,
+            child: Padding(
+                padding: EdgeInsets.all(padding),
+                child: ListView.builder(
+                    padding: EdgeInsets.zero,
+                    itemCount: _result.length,
+                    itemExtent: itemHeight,
+                    itemBuilder: _item))));
   }
 }
