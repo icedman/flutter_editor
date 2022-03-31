@@ -275,7 +275,7 @@ class _View extends State<View> {
     for (final p in pars) {
       RenderBox? pBox = p as RenderBox;
       Offset pOffset = pBox.localToGlobal(Offset.zero);
-      pOffset = Offset(0, pOffset.dy);
+      pOffset = Offset(globalBounds.left, globalBounds.top + pOffset.dy);
       Rect globalPBox = pOffset & pBox.size;
       if (globalBounds.contains(pOffset) &&
           globalBounds.contains(pOffset.translate(0, pBox.size.height))) {
@@ -296,10 +296,18 @@ class _View extends State<View> {
         visibleEnd = max;
       }
     }
+
+    // print('$visibleStart $visibleEnd');
   }
 
   bool isLineVisible(int line) {
     bool res = (line >= visibleStart && line <= visibleEnd);
+
+    if (visibleStart == -1 || visibleEnd == -1) {
+      print('visible range error: $visibleStart $visibleEnd');
+      return true;
+    }
+
     return res;
   }
 

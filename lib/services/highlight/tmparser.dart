@@ -39,8 +39,6 @@ class TMParser extends HLEngine {
     loadTheme(Platform.isAndroid
         ? '/sdcard/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json'
         : '/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json');
-
-    loadLanguage("test.c").langId;
   }
 
   void loadTheme(String path) {
