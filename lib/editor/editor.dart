@@ -12,6 +12,7 @@ import 'package:editor/editor/view.dart';
 import 'package:editor/ffi/bridge.dart';
 import 'package:editor/services/input.dart';
 import 'package:editor/minimap/minimap.dart';
+import 'package:editor/services/ui.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 import 'package:editor/services/indexer/indexer.dart';
@@ -232,6 +233,13 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     Document d = doc.doc;
     Cursor cursor = d.cursor().copy();
 
+    UIProvider ui = Provider.of<UIProvider>(context, listen: false);
+
+    if (cmd == 'cancel' && ui.popups.isNotEmpty) {
+      ui.clearPopups();
+      return;
+    }
+
     // todo!
     if (decor.showCaretBased) {
       switch (cmd) {
@@ -242,7 +250,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
           }
           return;
         case 'down':
-          if (decor.menuIndex + 1 < decor.resultItems?.length) {
+          if (decor.menuIndex + 1 < (decor.resultItems?.length ?? 0)) {
             decor.menuIndex++;
             decor.notifyListeners();
           }
@@ -283,6 +291,10 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     }
 
     if (modifiedBlocks.isNotEmpty) {
+
+      // onInputText..
+      ui.setPopup(AutoCompletePopup(position: decor.caretPosition, doc: doc, search: decor.result), blur: false, shield: false);
+
       Cursor cur = d.cursor().copy();
       cur.moveCursorLeft();
       cur.selectWord();
@@ -509,7 +521,9 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
                       showKeyboard: showKeyboard)),
               Minimap()
             ]),
-            AutoCompletePopup()
+            
+            // AutoCompletePopup()
+
           ])),
 
           if (Platform.isAndroid) ...[

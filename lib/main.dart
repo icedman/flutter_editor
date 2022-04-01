@@ -7,6 +7,7 @@ import 'package:editor/editor/editor.dart';
 import 'package:editor/explorer/explorer.dart';
 import 'package:editor/ffi/bridge.dart';
 import 'package:editor/services/app.dart';
+import 'package:editor/services/ui.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/tmparser.dart';
 import 'package:editor/services/highlight/highlighter.dart';
@@ -35,7 +36,8 @@ void main(List<String> args) async {
   TMParser(); // loads the theme
 
   AppProvider app = AppProvider();
-
+  UIProvider ui = UIProvider();
+  
   HLTheme theme = HLTheme.instance();
 
   ExplorerProvider explorer = ExplorerProvider();

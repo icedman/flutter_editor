@@ -97,8 +97,9 @@ class ViewLine extends StatelessWidget {
     Size extents = Size.zero;
     Size size = Size.zero;
     RenderObject? obj = context.findRenderObject();
+    RenderBox? box;
     if (obj != null) {
-      RenderBox? box = obj as RenderBox;
+      box = obj as RenderBox;
       size = box.size;
       pos = box.localToGlobal(pos);
     }
@@ -145,8 +146,7 @@ class ViewLine extends StatelessWidget {
               child: AnimatedCaret(
                   width: 2, height: extents.height, color: col.color)));
 
-          // Offset cursorOffset = Offset(pos.dx + left, pos.dy + top);
-          Offset cursorOffset = Offset(left, top);
+          Offset cursorOffset = box?.localToGlobal(Offset(left, top)) ?? Offset.zero;
           decor.setCaret(cursorOffset, doc.doc.cursor());
 
           doc.offsetForCaret = offsetForCaret;
