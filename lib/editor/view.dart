@@ -145,7 +145,8 @@ class ViewLine extends StatelessWidget {
               child: AnimatedCaret(
                   width: 2, height: extents.height, color: col.color)));
 
-          Offset cursorOffset = Offset(pos.dx + left, pos.dy + top);
+          // Offset cursorOffset = Offset(pos.dx + left, pos.dy + top);
+          Offset cursorOffset = Offset(left, pos.dy + top);
           decor.setCaret(cursorOffset, doc.doc.cursor());
 
           doc.offsetForCaret = offsetForCaret;

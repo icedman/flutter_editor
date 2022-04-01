@@ -159,7 +159,9 @@ class BracketMatch extends StatelessWidget {
         height: height,
         width: width,
         decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: color, width: 2.0))));
+            // border: Border(bottom: BorderSide(color: color, width: 2.0))
+            border: Border.all(color: color, width: 1.0)
+            ));
   }
 }
 

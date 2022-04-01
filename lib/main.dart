@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:editor/editor/editor.dart';
 import 'package:editor/explorer/explorer.dart';
 import 'package:editor/ffi/bridge.dart';
+import 'package:editor/services/app.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/tmparser.dart';
 import 'package:editor/services/highlight/highlighter.dart';
@@ -33,6 +34,10 @@ void main(List<String> args) async {
   FFIBridge.initialize(extPath);
   TMParser(); // loads the theme
 
+  AppProvider app = AppProvider();
+
+  HLTheme theme = HLTheme.instance();
+
   ExplorerProvider explorer = ExplorerProvider();
   explorer.explorer.setRootPath('./').then((files) {
     explorer.explorer.root?.isExpanded = true;
@@ -40,7 +45,8 @@ void main(List<String> args) async {
     });
 
   return runApp(MultiProvider(providers: [
-    ChangeNotifierProvider(create: (context) => HLTheme.instance()),
+    ChangeNotifierProvider(create: (context) => app),
+    ChangeNotifierProvider(create: (context) => theme),
     ChangeNotifierProvider(create: (context) => explorer),
   ], child: App(path: path)));
 }
