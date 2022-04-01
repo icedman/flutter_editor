@@ -61,7 +61,7 @@ class ExplorerItem {
         path = _path.join(fullPath, path);
       }
       String base = _path.basename(path);
-      if (base.startsWith('.')) continue; // skip 
+      if (base.startsWith('.')) continue; // skip
       String dir = _path.dirname(path);
       if (dir == fullPath && path != fullPath) {
         ExplorerItem? ci = itemFromPath(path, deep: false);
@@ -75,13 +75,13 @@ class ExplorerItem {
       }
     }
 
-    children.sort((a,b) {
+    children.sort((a, b) {
       if (a == null || b == null) return 0;
       if (a.isDirectory != b.isDirectory) {
         return a.isDirectory ? -1 : 1;
       }
       return a.fileName.compareTo(b.fileName);
-      });
+    });
   }
 
   @override

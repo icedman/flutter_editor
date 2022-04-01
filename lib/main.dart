@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:editor/editor/editor.dart';
 import 'package:editor/explorer/explorer.dart';
 import 'package:editor/ffi/bridge.dart';
+import 'package:editor/services/app.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/tmparser.dart';
 import 'package:editor/services/highlight/highlighter.dart';
@@ -16,6 +17,8 @@ void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
 
   FFIBridge.load();
+
+  AppProvider app = AppProvider();
 
   String extPath = '/home/iceman/.editor/extensions/';
   String path = './tests/tinywl.c';
@@ -33,14 +36,17 @@ void main(List<String> args) async {
   FFIBridge.initialize(extPath);
   TMParser(); // loads the theme
 
+  HLTheme theme = HLTheme.instance();
+
   ExplorerProvider explorer = ExplorerProvider();
   explorer.explorer.setRootPath('./').then((files) {
     explorer.explorer.root?.isExpanded = true;
     explorer.rebuild();
-    });
+  });
 
   return runApp(MultiProvider(providers: [
-    ChangeNotifierProvider(create: (context) => HLTheme.instance()),
+    ChangeNotifierProvider(create: (context) => app),
+    ChangeNotifierProvider(create: (context) => theme),
     ChangeNotifierProvider(create: (context) => explorer),
   ], child: App(path: path)));
 }
@@ -65,18 +71,17 @@ class App extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: themeData,
         home: Scaffold(
-            body: Row(
-              children: [ 
-              ExplorerTree(),
-              Expanded(child: Column(children: [
+            body: Row(children: [
+          ExplorerTree(),
           Expanded(
-              child: Padding(
-                  padding: EdgeInsets.all(0), child: Editor(path: path))),
-          // Expanded(
-          //     child: Padding(
-          //         padding: EdgeInsets.all(0), child: Editor(path: path))),
-        ]))
-              ]
-        )));
+              child: Column(children: [
+            Expanded(
+                child: Padding(
+                    padding: EdgeInsets.all(0), child: Editor(path: path))),
+            // Expanded(
+            //     child: Padding(
+            //         padding: EdgeInsets.all(0), child: Editor(path: path))),
+          ]))
+        ])));
   }
 }

@@ -60,6 +60,7 @@ class ViewLine extends StatelessWidget {
     TextStyle? this.gutterStyle,
     double this.width = 0,
     double this.height = 0,
+    double this.gutterPad = 0
   }) : super(key: key);
 
   Key? caretKey;
@@ -68,6 +69,7 @@ class ViewLine extends StatelessWidget {
   double width = 0;
   double height = 0;
   double gutterWidth = 0;
+  double gutterPad = 0;
   TextStyle? gutterStyle;
 
   @override
@@ -105,7 +107,7 @@ class ViewLine extends StatelessWidget {
 
     TextPainter? textPainter;
     TextPainter? painter() {
-      if (size.width > 0 && !spans.isEmpty && spans[0] is TextSpan) {
+      if (size.width > 0 && spans.isNotEmpty && spans[0] is TextSpan) {
         TextSpan ts = spans[0] as TextSpan;
         extents = getTextExtents('|', ts.style ?? TextStyle());
         return TextPainter(
@@ -127,7 +129,7 @@ class ViewLine extends StatelessWidget {
 
     // render carets
     List<Widget> carets = [];
-    if (!(block?.carets ?? []).isEmpty) {
+    if ((block?.carets ?? []).isNotEmpty) {
       if (textPainter == null) {
         textPainter = painter();
       }
@@ -135,7 +137,7 @@ class ViewLine extends StatelessWidget {
       if (textPainter != null) {
         for (final col in block?.carets ?? []) {
           Offset offsetForCaret = textPainter.getOffsetForCaret(
-              TextPosition(offset: col.position), Offset(0, 0) & Size.zero);
+              TextPosition(offset: col.position), Offset.zero & Size.zero);
 
           double left = gutterWidth + offsetForCaret.dx;
           double top = offsetForCaret.dy;
@@ -155,7 +157,7 @@ class ViewLine extends StatelessWidget {
     }
 
     List<Cursor> extras = [...doc.doc.extraCursors, ...doc.doc.sectionCursors];
-    if (!extras.isEmpty) {
+    if (extras.isNotEmpty) {
       for (final e in extras) {
         if (e.block != block) continue;
         if (textPainter == null) {
@@ -163,7 +165,7 @@ class ViewLine extends StatelessWidget {
         }
         if (textPainter != null) {
           Offset offsetForCaret = textPainter.getOffsetForCaret(
-              TextPosition(offset: e.column), Offset(0, 0) & Size.zero);
+              TextPosition(offset: e.column), Offset.zero & Size.zero);
           carets.add(Positioned(
               left: gutterWidth + offsetForCaret.dx,
               top: offsetForCaret.dy,
@@ -179,12 +181,12 @@ class ViewLine extends StatelessWidget {
       Padding(
           padding: EdgeInsets.only(left: gutterWidth),
           child: RichText(text: TextSpan(children: spans), softWrap: softWrap)),
-      GutterLine(
+      Padding(padding: EdgeInsets.only(left: gutterPad), child: GutterLine(
           block: block,
           height: height,
           width: gutterWidth,
           text: '${lineNumber + 1} ',
-          style: gutterStyle),
+          style: gutterStyle)),
       ...carets,
     ]);
   }
@@ -224,7 +226,7 @@ class _View extends State<View> {
       int docSize = doc.doc.blocks.length;
       double totalHeight = docSize * fontHeight;
 
-      if (!scroller.positions.isEmpty) {
+      if (scroller.positions.isNotEmpty) {
         double p = scroller.position.pixels / scroller.position.maxScrollExtent;
         int line = (p * docSize).toInt();
         updateVisibleRange(context);
@@ -241,10 +243,13 @@ class _View extends State<View> {
     });
 
     hscroller.addListener(() {
-      if (!hscroller.positions.isEmpty) {
+      if (hscroller.positions.isNotEmpty) {
         Offset scroll = Offset(0, hscroller.position.pixels);
         DecorInfo decor = Provider.of<DecorInfo>(context, listen: false);
         decor.onScroll(scroll);
+          setState(() {
+            // force redraw gutters
+          });
       }
     });
 
@@ -316,7 +321,7 @@ class _View extends State<View> {
         Provider.of<DocumentProvider>(context, listen: false);
     if (doc.softWrap) return;
 
-    if (!hscroller.positions.isEmpty && doc.scrollAreaSize.width > 0) {
+    if (hscroller.positions.isNotEmpty && doc.scrollAreaSize.width > 0) {
       int col = doc.doc.cursor().column;
       double offsetForCaret = doc.offsetForCaret.dx - hscroller.position.pixels;
       // double offsetForCaret = (col * fontWidth).toDouble() - hscroller.position.pixels;
@@ -325,7 +330,7 @@ class _View extends State<View> {
 
       final _jump = (target) {
         // if (doc.doc.hasSelection()) {
-          hscroller.jumpTo(target);
+        hscroller.jumpTo(target);
         // } else {
         //   hscroller.animateTo(target,
         //       duration: const Duration(milliseconds: 100), curve: Curves.easeIn);
@@ -372,11 +377,11 @@ class _View extends State<View> {
 
             double dv = estimateTarget - position;
             double ds = sqrt(dv * dv);
-            if (ds > 250) {
-              speed = (ds / 6);
+            if (ds > 100) {
+              speed = (ds / 3);
             }
-            if (ds > 1000) {
-              speed = (ds / 4);
+            if (ds > 500) {
+              speed = (ds / 2.5);
             }
             if (ds > 5000) {
               speed = (ds / 2);
@@ -447,7 +452,7 @@ class _View extends State<View> {
     if (!softWrap) {
       extent = fontHeight;
     } else {
-      if (!hscroller.positions.isEmpty) {
+      if (hscroller.positions.isNotEmpty) {
         hscroller.jumpTo(0);
       }
     }
@@ -504,38 +509,37 @@ class _View extends State<View> {
     // print('count: $count top: $top visible: $visibleLine');
 
     List<Widget> gutters = [];
-    List<Widget> children = [];
-    double offset = top;
-    for (int i = 0; i < count; i++) {
-      int line = visibleLine + i;
-      if (line >= docSize) {
-        break;
-      }
-      line = doc.doc.computedLine(line);
-      Block block = doc.doc.blockAtLine(line) ?? Block('');
-      children.add(ViewLine(
-          line: line,
-          block: block,
-          width: size.width - gutterWidth,
-          height: fontHeight,
-          gutterWidth: gutterWidth,
-          gutterStyle: gutterStyle));
 
-      if (!softWrap && gutterWidth > 0) {
-        gutters.add(GutterLine(
+    List<Widget> _buildChildren(int start, int count) {
+      List<Widget> children = [];
+      for (int i = 0; i < count; i++) {
+        int line = start + i;
+        if (line >= docSize) {
+          break;
+        }
+        line = doc.doc.computedLine(line);
+        Block block = doc.doc.blockAtLine(line) ?? Block('');
+        children.add(ViewLine(
+            line: line,
             block: block,
-            width: gutterWidth,
+            width: size.width - gutterWidth,
             height: fontHeight,
-            text: '${block.line + 1} ',
-            style: gutterStyle));
+            gutterWidth: gutterWidth,
+            gutterStyle: gutterStyle));
+
+        if (!softWrap && gutterWidth > 0) {
+          gutters.add(GutterLine(
+              block: block,
+              width: gutterWidth,
+              height: fontHeight,
+              text: '${block.line + 1} ',
+              style: gutterStyle));
+        }
       }
+      return children;
     }
 
-    Widget viewLines = Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [Container(height: top), ...children]);
+    ;
 
     Widget gutterLines = softWrap
         ? Container()
@@ -545,20 +549,59 @@ class _View extends State<View> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [Container(height: top), ...gutters]);
 
-    Widget viewLinesContainer = softWrap
-        ? viewLines
-        : SingleChildScrollView(
-            controller: hscroller,
-            scrollDirection: Axis.horizontal,
-            child: viewLines);
+    if (softWrap) {
+      // this is janky - but we have to make do with this for now
+      Widget viewLines = Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(height: top),
+            ..._buildChildren(visibleLine, count)
+          ]);
 
-    return SingleChildScrollView(
-        scrollDirection: Axis.vertical,
-        controller: scroller,
-        child: Stack(children: [
-          Container(height: totalHeight),
-          viewLinesContainer,
-          if (gutterWidth > 0) ...[gutterLines]
-        ]));
+      return SingleChildScrollView(
+          scrollDirection: Axis.vertical,
+          controller: scroller,
+          child: Stack(children: [
+            Container(height: totalHeight),
+            viewLines,
+            if (gutterWidth > 0) ...[gutterLines]
+          ]));
+          
+    } else {
+      
+      Widget viewLines = Container(
+          width: 800,
+          child: ListView.builder(
+              controller: scroller,
+              itemCount: docSize,
+              itemExtent: fontHeight,
+              itemBuilder: (BuildContext context, int line) {
+                line = doc.doc.computedLine(line);
+                Block block = doc.doc.blockAtLine(line) ?? Block('');
+
+                double gutterPad = 0;
+                if (hscroller.positions.isNotEmpty) {
+                  gutterPad = hscroller.position.pixels;
+                }
+                return ViewLine(
+                      line: line,
+                      block: block,
+                      width: size.width - gutterWidth,
+                      height: fontHeight,
+                      gutterPad: hscroller.position.pixels,
+                      gutterWidth: gutterWidth,
+                      gutterStyle: gutterStyle);
+              }
+          ));
+
+      return SingleChildScrollView(
+          controller: hscroller,
+          scrollDirection: Axis.horizontal,
+          child: viewLines);
+    }
+
+    return Container();
   }
 }
