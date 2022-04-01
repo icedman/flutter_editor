@@ -146,7 +146,7 @@ class ViewLine extends StatelessWidget {
                   width: 2, height: extents.height, color: col.color)));
 
           // Offset cursorOffset = Offset(pos.dx + left, pos.dy + top);
-          Offset cursorOffset = Offset(left, pos.dy + top);
+          Offset cursorOffset = Offset(left, top);
           decor.setCaret(cursorOffset, doc.doc.cursor());
 
           doc.offsetForCaret = offsetForCaret;
@@ -276,7 +276,7 @@ class _View extends State<View> {
     for (final p in pars) {
       RenderBox? pBox = p as RenderBox;
       Offset pOffset = pBox.localToGlobal(Offset.zero);
-      pOffset = Offset(globalBounds.left, globalBounds.top + pOffset.dy);
+      pOffset = Offset(globalBounds.left, pOffset.dy);
       Rect globalPBox = pOffset & pBox.size;
       if (globalBounds.contains(pOffset) &&
           globalBounds.contains(pOffset.translate(0, pBox.size.height))) {
@@ -326,7 +326,7 @@ class _View extends State<View> {
 
       final _jump = (target) {
         // if (doc.doc.hasSelection()) {
-          hscroller.jumpTo(target);
+        hscroller.jumpTo(target);
         // } else {
         //   hscroller.animateTo(target,
         //       duration: const Duration(milliseconds: 100), curve: Curves.easeIn);
@@ -506,15 +506,16 @@ class _View extends State<View> {
 
     List<Widget> gutters = [];
     List<Widget> children = [];
-    double offset = top;
-    for (int i = 0; i < count; i++) {
+    for (int i = -8; i < count + 8; i++) {
       int line = visibleLine + i;
+      if (line < 0) continue;
       if (line >= docSize) {
         break;
       }
       line = doc.doc.computedLine(line);
       Block block = doc.doc.blockAtLine(line) ?? Block('');
       children.add(ViewLine(
+          key: ValueKey(block.blockId),
           line: line,
           block: block,
           width: size.width - gutterWidth,

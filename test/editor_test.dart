@@ -10,8 +10,9 @@ import 'package:editor/services/app.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/tmparser.dart';
 import 'package:editor/services/highlight/highlighter.dart';
-import 'package:editor/services/explorer/filesystem.dart';
-import 'package:editor/services/explorer/localfs.dart';
+
+bool hSplit = true;
+bool vSplit = true;
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,7 +29,7 @@ void main(List<String> args) async {
   }
 
   if (args.isNotEmpty) {
-    path = args[0];
+    path = args[args.length - 1];
   }
 
   FFIBridge.initialize(extPath);
@@ -38,16 +39,9 @@ void main(List<String> args) async {
 
   HLTheme theme = HLTheme.instance();
 
-  ExplorerProvider explorer = ExplorerProvider();
-  explorer.explorer.setRootPath('./').then((files) {
-    explorer.explorer.root?.isExpanded = true;
-    explorer.rebuild();
-  });
-
   return runApp(MultiProvider(providers: [
     ChangeNotifierProvider(create: (context) => app),
     ChangeNotifierProvider(create: (context) => theme),
-    ChangeNotifierProvider(create: (context) => explorer),
   ], child: App(path: path)));
 }
 
@@ -72,15 +66,17 @@ class App extends StatelessWidget {
         theme: themeData,
         home: Scaffold(
             body: Row(children: [
-          ExplorerTree(),
-          Expanded(
+            if (hSplit) ...[ Expanded(
+                child: Padding(
+                    padding: const EdgeInsets.all(8), child: Editor(path: path))) ],
+          Expanded(flex: 2,
               child: Column(children: [
             Expanded(
                 child: Padding(
-                    padding: EdgeInsets.all(0), child: Editor(path: path))),
-            // Expanded(
-            //     child: Padding(
-            //         padding: EdgeInsets.all(0), child: Editor(path: path))),
+                    padding: const EdgeInsets.all(8), child: Editor(path: path))),
+            if (vSplit) ...[ Expanded(
+                child: Padding(
+                    padding: const EdgeInsets.all(8), child: Editor(path: path))) ],
           ]))
         ])));
   }

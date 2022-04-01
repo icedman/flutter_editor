@@ -72,9 +72,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       // print('auto close');
     });
     d.addListener('onInsertNewLine', () {
-      d.begin();
       d.autoIndent();
-      d.commit();
     });
     d.addListener('onReady', () {
       Future.delayed(const Duration(seconds: 2), () {
@@ -231,7 +229,6 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
   }
 
   void command(String cmd, {List<String> params = const <String>[]}) async {
-
     Document d = doc.doc;
     Cursor cursor = d.cursor().copy();
 
@@ -257,7 +254,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
             doc.command('cancel');
             doc.command('left');
             doc.command('select_word');
-            doc.command('insert', params: [ s ]);
+            doc.command('insert', params: [s]);
             doc.commit();
             decor.setSearch('');
             return;

@@ -746,7 +746,7 @@ class DocumentProvider extends ChangeNotifier {
   Document doc = Document();
 
   int scrollTo = -1;
-  bool softWrap = true;
+  bool softWrap = false;
   bool showGutters = true;
   bool showMinimap = true;
   bool ready = false;
@@ -784,7 +784,6 @@ class DocumentProvider extends ChangeNotifier {
     }
   }
 
-
   void begin() {
     _makeDirty();
     doc.begin();
@@ -794,7 +793,9 @@ class DocumentProvider extends ChangeNotifier {
     doc.commit();
   }
 
-  void command(String cmd, {List<String> params = const <String>[], List<Block>? modifiedBlocks}) async {
+  void command(String cmd,
+      {List<String> params = const <String>[],
+      List<Block>? modifiedBlocks}) async {
     DocumentProvider doc = this;
     Document d = doc.doc;
     Cursor cursor = d.cursor().copy();

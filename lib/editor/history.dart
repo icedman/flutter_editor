@@ -26,7 +26,7 @@ class History {
   }
 
   void commit() {
-    if (actions.length > 0) {
+    if (actions.isNotEmpty) {
       HistoryEntry entry = HistoryEntry();
       entry.cursors = cursors;
       entry.actions = actions;
@@ -35,7 +35,6 @@ class History {
   }
 
   void add(Block? block) {
-    // actions.add('add ${block?.text}');
     Action action = Action();
     action.type = 'add';
     action.block = block;
@@ -43,7 +42,6 @@ class History {
   }
 
   void remove(Block? block) {
-    // actions.add('remove ${block?.text}');
     Action action = Action();
     action.type = 'remove';
     action.block = block;
@@ -51,7 +49,7 @@ class History {
   }
 
   void update(Block? block) {
-    // actions.add('update ${block?.text}');
+    // print('update ${block?.text}');
     Action action = Action();
     action.type = 'update';
     action.block = block;

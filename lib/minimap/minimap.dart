@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:editor/editor/document.dart';
+import 'package:editor/editor/decorations.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 
 int minimapLineSpacing = 3;
@@ -118,6 +119,7 @@ class Minimap extends StatefulWidget {
 
 class _Minimap extends State<Minimap> {
   late ScrollController scroller;
+  Offset scrollPosition = Offset.zero;
 
   @override
   void initState() {
@@ -134,6 +136,7 @@ class _Minimap extends State<Minimap> {
   @override
   Widget build(BuildContext context) {
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
+    DecorInfo decor = Provider.of<DecorInfo>(context);
 
     if (!doc.showMinimap || !doc.ready) {
       return Container();
@@ -142,6 +145,17 @@ class _Minimap extends State<Minimap> {
     int perPage = 100;
     int pages = doc.doc.blocks.length ~/ perPage;
     if (pages <= 0) pages = 1;
+
+    if (decor.scrollPosition != scrollPosition) {
+      scrollPosition = decor.scrollPosition;
+      if (!scroller.positions.isEmpty) {
+        double target = scrollPosition.dy / minimapLineSpacing;
+        if (target > scroller.position.maxScrollExtent) {
+          target = scroller.position.maxScrollExtent;
+        }
+        scroller.jumpTo(target);
+      }
+    }
 
     return Container(
         width: Platform.isAndroid ? 60 : 80,

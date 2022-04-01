@@ -22,7 +22,7 @@ class LocalFs extends ExplorerBackend {
     var lister = dir.list(recursive: false);
     lister.listen((file) => files.add(file), onError: (err) {
       // fail silently?
-      }, onDone: () {
+    }, onDone: () {
       List<dynamic> items = [];
       for (final i in files) {
         items.add({'path': i.path, 'isDirectory': (i is Directory)});
@@ -46,5 +46,4 @@ class LocalFs extends ExplorerBackend {
   void deleteFile(String path) {}
 
   void rename(String path) {}
-
 }

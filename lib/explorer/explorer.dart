@@ -31,41 +31,44 @@ class ExplorerTreeItem {
 
   ExplorerItem? item;
   ExplorerProvider? provider;
-  
+
   Widget build(BuildContext context) {
     HLTheme theme = Provider.of<HLTheme>(context);
     ExplorerItem? _item = item ?? ExplorerItem('');
     bool expanded = _item.isExpanded;
 
     double size = 16;
-    Widget icon = _item.isDirectory ? Icon((expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down),
-      size: size, color: theme.comment)
-      : Container(width: size);
+    Widget icon = _item.isDirectory
+        ? Icon((expanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down),
+            size: size, color: theme.comment)
+        : Container(width: size);
 
-    TextStyle style = TextStyle(fontSize: theme.fontSize * 0.8, fontFamily: theme.fontFamily, color: theme.comment);
+    TextStyle style = TextStyle(
+        fontSize: theme.fontSize * 0.8,
+        fontFamily: theme.fontFamily,
+        color: theme.comment);
 
     return GestureDetector(
-          child: SingleChildScrollView(
+        child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Container(
-            height: 32,
-            // color: Colors.yellow,
-            child: Row(children: [ 
-                Container(width: _item.depth * size / 2),
-                Padding(child: icon, padding: EdgeInsets.all(2)),
-                Text(' ${_item.fileName}', style: style),
-                // IconButton(icon: Icon(Icons.close), onPressed:() {}),
-             ]))),
-          onTap: () {
-            if (_item.isDirectory) {
-              _item.isExpanded = !expanded;
-              if (_item.isExpanded) {
-                provider?.explorer.loadPath(_item.fullPath);
-              }
-              provider?.rebuild();
+                height: 32,
+                // color: Colors.yellow,
+                child: Row(children: [
+                  Container(width: _item.depth * size / 2),
+                  Padding(child: icon, padding: EdgeInsets.all(2)),
+                  Text(' ${_item.fileName}', style: style),
+                  // IconButton(icon: Icon(Icons.close), onPressed:() {}),
+                ]))),
+        onTap: () {
+          if (_item.isDirectory) {
+            _item.isExpanded = !expanded;
+            if (_item.isExpanded) {
+              provider?.explorer.loadPath(_item.fullPath);
             }
+            provider?.rebuild();
           }
-          );
+        });
   }
 }
 
@@ -76,12 +79,13 @@ class ExplorerTree extends StatelessWidget {
     List<ExplorerTreeItem> tree = [
       ...exp.tree.map((item) => ExplorerTreeItem(item: item, provider: exp))
     ];
-    return Container(width: 240, child: ListView.builder(
-      itemCount: tree.length,
-      itemBuilder: (BuildContext context, int index) {
-        ExplorerTreeItem _node = tree[index];
-        return _node.build(context);
-      }));
+    return Container(
+        width: 240,
+        child: ListView.builder(
+            itemCount: tree.length,
+            itemBuilder: (BuildContext context, int index) {
+              ExplorerTreeItem _node = tree[index];
+              return _node.build(context);
+            }));
   }
 }
-
