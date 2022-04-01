@@ -222,6 +222,10 @@ class Document {
       blocks[i].makeDirty(highlight: true);
     }
 
+    if (blocks.isEmpty) {
+      clear();
+    }
+
     cursor();
     moveCursorToStartOfDocument();
 
@@ -742,7 +746,7 @@ class DocumentProvider extends ChangeNotifier {
   Document doc = Document();
 
   int scrollTo = -1;
-  bool softWrap = false;
+  bool softWrap = true;
   bool showGutters = true;
   bool showMinimap = true;
   bool ready = false;

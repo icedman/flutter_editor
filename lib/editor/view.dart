@@ -105,7 +105,7 @@ class ViewLine extends StatelessWidget {
 
     TextPainter? textPainter;
     TextPainter? painter() {
-      if (size.width > 0 && !spans.isEmpty && spans[0] is TextSpan) {
+      if (size.width > 0 && spans.isNotEmpty && spans[0] is TextSpan) {
         TextSpan ts = spans[0] as TextSpan;
         extents = getTextExtents('|', ts.style ?? TextStyle());
         return TextPainter(
@@ -127,7 +127,7 @@ class ViewLine extends StatelessWidget {
 
     // render carets
     List<Widget> carets = [];
-    if (!(block?.carets ?? []).isEmpty) {
+    if ((block?.carets ?? []).isNotEmpty) {
       if (textPainter == null) {
         textPainter = painter();
       }
@@ -156,7 +156,7 @@ class ViewLine extends StatelessWidget {
     }
 
     List<Cursor> extras = [...doc.doc.extraCursors, ...doc.doc.sectionCursors];
-    if (!extras.isEmpty) {
+    if (extras.isNotEmpty) {
       for (final e in extras) {
         if (e.block != block) continue;
         if (textPainter == null) {
@@ -225,7 +225,7 @@ class _View extends State<View> {
       int docSize = doc.doc.blocks.length;
       double totalHeight = docSize * fontHeight;
 
-      if (!scroller.positions.isEmpty) {
+      if (scroller.positions.isNotEmpty) {
         double p = scroller.position.pixels / scroller.position.maxScrollExtent;
         int line = (p * docSize).toInt();
         updateVisibleRange(context);
@@ -242,7 +242,7 @@ class _View extends State<View> {
     });
 
     hscroller.addListener(() {
-      if (!hscroller.positions.isEmpty) {
+      if (hscroller.positions.isNotEmpty) {
         Offset scroll = Offset(0, hscroller.position.pixels);
         DecorInfo decor = Provider.of<DecorInfo>(context, listen: false);
         decor.onScroll(scroll);
@@ -317,7 +317,7 @@ class _View extends State<View> {
         Provider.of<DocumentProvider>(context, listen: false);
     if (doc.softWrap) return;
 
-    if (!hscroller.positions.isEmpty && doc.scrollAreaSize.width > 0) {
+    if (hscroller.positions.isNotEmpty && doc.scrollAreaSize.width > 0) {
       int col = doc.doc.cursor().column;
       double offsetForCaret = doc.offsetForCaret.dx - hscroller.position.pixels;
       // double offsetForCaret = (col * fontWidth).toDouble() - hscroller.position.pixels;
@@ -448,7 +448,7 @@ class _View extends State<View> {
     if (!softWrap) {
       extent = fontHeight;
     } else {
-      if (!hscroller.positions.isEmpty) {
+      if (hscroller.positions.isNotEmpty) {
         hscroller.jumpTo(0);
       }
     }
