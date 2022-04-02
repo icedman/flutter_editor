@@ -7,7 +7,7 @@ import 'package:editor/editor/editor.dart';
 import 'package:editor/explorer/explorer.dart';
 import 'package:editor/ffi/bridge.dart';
 import 'package:editor/services/app.dart';
-import 'package:editor/services/ui.dart';
+import 'package:editor/services/ui/ui.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/tmparser.dart';
 import 'package:editor/services/highlight/highlighter.dart';
@@ -37,7 +37,7 @@ void main(List<String> args) async {
 
   AppProvider app = AppProvider();
   UIProvider ui = UIProvider();
-  
+
   HLTheme theme = HLTheme.instance();
 
   ExplorerProvider explorer = ExplorerProvider();
@@ -48,6 +48,7 @@ void main(List<String> args) async {
 
   return runApp(MultiProvider(providers: [
     ChangeNotifierProvider(create: (context) => app),
+    ChangeNotifierProvider(create: (context) => ui),
     ChangeNotifierProvider(create: (context) => theme),
     ChangeNotifierProvider(create: (context) => explorer),
   ], child: App(path: path)));
@@ -60,6 +61,7 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    UIProvider ui = Provider.of<UIProvider>(context);
     HLTheme theme = Provider.of<HLTheme>(context);
 
     ThemeData themeData = ThemeData(
@@ -73,17 +75,9 @@ class App extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: themeData,
         home: Scaffold(
-            body: Row(children: [
-          ExplorerTree(),
-          Expanded(
-              child: Column(children: [
-            Expanded(
-                child: Padding(
-                    padding: EdgeInsets.all(0), child: Editor(path: path))),
-            // Expanded(
-            //     child: Padding(
-            //         padding: EdgeInsets.all(0), child: Editor(path: path))),
-          ]))
+            body: Stack(children: [
+          Row(children: [ExplorerTree(), Expanded(child: Editor(path: path))]),
+          ...ui.popups
         ])));
   }
 }

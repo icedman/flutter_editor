@@ -5,14 +5,14 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:editor/editor/decorations.dart';
-import 'package:editor/editor/autocomplete.dart';
 import 'package:editor/editor/cursor.dart';
 import 'package:editor/editor/document.dart';
 import 'package:editor/editor/view.dart';
 import 'package:editor/ffi/bridge.dart';
 import 'package:editor/services/input.dart';
 import 'package:editor/minimap/minimap.dart';
-import 'package:editor/services/ui.dart';
+import 'package:editor/services/ui/ui.dart';
+import 'package:editor/services/ui/menu.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 import 'package:editor/services/indexer/indexer.dart';
@@ -76,7 +76,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       d.autoIndent();
     });
     d.addListener('onReady', () {
-      Future.delayed(const Duration(seconds: 2), () {
+      Future.delayed(const Duration(seconds: 3), () {
         indexer.indexFile(widget.path);
       });
     });
@@ -86,6 +86,31 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
 
     indexer.onResult = (res) {
       decor.setSearchResult(res);
+      UIProvider ui = Provider.of<UIProvider>(context, listen: false);
+      UIMenuData? menu = ui.menu('${d.documentId}_search', onSelect: (item) {
+        Document d = doc.doc;
+        d.begin();
+        d.clearCursors();
+        d.moveCursorLeft();
+        d.selectWord();
+        d.insertText(item.title); // todo.. command!
+        d.commit();
+        doc.notifyListeners();
+      });
+      menu?.menuIndex = 0;
+
+      dynamic search = res;
+      if (search == null) {
+        return;
+      }
+
+      String _search = search['search'] ?? '';
+      dynamic _result = search['result'] ?? [];
+
+      menu?.items.clear();
+      for (final s in _result) {
+        menu?.items.add(UIMenuData()..title = s);
+      }
     };
 
     super.initState();
@@ -241,30 +266,27 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     }
 
     // todo!
-    if (decor.showCaretBased) {
+    if (ui.popups.isNotEmpty) {
+      UIMenuData? menu = ui.menu('${d.documentId}_search');
+      int idx = menu?.menuIndex ?? 0;
+      int size = menu?.items.length ?? 0;
       switch (cmd) {
         case 'up':
-          if (decor.menuIndex > 0) {
-            decor.menuIndex--;
-            decor.notifyListeners();
+          if (idx > 0) {
+            menu?.menuIndex--;
+            ui.notifyListeners();
           }
           return;
         case 'down':
-          if (decor.menuIndex + 1 < (decor.resultItems?.length ?? 0)) {
-            decor.menuIndex++;
-            decor.notifyListeners();
+          if (idx + 1 < size) {
+            menu?.menuIndex++;
+            ui.notifyListeners();
           }
           return;
         case 'enter':
           {
-            String s = decor.resultItems[decor.menuIndex] ?? '';
-            doc.begin();
-            doc.command('cancel');
-            doc.command('left');
-            doc.command('select_word');
-            doc.command('insert', params: [s]);
-            doc.commit();
-            decor.setSearch('');
+            menu?.select(menu.menuIndex);
+            ui.clearPopups();
             return;
           }
       }
@@ -282,18 +304,22 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       }
     }
 
-    while (indexingQueue.isNotEmpty) {
-      Block l = indexingQueue.last;
-      if (d.cursor().block == l) break;
-      indexingQueue.removeLast();
-      indexer.indexWords(l.text);
-      break;
+    if (d.cursors.length == 1) {
+      while (indexingQueue.isNotEmpty) {
+        Block l = indexingQueue.last;
+        if (d.cursor().block == l) break;
+        indexingQueue.removeLast();
+        indexer.indexWords(l.text);
+        break;
+      }
     }
 
     if (modifiedBlocks.isNotEmpty) {
-
       // onInputText..
-      ui.setPopup(AutoCompletePopup(position: decor.caretPosition, doc: doc, search: decor.result), blur: false, shield: false);
+      UIMenuData? menu = ui.menu('${d.documentId}_search');
+      menu?.title = 'Search!';
+      ui.setPopup(UIMenuPopup(position: decor.caretPosition, menu: menu),
+          blur: false, shield: false);
 
       Cursor cur = d.cursor().copy();
       cur.moveCursorLeft();
@@ -306,9 +332,11 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
         }
       } else {
         decor.setSearch('');
+        ui.clearPopups();
       }
     } else {
       decor.setSearch('');
+      ui.clearPopups();
     }
   }
 
@@ -521,9 +549,6 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
                       showKeyboard: showKeyboard)),
               Minimap()
             ]),
-            
-            // AutoCompletePopup()
-
           ])),
 
           if (Platform.isAndroid) ...[

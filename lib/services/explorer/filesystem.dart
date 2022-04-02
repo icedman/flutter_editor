@@ -18,6 +18,9 @@ class ExplorerItem {
   bool isBinary = false;
   bool isExpanded = false;
 
+  double height = 0;
+  int duration = 0;
+
   ExplorerItem? parent;
   List<ExplorerItem?> children = [];
   dynamic data;
@@ -25,7 +28,6 @@ class ExplorerItem {
   void buildTree(List<ExplorerItem?> items) {
     items.add(this);
     if (!isExpanded) return;
-
     for (final c in children) {
       c?.buildTree(items);
     }
@@ -97,6 +99,10 @@ class Explorer implements ExplorerListener {
 
   Map<String, Completer> requests = {};
 
+  void _busy() {
+    //...
+  }
+
   void setBackend(ExplorerBackend? back) {
     backend = back;
     backend?.addListener(this);
@@ -111,7 +117,7 @@ class Explorer implements ExplorerListener {
   Future<bool> loadPath(String path) {
     String p = _path.normalize(Directory(path).absolute.path);
     if (isLoading(p)) {
-      print('is loading');
+      _busy();
       return Future.value(false);
     }
     backend?.loadPath(path);
@@ -124,6 +130,56 @@ class Explorer implements ExplorerListener {
   ExplorerItem? itemFromPath(String path) {
     String p = _path.normalize(Directory(path).absolute.path);
     return root?.itemFromPath(p);
+  }
+
+  Future<bool> deleteDirectory(String path, {bool recursive: false}) {
+    String p = _path.normalize(Directory(path).absolute.path);
+    if (isLoading(p)) {
+      _busy();
+      return Future.value(false);
+    }
+    backend?.deleteDirectory(p, recursive: recursive);
+    Completer<bool> completer = Completer<bool>();
+    requests[p] = completer;
+    return completer.future;
+  }
+
+  Future<bool> deleteFile(String path) {
+    String p = _path.normalize(Directory(path).absolute.path);
+    if (isLoading(p)) {
+      _busy();
+      return Future.value(false);
+    }
+    backend?.deleteFile(p);
+    Completer<bool> completer = Completer<bool>();
+    requests[p] = completer;
+    return completer.future;
+  }
+
+  Future<bool> renameDirectory(String path, String newPath) {
+    String p = _path.normalize(Directory(path).absolute.path);
+    String np = _path.normalize(Directory(newPath).absolute.path);
+    if (isLoading(p)) {
+      _busy();
+      return Future.value(false);
+    }
+    backend?.renameDirectory(p, np);
+    Completer<bool> completer = Completer<bool>();
+    requests[p] = completer;
+    return completer.future;
+  }
+
+  Future<bool> renameFile(String path, String newPath) {
+    String p = _path.normalize(Directory(path).absolute.path);
+    String np = _path.normalize(Directory(newPath).absolute.path);
+    if (isLoading(p)) {
+      _busy();
+      return Future.value(false);
+    }
+    backend?.renameFile(p, np);
+    Completer<bool> completer = Completer<bool>();
+    requests[p] = completer;
+    return completer.future;
   }
 
   bool isLoading(String path) {
@@ -153,10 +209,27 @@ class Explorer implements ExplorerListener {
       requests.remove(p);
     }
   }
+
+  void onDelete(dynamic item) {
+    dynamic json = jsonDecode(item);
+    String p = _path.normalize(Directory(json['path']).absolute.path);
+
+    ExplorerItem? _item = itemFromPath(p);
+    _item?.parent?.children.removeWhere((i) => i == item);
+
+    if (requests.containsKey(p)) {
+      requests[p]?.complete(true);
+      requests.remove(p);
+    }
+  }
+
+  void onError(dynamic error) {}
 }
 
 abstract class ExplorerListener {
   void onLoad(dynamic items);
+  void onDelete(dynamic item);
+  void onError(dynamic error);
 }
 
 // isolate?
@@ -167,7 +240,8 @@ abstract class ExplorerBackend {
   void openFile(String path);
   void createDirectory(String path);
   void createFile(String path);
-  void deleteDirectory(String path, {bool recursive: false});
+  void deleteDirectory(String path, {bool recursive = false});
   void deleteFile(String path);
-  void rename(String path);
+  void renameDirectory(String path, String newPath);
+  void renameFile(String path, String newPath);
 }

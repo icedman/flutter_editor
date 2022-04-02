@@ -46,7 +46,8 @@ Document docTestRun() {
   cur.moveCursorUp();
   cur.moveCursorToStartOfLine();
   cur.moveCursorToStartOfDocument();
-  Cursor? res = d.find(cur, 'l.nE', regex: true, caseSensitive: false, direction: 1);
+  Cursor? res =
+      d.find(cur, 'l.nE', regex: true, caseSensitive: false, direction: 1);
   print('found $res');
   return d;
 }

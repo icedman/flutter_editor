@@ -7,7 +7,7 @@ import 'package:editor/editor/editor.dart';
 import 'package:editor/explorer/explorer.dart';
 import 'package:editor/ffi/bridge.dart';
 import 'package:editor/services/app.dart';
-import 'package:editor/services/ui.dart';
+import 'package:editor/services/ui/ui.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/tmparser.dart';
 import 'package:editor/services/highlight/highlighter.dart';
@@ -69,24 +69,30 @@ class App extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: themeData,
         home: Scaffold(
-            body: Stack(children: [ Row(children: [
-            if (hSplit) ...[ Expanded(
-                child: Padding(
-                    padding: const EdgeInsets.all(8), child: Editor(path: path))) ],
-          Expanded(flex: 2,
-              child: Column(children: [
+            body: Stack(children: [
+          Row(children: [
+            if (hSplit) ...[
+              Expanded(
+                  child: Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Editor(path: path)))
+            ],
             Expanded(
-                child: Padding(
-                    padding: const EdgeInsets.all(8), child: Editor(path: path))),
-            if (vSplit) ...[ Expanded(
-                child: Padding(
-                    padding: const EdgeInsets.all(8), child: Editor(path: path))) ],
-          ]))
-        ]),
-
-        ...ui.popups
-
-        ])
-        ));
+                flex: 2,
+                child: Column(children: [
+                  Expanded(
+                      child: Padding(
+                          padding: const EdgeInsets.all(8),
+                          child: Editor(path: path))),
+                  if (vSplit) ...[
+                    Expanded(
+                        child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Editor(path: path)))
+                  ],
+                ]))
+          ]),
+          ...ui.popups
+        ])));
   }
 }

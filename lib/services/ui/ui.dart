@@ -1,9 +1,32 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 
+class UIMenuData {
+  int menuIndex = 0;
+  String title = '';
+  List<UIMenuData> items = [];
+
+  Function? onSelect;
+
+  void select(int index) {
+    if (items[index] != null) {
+      onSelect?.call(items[index]);
+    }
+  }
+}
+
 class UIProvider extends ChangeNotifier {
   Map<String, Function?> actions = <String, Function?>{};
   List<Widget> popups = <Widget>[];
+  Map<String, UIMenuData> menus = {};
+
+  int menuIndex = 0;
+
+  UIMenuData? menu(String id, {Function? onSelect}) {
+    menus[id] = menus[id] ?? UIMenuData();
+    menus[id]?.onSelect = onSelect ?? menus[id]?.onSelect;
+    return menus[id];
+  }
 
   bool hasPopups() {
     return popups.isNotEmpty;
@@ -45,5 +68,4 @@ class UIProvider extends ChangeNotifier {
       Future.delayed(const Duration(milliseconds: 50), notifyListeners);
     }
   }
-
 }

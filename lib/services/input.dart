@@ -188,9 +188,9 @@ class _InputListener extends State<InputListener> {
     Document d = doc.doc;
     return Focus(
         onFocusChange: (focused) {
-          // if (focused && !textFocusNode.hasFocus) {
-          //   textFocusNode.requestFocus();
-          // }
+          if (focused && !textFocusNode.hasFocus) {
+            textFocusNode.requestFocus();
+          }
         },
         child: Column(children: [
           Expanded(
@@ -203,10 +203,12 @@ class _InputListener extends State<InputListener> {
                     if (!focusNode.hasFocus) {
                       focusNode.requestFocus();
                       textFocusNode.unfocus();
-                      FocusScope.of(context).unfocus();
+                      // FocusScope.of(context).unfocus();
                     }
                     if (!textFocusNode.hasFocus) {
-                      textFocusNode.requestFocus();
+                      Future.delayed(const Duration(microseconds: 50), () {
+                        textFocusNode.requestFocus();
+                      });
                     }
                     widget.onTapDown?.call(
                         context.findRenderObject(), details.globalPosition);

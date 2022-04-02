@@ -9,10 +9,10 @@ void indexerTestRun() async {
 
   idx.find('qui').then((res) {
     print(res);
-    });
+  });
   idx.find('BROW').then((res) {
     print(res);
-    });
+  });
 }
 
 void main() {

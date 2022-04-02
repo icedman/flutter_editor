@@ -21,7 +21,9 @@ class LocalFs extends ExplorerBackend {
     Directory dir = Directory(path);
     var lister = dir.list(recursive: false);
     lister.listen((file) => files.add(file), onError: (err) {
-      // fail silently?
+      listeners.forEach((l) {
+        l.onError(jsonEncode({'path': path, 'operation': 'load'}));
+      });
     }, onDone: () {
       List<dynamic> items = [];
       for (final i in files) {
@@ -37,13 +39,75 @@ class LocalFs extends ExplorerBackend {
 
   void openFile(String path) {}
 
-  void createDirectory(String path) {}
+  void createDirectory(String path) {
+    final d = Directory(path);
+    d.create().then((res) {
+      final json = jsonEncode({'path': _path.normalize(path)});
+      listeners.forEach((l) {
+        l.onDelete(json);
+      });
+    }).catchError((err) {
+      listeners.forEach((l) {
+        l.onError(jsonEncode({'path': path, 'operation': 'create'}));
+      });
+    });
+  }
 
   void createFile(String path) {}
 
-  void deleteDirectory(String path, {bool recursive: false}) {}
+  void deleteDirectory(String path, {bool recursive = false}) {
+    final d = Directory(path);
+    d.delete(recursive: true).then((res) {
+      final json = jsonEncode({'path': _path.normalize(path)});
+      listeners.forEach((l) {
+        l.onDelete(json);
+      });
+    }).catchError((err) {
+      listeners.forEach((l) {
+        l.onError(jsonEncode({'path': path, 'operation': 'delete'}));
+      });
+    });
+  }
 
-  void deleteFile(String path) {}
+  void deleteFile(String path) {
+    final f = File(path);
+    f.delete().then((res) {
+      final json = jsonEncode({'path': _path.normalize(path)});
+      listeners.forEach((l) {
+        l.onDelete(json);
+      });
+    }).catchError((err) {
+      listeners.forEach((l) {
+        l.onError(jsonEncode({'path': path, 'operation': 'delete'}));
+      });
+    });
+  }
 
-  void rename(String path) {}
+  void renameDirectory(String path, String newPath) {
+    final d = Directory(path);
+    d.rename(newPath).then((res) {
+      final json = jsonEncode({'path': _path.normalize(path)});
+      listeners.forEach((l) {
+        l.onDelete(json);
+      });
+    }).catchError((err) {
+      listeners.forEach((l) {
+        l.onError(jsonEncode({'path': path, 'operation': 'rename'}));
+      });
+    });
+  }
+
+  void renameFile(String path, String newPath) {
+    final f = File(path);
+    f.rename(newPath).then((res) {
+      final json = jsonEncode({'path': _path.normalize(path)});
+      listeners.forEach((l) {
+        l.onDelete(json);
+      });
+    }).catchError((err) {
+      listeners.forEach((l) {
+        l.onError(jsonEncode({'path': path, 'operation': 'rename'}));
+      });
+    });
+  }
 }
