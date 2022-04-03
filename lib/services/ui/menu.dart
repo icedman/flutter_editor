@@ -2,8 +2,7 @@ import 'dart:async';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 
-import 'package:editor/editor/decorations.dart';
-import 'package:editor/editor/document.dart';
+import 'package:editor/services/app.dart';
 import 'package:editor/services/ui/ui.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
@@ -19,6 +18,7 @@ class UIMenuPopup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     HLTheme theme = Provider.of<HLTheme>(context);
+    AppProvider app = Provider.of<AppProvider>(context);
     UIProvider ui = Provider.of<UIProvider>(context);
 
     _cancel() {
@@ -49,6 +49,17 @@ class UIMenuPopup extends StatelessWidget {
     if (itemsCount > maxItems) itemsCount = maxItems;
     double height = (itemHeight + 1.5) * itemsCount;
 
+    double dx = position.dx;
+    double dy = position.dy + itemHeight;
+    if (dx + maxWidth > app.screenWidth + 8) {
+      dx = app.screenWidth - 8 - maxWidth;
+    }
+    if (dy + height > app.screenHeight + 40) {
+      dy = position.dy - height - 4;
+    }
+
+    Offset _position = Offset(dx, dy);
+
     Widget _item(BuildContext context, int index) {
       UIMenuData? item = items[index];
       String s = item?.title ?? '';
@@ -74,23 +85,20 @@ class UIMenuPopup extends StatelessWidget {
     }
 
     return Positioned(
-        top: position.dy + itemHeight,
-        left: position.dx,
+        top: _position.dy,
+        left: _position.dx,
         child: Container(
             width: maxWidth + padding,
             height: height,
             decoration: BoxDecoration(
                 color: bg,
                 border: Border.all(color: theme.comment, width: 1.5)),
-            child:
-                // Text('hello ${position}', style: TextStyle(color: Colors.white))
-
-                Padding(
-                    padding: EdgeInsets.all(padding),
-                    child: ListView.builder(
-                        padding: EdgeInsets.zero,
-                        itemCount: items.length,
-                        itemExtent: itemHeight,
-                        itemBuilder: _item))));
+            child: Padding(
+                padding: EdgeInsets.all(padding),
+                child: ListView.builder(
+                    padding: EdgeInsets.zero,
+                    itemCount: items.length,
+                    itemExtent: itemHeight,
+                    itemBuilder: _item))));
   }
 }

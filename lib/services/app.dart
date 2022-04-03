@@ -1,5 +1,57 @@
+import 'dart:io';
 import 'dart:async';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
+import 'package:editor/editor/document.dart';
+import 'package:editor/services/app.dart';
+import 'package:path/path.dart' as _path;
 
-class AppProvider extends ChangeNotifier {}
+class AppProvider extends ChangeNotifier {
+  List<Document> documents = [];
+  Document? document;
+
+  double bottomInset = 0;
+  double screenWidth = 0;
+  double screenHeight = 0;
+  double sidebarWidth = 240;
+  double tabbarHeight = 32;
+
+  bool fixedSidebar = true;
+  bool openSidebar = false;
+
+  Document? open(String path, {bool focus = false}) {
+    String p = _path.normalize(Directory(path).absolute.path);
+    for (final d in documents) {
+      if (d.docPath == p) {
+        if (focus) {
+          document = d;
+          notifyListeners();
+        }
+        return d;
+      }
+    }
+    Document doc = Document()..docPath = p;
+    documents.add(doc);
+    if (focus || documents.length == 1) {
+      document = doc;
+    }
+    notifyListeners();
+    return doc;
+  }
+
+  void close(String path) {
+    String p = _path.normalize(Directory(path).absolute.path);
+    document = null;
+    for (final d in documents) {
+      if (d.docPath == p) {
+        documents.removeWhere((d) => d.docPath == p);
+        notifyListeners();
+        break;
+      }
+      document = d;
+    }
+    if (document == null && documents.length > 0) {
+      document = documents[0];
+    }
+  }
+}

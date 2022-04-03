@@ -8,7 +8,8 @@ import 'package:editor/editor/decorations.dart';
 import 'package:editor/editor/cursor.dart';
 import 'package:editor/editor/document.dart';
 import 'package:editor/editor/view.dart';
-import 'package:editor/ffi/bridge.dart';
+import 'package:editor/services/app.dart';
+import 'package:editor/services/ffi/bridge.dart';
 import 'package:editor/services/input.dart';
 import 'package:editor/minimap/minimap.dart';
 import 'package:editor/services/ui/ui.dart';
@@ -18,8 +19,11 @@ import 'package:editor/services/highlight/highlighter.dart';
 import 'package:editor/services/indexer/indexer.dart';
 
 class Editor extends StatefulWidget {
-  Editor({Key? key, String this.path = ''}) : super(key: key);
+  Editor({Key? key, String this.path = '', Document? this.document})
+      : super(key: key);
   String path = '';
+  Document? document;
+
   @override
   _Editor createState() => _Editor();
 }
@@ -46,11 +50,17 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     highlighter = Highlighter();
     indexer = IndexerIsolate();
     doc = DocumentProvider();
+
+    if (widget.document != null) {
+      doc.doc = widget.document ?? doc.doc;
+    }
+    // if (widget.path.isNotEmpty) {
     doc.openFile(widget.path);
+    // }
+
     doc.doc.langId = highlighter.engine.loadLanguage(widget.path).langId;
 
     Document d = doc.doc;
-
     HLLanguage? lang = highlighter.engine.language(d.langId);
     if (lang != null) {
       d.lineComment = lang.lineComment;
@@ -85,7 +95,6 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     pulse = CaretPulse();
 
     indexer.onResult = (res) {
-      decor.setSearchResult(res);
       UIProvider ui = Provider.of<UIProvider>(context, listen: false);
       UIMenuData? menu = ui.menu('${d.documentId}_search', onSelect: (item) {
         Document d = doc.doc;
@@ -119,6 +128,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    pulse.cancel();
     indexer.dispose();
     WidgetsBinding.instance!.removeObserver(this);
     super.dispose();
@@ -326,16 +336,13 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       cur.selectWord();
       if (cur.column == d.cursor().column) {
         String t = cur.selectedText();
-        decor.setSearch(t);
         if (t.length > 1) {
           indexer.find(t);
         }
       } else {
-        decor.setSearch('');
         ui.clearPopups();
       }
     } else {
-      decor.setSearch('');
       ui.clearPopups();
     }
   }
@@ -413,7 +420,6 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
   }
 
   void onTapDown(RenderObject? obj, Offset globalPosition) {
-    Document d = doc.doc;
     Offset o = screenToCursor(obj, globalPosition);
     if (shifting) {
       command('shift+cursor',
@@ -443,6 +449,16 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    bool hide = false;
+
+    // hack - managed by app provider
+    if (widget.document != null) {
+      AppProvider app = Provider.of<AppProvider>(context);
+      if (app.document != doc.doc) {
+        hide = true;
+      }
+    }
+
     HLTheme theme = Provider.of<HLTheme>(context);
     double buttonSize = 16.0;
     Color clr = theme.foreground;
@@ -534,29 +550,32 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
           ChangeNotifierProvider(create: (context) => decor),
           Provider(create: (context) => highlighter),
         ],
-        child: Column(children: [
-          Expanded(
-              child: Stack(children: [
-            Row(children: [
-              Expanded(
-                  child: InputListener(
-                      child: View(),
-                      onKeyDown: onKeyDown,
-                      onKeyUp: onKeyUp,
-                      onTapDown: onTapDown,
-                      onDoubleTapDown: onDoubleTapDown,
-                      onPanUpdate: onPanUpdate,
-                      showKeyboard: showKeyboard)),
-              Minimap()
-            ]),
-          ])),
+        child: hide
+            ? Container()
+            : Expanded(
+                child: Column(children: [
+                Expanded(
+                    child: Stack(children: [
+                  Row(children: [
+                    Expanded(
+                        child: InputListener(
+                            child: View(),
+                            onKeyDown: onKeyDown,
+                            onKeyUp: onKeyUp,
+                            onTapDown: onTapDown,
+                            onDoubleTapDown: onDoubleTapDown,
+                            onPanUpdate: onPanUpdate,
+                            showKeyboard: showKeyboard)),
+                    Minimap()
+                  ]),
+                ])),
 
-          if (Platform.isAndroid) ...[
-            Container(
-                child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(children: buttons)))
-          ], // toolbar
-        ]));
+                if (Platform.isAndroid) ...[
+                  Container(
+                      child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(children: buttons)))
+                ], // toolbar
+              ])));
   }
 }

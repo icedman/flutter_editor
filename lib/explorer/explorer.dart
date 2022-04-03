@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';
+import 'package:editor/services/app.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 import 'package:editor/services/explorer/filesystem.dart';
@@ -12,6 +13,10 @@ class ExplorerProvider extends ChangeNotifier implements ExplorerListener {
   late Explorer explorer;
 
   List<ExplorerItem?> tree = [];
+  ExplorerItem? selected;
+  bool animate = false;
+
+  Function? onSelect;
 
   ExplorerProvider() {
     explorer = Explorer();
@@ -29,9 +34,22 @@ class ExplorerProvider extends ChangeNotifier implements ExplorerListener {
 
   void onError(dynamic error) {}
 
+  void select(ExplorerItem? item) {
+    selected = item;
+    onSelect?.call(item);
+  }
+
   void rebuild() {
     List<ExplorerItem?> _previous = [...tree];
     tree = explorer.tree();
+
+    if (!animate) {
+      for (final i in tree) {
+        i?.height = 1;
+      }
+      notifyListeners();
+      return;
+    }
 
     Map<ExplorerItem?, List<bool>> hash = {};
     _previous.forEach((item) {
@@ -53,6 +71,12 @@ class ExplorerProvider extends ChangeNotifier implements ExplorerListener {
       if (hash[k]?[0] == true) {
         k?.height = 0;
         removed.add(k);
+
+        Future.delayed(Duration(milliseconds: removed.length * interval), () {
+          k?.height = 0;
+          k?.duration = removed.length * interval;
+          notifyListeners();
+        });
       }
       if (hash[k]?[1] == true) {
         added.add(k);
@@ -66,6 +90,16 @@ class ExplorerProvider extends ChangeNotifier implements ExplorerListener {
         if (interval < 0) interval = 0;
       }
     }
+
+    // if (removed.isNotEmpty) {
+    //   List<ExplorerItem?> newTree = [...tree];
+    //   tree = _previous;
+    //   Future.delayed(Duration(milliseconds: removed.length * interval), () {
+    //       tree = newTree;
+    //       notifyListeners();
+    //     });
+    // }
+
     notifyListeners();
   }
 }
@@ -91,7 +125,7 @@ class ExplorerTreeItem {
             size: size, color: theme.comment)
         : Container(width: size);
 
-    return GestureDetector(
+    return InkWell(
         child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Container(
@@ -115,6 +149,7 @@ class ExplorerTreeItem {
             }
             provider?.rebuild();
           }
+          provider?.select(_item);
         });
   }
 }
@@ -122,16 +157,17 @@ class ExplorerTreeItem {
 class ExplorerTree extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    AppProvider app = Provider.of<AppProvider>(context);
     ExplorerProvider exp = Provider.of<ExplorerProvider>(context);
 
     HLTheme theme = Provider.of<HLTheme>(context);
     TextStyle style = TextStyle(
-        fontSize: theme.fontSize * 0.8,
+        fontSize: theme.fontSize,
         fontFamily: theme.fontFamily,
         color: theme.comment);
 
     Size sz = getTextExtents('item', style);
-    double itemHeight = sz.height + 3;
+    double itemHeight = sz.height + 8;
 
     List<ExplorerTreeItem> tree = [
       ...exp.tree.map(
@@ -145,7 +181,7 @@ class ExplorerTree extends StatelessWidget {
         double opacity = 0,
         bool animate = true}) {
       if (!animate) {
-        return child ?? Container();
+        return Container(height: height, child: child);
       }
 
       return AnimatedOpacity(
@@ -156,28 +192,31 @@ class ExplorerTree extends StatelessWidget {
           child: AnimatedSize(
               clipBehavior: Clip.hardEdge,
               curve: Curves.decelerate,
-              duration: Duration(milliseconds: animateK),
+              duration: Duration(milliseconds: animateK * 2),
               child: AnimatedPadding(
-                  padding: EdgeInsets.only(left: (itemHeight - height) * 4),
+                  padding: EdgeInsets.only(left: (itemHeight - height) * 4 * 0),
                   curve: Curves.decelerate,
                   duration: Duration(milliseconds: animateK * 2),
                   child: Container(height: height, child: child))));
     }
 
-    return Container(
-        width: 240,
-        child: ListView.builder(
-            itemCount: tree.length,
-            itemBuilder: (BuildContext context, int index) {
-              ExplorerTreeItem _node = tree[index];
-              double h = itemHeight * (_node.item?.height ?? 0);
-              double o = 1 * (_node.item?.height ?? 0);
-              return _animate(
-                  key: ValueKey(_node.item),
-                  child: _node.build(context),
-                  height: h,
-                  opacity: o,
-                  animate: true);
-            }));
+    return Material(
+        color: darken(theme.background, 0.04),
+        child: Container(
+            height: app.screenHeight,
+            width: app.sidebarWidth,
+            child: ListView.builder(
+                itemCount: tree.length,
+                itemBuilder: (BuildContext context, int index) {
+                  ExplorerTreeItem _node = tree[index];
+                  double h = itemHeight * (_node.item?.height ?? 0);
+                  double o = 1 * (_node.item?.height ?? 0);
+                  return _animate(
+                      key: ValueKey(_node.item),
+                      child: _node.build(context),
+                      height: h,
+                      opacity: o,
+                      animate: false);
+                })));
   }
 }

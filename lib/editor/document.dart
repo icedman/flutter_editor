@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:highlight/src/mode.dart';
+import 'package:path/path.dart' as _path;
 
 import 'package:editor/editor/cursor.dart';
 import 'package:editor/editor/history.dart';
@@ -93,6 +94,7 @@ class Block {
 
 class Document {
   String docPath = '';
+  String fileName = '';
   int documentId = 0;
   int langId = 0;
 
@@ -187,7 +189,8 @@ class Document {
 
   Future<bool> openFile(String path) async {
     clear();
-    docPath = path;
+    docPath = _path.normalize(Directory(path).absolute.path);
+    fileName = _path.basename(path);
     detectedTabSpaces = 0;
 
     blocks = [];
@@ -746,7 +749,7 @@ class DocumentProvider extends ChangeNotifier {
   Document doc = Document();
 
   int scrollTo = -1;
-  bool softWrap = false;
+  bool softWrap = true;
   bool showGutters = true;
   bool showMinimap = true;
   bool ready = false;

@@ -5,8 +5,8 @@ import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
 
 import 'package:editor/editor/document.dart';
-import 'package:editor/ffi/bridge.dart';
-import 'package:editor/ffi/highlighter.dart';
+import 'package:editor/services/ffi/bridge.dart';
+import 'package:editor/services/ffi/highlighter.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 

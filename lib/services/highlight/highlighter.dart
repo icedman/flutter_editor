@@ -9,7 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:editor/editor/cursor.dart';
 import 'package:editor/editor/document.dart';
 import 'package:editor/editor/view.dart';
-import 'package:editor/ffi/bridge.dart';
+import 'package:editor/services/ffi/bridge.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/fhl.dart';
 import 'package:editor/services/highlight/tmparser.dart';

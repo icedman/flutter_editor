@@ -29,6 +29,10 @@ class CaretPulse extends ChangeNotifier {
       flipCaret();
     });
   }
+
+  void cancel() {
+    timer.cancel();
+  }
 }
 
 class DecorInfo extends ChangeNotifier {
@@ -42,13 +46,6 @@ class DecorInfo extends ChangeNotifier {
   Offset caretScrollStart = Offset.zero;
   Offset caretPosition = Offset.zero;
   Cursor caret = Cursor();
-  bool showCaretBased = false;
-
-  List<String> menu = [];
-  int menuIndex = 0;
-  String searchText = '';
-  dynamic result;
-  dynamic resultItems;
 
   void notifyLater() {
     Future.delayed(const Duration(milliseconds: 0), () => notifyListeners());
@@ -56,46 +53,14 @@ class DecorInfo extends ChangeNotifier {
 
   void onScroll(scroll) {
     scrollPosition = scroll;
-    searchText = '';
     notifyListeners();
   }
 
   void setCaret(Offset pos, Cursor cursor) {
-    bool show = true;
-    if (cursor.hasSelection() || (cursor.document?.cursors.length ?? 0) > 1) {
-      show = false;
-    }
-    if (show == showCaretBased &&
-        cursor.normalized() == thumbCursor.normalized() &&
-        caretPosition == pos) {
-      return;
-    }
-    showCaretBased = show;
     caretScrollStart = scrollPosition;
     caretPosition = pos;
     caret = cursor.copy();
     notifyLater();
-  }
-
-  void setSearch(String text) {
-    if (searchText != text) {
-      searchText = text;
-      menuIndex = 0;
-      notifyLater();
-    }
-  }
-
-  void setSearchResult(dynamic res) {
-    result = res;
-    resultItems = res['result']!;
-    notifyLater();
-  }
-
-  void setMenu(List<String> strings) {
-    menu = strings;
-    if (showCaretBased) {
-      notifyLater();
-    }
   }
 
   void setThumb(Offset start, Offset end, Cursor cursor) {

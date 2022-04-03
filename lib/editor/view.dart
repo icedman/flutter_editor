@@ -1,22 +1,14 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
-import 'dart:ffi' hide Size;
-import 'dart:convert';
-import 'package:ffi/ffi.dart';
-
-import 'dart:io';
-import 'dart:convert';
-import 'dart:math';
 
 import 'package:editor/editor/decorations.dart';
 import 'package:editor/editor/cursor.dart';
 import 'package:editor/editor/document.dart';
 import 'package:editor/services/timer.dart';
 import 'package:editor/services/input.dart';
-import 'package:editor/ffi/bridge.dart';
+import 'package:editor/services/ui/ui.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 
@@ -219,6 +211,13 @@ class _View extends State<View> {
     hscroller = ScrollController();
     scrollTo = PeriodicTimer();
 
+    // hack - to recalculate layout on tab change
+    Future.delayed(const Duration(milliseconds: 0), () {
+      DocumentProvider doc =
+          Provider.of<DocumentProvider>(context, listen: false);
+      doc.touch();
+    });
+
     scroller.addListener(() {
       DocumentProvider doc =
           Provider.of<DocumentProvider>(context, listen: false);
@@ -239,6 +238,9 @@ class _View extends State<View> {
         Offset scroll = Offset(0, scroller.position.pixels);
         DecorInfo decor = Provider.of<DecorInfo>(context, listen: false);
         decor.onScroll(scroll);
+
+        UIProvider ui = Provider.of<UIProvider>(context, listen: false);
+        ui.clearPopups();
       }
     });
 
@@ -247,6 +249,9 @@ class _View extends State<View> {
         Offset scroll = Offset(0, hscroller.position.pixels);
         DecorInfo decor = Provider.of<DecorInfo>(context, listen: false);
         decor.onScroll(scroll);
+
+        UIProvider ui = Provider.of<UIProvider>(context, listen: false);
+        ui.clearPopups();
       }
     });
 
