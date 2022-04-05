@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:editor/editor/editor.dart';
+import 'package:editor/explorer/explorer.dart';
 import 'package:editor/services/app.dart';
 import 'package:editor/services/util.dart';
+import 'package:editor/services/ffi/bridge.dart';
 import 'package:editor/services/highlight/theme.dart';
 
 class EditorTabBar extends StatelessWidget {
@@ -20,12 +22,16 @@ class EditorTabBar extends StatelessWidget {
       bool isFocused = doc.docPath == app.document?.docPath;
       if (isFocused) idx = tabs.length;
 
+      String iconPath = FFIBridge.iconForFileName(doc.fileName);
+      Widget fileIcon = FileIcon(path: iconPath, size: theme.uiFontSize);
+
       tabs.add(Tab(
           key: ValueKey(doc.documentId),
           child: Padding(
               padding: EdgeInsets.only(left: 10, right: 0),
               child: Row(children: [
-                Text('${doc.fileName}',
+                fileIcon,
+                Text(' ${doc.fileName}',
                     style: TextStyle(
                         fontFamily: theme.uiFontFamily,
                         fontSize: theme.uiFontSize,

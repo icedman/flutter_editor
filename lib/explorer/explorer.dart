@@ -158,7 +158,13 @@ class ExplorerTreeItem {
     // TextStyle? _style = style?.copyWith(color: isFocused ? theme.foreground : theme.comment);
 
     String iconPath = FFIBridge.iconForFileName(item?.fileName ?? '');
-    Widget fileIcon = FileIcon(path: iconPath, size: theme.uiFontSize);
+    Widget? fileIcon;
+    
+    if (_item.isDirectory) {
+      fileIcon = Icon(Icons.folder, size: theme.uiFontSize, color: theme.comment);
+    } else {
+      fileIcon = Padding(padding: EdgeInsets.only(left: theme.uiFontSize/2), child: FileIcon(path: iconPath, size: theme.uiFontSize));
+    }
 
     return InkWell(
         child: Container(
@@ -170,7 +176,7 @@ class ExplorerTreeItem {
                     child: Row(children: [
                       Container(width: _item.depth * size / 2),
                       Padding(child: icon, padding: EdgeInsets.all(2)),
-                      if (!_item.isDirectory) ...[fileIcon],
+                      fileIcon,
                       Text(
                         ' ${_item.fileName}',
                         style: style,
