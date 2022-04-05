@@ -41,7 +41,6 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
   bool shifting = false;
   bool controlling = false;
   bool alting = false;
-  bool showKeyboard = false;
 
   List<Block> indexingQueue = [];
 
@@ -451,9 +450,9 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     bool hide = false;
 
-    // hack - managed by app provider
+    // todo remove
+    AppProvider app = Provider.of<AppProvider>(context);
     if (widget.document != null) {
-      AppProvider app = Provider.of<AppProvider>(context);
       if (app.document != doc.doc) {
         hide = true;
       }
@@ -464,84 +463,83 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     Color clr = theme.foreground;
     Color hiColor = theme.selection;
 
-    List<Widget> buttons = <Widget>[
-      IconButton(
-          icon: Icon(showKeyboard ? Icons.keyboard_hide : Icons.keyboard,
-              size: buttonSize, color: clr),
-          onPressed: () {
-            setState(() {
-              showKeyboard = !showKeyboard;
-            });
-          }),
-      IconButton(
-          icon: Icon(Icons.undo, size: buttonSize, color: clr),
-          onPressed: () {
-            command('undo');
-          }),
-      Container(
-          decoration: controlling ? BoxDecoration(color: hiColor) : null,
-          child: IconButton(
-              icon: Icon(Icons.south_west, size: buttonSize, color: clr),
-              onPressed: () {
-                setState(() {
-                  controlling = !controlling;
-                });
-              })),
-      Container(
-          decoration: shifting ? BoxDecoration(color: hiColor) : null,
-          child: IconButton(
-              icon: Icon(Icons.keyboard_capslock, size: buttonSize, color: clr),
-              onPressed: () {
-                setState(() {
-                  shifting = !shifting;
-                });
-              })),
-      IconButton(
-          icon: Icon(Icons.west, size: buttonSize, color: clr),
-          onPressed: () {
-            command(_buildKeys('left', control: controlling, shift: shifting));
-          }),
-      IconButton(
-          icon: Icon(Icons.north, size: buttonSize, color: clr),
-          onPressed: () {
-            command(_buildKeys('up', control: controlling, shift: shifting));
-          }),
-      IconButton(
-          icon: Icon(Icons.south, size: buttonSize, color: clr),
-          onPressed: () {
-            command(_buildKeys('down', control: controlling, shift: shifting));
-          }),
-      IconButton(
-          icon: Icon(Icons.east, size: buttonSize, color: clr),
-          onPressed: () {
-            command(_buildKeys('right', control: controlling, shift: shifting));
-          }),
-      IconButton(
-          icon: Icon(Icons.keyboard_tab, size: buttonSize, color: clr),
-          onPressed: () {
-            command('tab');
-          }),
-      IconButton(
-          icon: Icon(Icons.highlight_alt, size: buttonSize, color: clr),
-          onPressed: () {
-            command('select_word');
-          }),
-      IconButton(
-          icon: Icon(Icons.copy, size: buttonSize, color: clr),
-          onPressed: () {
-            command('copy');
-          }),
-      IconButton(
-          icon: Icon(Icons.cut, size: buttonSize, color: clr),
-          onPressed: () {
-            command('cut');
-          }),
-      IconButton(
-          icon: Icon(Icons.paste, size: buttonSize, color: clr),
-          onPressed: () {
-            command('paste');
-          }),
-    ];
+    List<Widget> buttons = !app.isKeyboardVisible
+        ? []
+        : <Widget>[
+            IconButton(
+                icon: Icon(Icons.undo, size: buttonSize, color: clr),
+                onPressed: () {
+                  command('undo');
+                }),
+            Container(
+                decoration: controlling ? BoxDecoration(color: hiColor) : null,
+                child: IconButton(
+                    icon: Icon(Icons.south_west, size: buttonSize, color: clr),
+                    onPressed: () {
+                      setState(() {
+                        controlling = !controlling;
+                      });
+                    })),
+            Container(
+                decoration: shifting ? BoxDecoration(color: hiColor) : null,
+                child: IconButton(
+                    icon: Icon(Icons.keyboard_capslock,
+                        size: buttonSize, color: clr),
+                    onPressed: () {
+                      setState(() {
+                        shifting = !shifting;
+                      });
+                    })),
+            IconButton(
+                icon: Icon(Icons.west, size: buttonSize, color: clr),
+                onPressed: () {
+                  command(_buildKeys('left',
+                      control: controlling, shift: shifting));
+                }),
+            IconButton(
+                icon: Icon(Icons.north, size: buttonSize, color: clr),
+                onPressed: () {
+                  command(
+                      _buildKeys('up', control: controlling, shift: shifting));
+                }),
+            IconButton(
+                icon: Icon(Icons.south, size: buttonSize, color: clr),
+                onPressed: () {
+                  command(_buildKeys('down',
+                      control: controlling, shift: shifting));
+                }),
+            IconButton(
+                icon: Icon(Icons.east, size: buttonSize, color: clr),
+                onPressed: () {
+                  command(_buildKeys('right',
+                      control: controlling, shift: shifting));
+                }),
+            IconButton(
+                icon: Icon(Icons.keyboard_tab, size: buttonSize, color: clr),
+                onPressed: () {
+                  command('tab');
+                }),
+            IconButton(
+                icon: Icon(Icons.highlight_alt, size: buttonSize, color: clr),
+                onPressed: () {
+                  command('select_word');
+                }),
+            IconButton(
+                icon: Icon(Icons.copy, size: buttonSize, color: clr),
+                onPressed: () {
+                  command('copy');
+                }),
+            IconButton(
+                icon: Icon(Icons.cut, size: buttonSize, color: clr),
+                onPressed: () {
+                  command('cut');
+                }),
+            IconButton(
+                icon: Icon(Icons.paste, size: buttonSize, color: clr),
+                onPressed: () {
+                  command('paste');
+                }),
+          ];
 
     return MultiProvider(
         providers: [
@@ -565,12 +563,12 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
                             onTapDown: onTapDown,
                             onDoubleTapDown: onDoubleTapDown,
                             onPanUpdate: onPanUpdate,
-                            showKeyboard: showKeyboard)),
+                            showKeyboard: app.showKeyboard)),
                     Minimap()
                   ]),
                 ])),
 
-                if (Platform.isAndroid) ...[
+                if (Platform.isAndroid && app.isKeyboardVisible) ...[
                   Container(
                       child: SingleChildScrollView(
                           scrollDirection: Axis.horizontal,

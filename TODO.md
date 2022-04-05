@@ -16,7 +16,8 @@ auto complete (done)
 search (partial)
 
 # file explorer
-directory & file watcher
+directory (done)
+file watcher
 fileicons
 
 # native
@@ -33,5 +34,5 @@ console
 
 # bug
 
-nowrap -> scoll to right -> tap => (vertical autoscroll gets lost)
+nowrap -> scoll to right -> tap => {vertical autoscroll gets lost} (fixed)
 

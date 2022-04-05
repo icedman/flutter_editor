@@ -1,13 +1,41 @@
+import 'dart:io';
+import 'package:editor/services/ffi/bridge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:editor/services/app.dart';
+import 'package:editor/services/util.dart';
+import 'package:editor/services/ffi/bridge.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 import 'package:editor/services/explorer/filesystem.dart';
 import 'package:editor/services/explorer/localfs.dart';
 
 const int animateK = 55;
+
+class FileIcon extends StatefulWidget {
+  FileIcon({String this.path = '', double this.size = 20});
+
+  String path = '';
+  double size = 20;
+
+  @override
+  _FileIcon createState() => _FileIcon();
+}
+
+class _FileIcon extends State<FileIcon> {
+  Widget? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    if (icon == null) {
+      File iconFile = File(widget.path);
+      icon = SvgPicture.file(iconFile, width: widget.size, height: widget.size);
+    }
+    return icon ?? Container();
+  }
+}
 
 class ExplorerProvider extends ChangeNotifier implements ExplorerListener {
   late Explorer explorer;
@@ -115,6 +143,7 @@ class ExplorerTreeItem {
   TextStyle? style;
 
   Widget build(BuildContext context) {
+    AppProvider app = Provider.of<AppProvider>(context);
     HLTheme theme = Provider.of<HLTheme>(context);
     ExplorerItem? _item = item ?? ExplorerItem('');
     bool expanded = _item.isExpanded;
@@ -125,22 +154,30 @@ class ExplorerTreeItem {
             size: size, color: theme.comment)
         : Container(width: size);
 
+    bool isFocused = item?.fullPath == app.document?.docPath;
+    // TextStyle? _style = style?.copyWith(color: isFocused ? theme.foreground : theme.comment);
+
+    String iconPath = FFIBridge.iconForFileName(item?.fileName ?? '');
+    Widget fileIcon = FileIcon(path: iconPath, size: theme.uiFontSize);
+
     return InkWell(
-        child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Container(
-                height: 32,
-                // color: Colors.yellow,
-                child: Row(children: [
-                  Container(width: _item.depth * size / 2),
-                  Padding(child: icon, padding: EdgeInsets.all(2)),
-                  Text(
-                    ' ${_item.fileName}',
-                    style: style,
-                    maxLines: 1,
-                  ),
-                  // IconButton(icon: Icon(Icons.close), onPressed:() {}),
-                ]))),
+        child: Container(
+            color: isFocused ? theme.selection.withOpacity(0.2) : null,
+            child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Container(
+                    height: 32,
+                    child: Row(children: [
+                      Container(width: _item.depth * size / 2),
+                      Padding(child: icon, padding: EdgeInsets.all(2)),
+                      if (!_item.isDirectory) ...[fileIcon],
+                      Text(
+                        ' ${_item.fileName}',
+                        style: style,
+                        maxLines: 1,
+                      ),
+                      // IconButton(icon: Icon(Icons.close), onPressed:() {}),
+                    ])))),
         onTap: () {
           if (_item.isDirectory) {
             _item.isExpanded = !expanded;
@@ -162,8 +199,8 @@ class ExplorerTree extends StatelessWidget {
 
     HLTheme theme = Provider.of<HLTheme>(context);
     TextStyle style = TextStyle(
-        fontSize: theme.fontSize,
-        fontFamily: theme.fontFamily,
+        fontSize: theme.uiFontSize,
+        fontFamily: theme.uiFontFamily,
         color: theme.comment);
 
     Size sz = getTextExtents('item', style);
@@ -201,7 +238,7 @@ class ExplorerTree extends StatelessWidget {
     }
 
     return Material(
-        color: darken(theme.background, 0.04),
+        color: darken(theme.background, sidebarDarken),
         child: Container(
             height: app.screenHeight,
             width: app.sidebarWidth,

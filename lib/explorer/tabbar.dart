@@ -1,11 +1,12 @@
+import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:editor/editor/editor.dart';
 import 'package:editor/services/app.dart';
+import 'package:editor/services/util.dart';
 import 'package:editor/services/highlight/theme.dart';
-import 'package:editor/services/highlight/highlighter.dart';
 
 class EditorTabBar extends StatelessWidget {
   @override
@@ -24,13 +25,17 @@ class EditorTabBar extends StatelessWidget {
           child: Padding(
               padding: EdgeInsets.only(left: 10, right: 0),
               child: Row(children: [
-                Text('${doc.fileName}', style: TextStyle(color: Colors.white)),
+                Text('${doc.fileName}',
+                    style: TextStyle(
+                        fontFamily: theme.uiFontFamily,
+                        fontSize: theme.uiFontSize,
+                        color: isFocused ? theme.foreground : theme.comment)),
                 InkWell(
                   canRequestFocus: false,
                   child: Padding(
                       padding: const EdgeInsets.all(6),
                       child: Icon(Icons.close,
-                          color: theme.comment, size: theme.fontSize)),
+                          color: theme.comment, size: theme.uiFontSize)),
                   onTap: () {
                     app.close(doc.docPath);
                   },
@@ -45,23 +50,41 @@ class EditorTabBar extends StatelessWidget {
       });
     }
 
+    List<Widget> actions = [
+      if (Platform.isAndroid) ...[
+        IconButton(
+            onPressed: () {
+              app.showKeyboard = !app.showKeyboard;
+              app.notifyListeners();
+            },
+            icon: Icon(
+                app.isKeyboardVisible ? Icons.keyboard_hide : Icons.keyboard,
+                color: theme.comment,
+                size: theme.fontSize))
+      ],
+      IconButton(
+          onPressed: () {
+            app.openSidebar = true;
+            app.notifyListeners();
+          },
+          icon: Icon(Icons.more_vert,
+              color: theme.comment, size: theme.uiFontSize))
+    ];
+
     return Material(
-        color: darken(theme.background, 0.02),
+        color: darken(theme.background, tabbarDarken),
         child: Row(children: [
-          if (!app.fixedSidebar) ...[
-            Container(
-                height: app.tabbarHeight,
-                child: IconButton(
-                    onPressed: () {
-                      app.openSidebar = true;
-                      app.notifyListeners();
-                    },
-                    icon: Icon(Icons.vertical_split,
-                        color: theme.comment, size: theme.fontSize)))
-          ],
+          IconButton(
+              onPressed: () {
+                app.openSidebar = !app.openSidebar;
+                app.notifyListeners();
+              },
+              icon: Icon(Icons.vertical_split,
+                  color: theme.comment, size: theme.uiFontSize)),
           TabBar(
               indicatorSize: TabBarIndicatorSize.label,
               indicator: BoxDecoration(
+                  color: theme.background,
                   border: Border(
                       top: BorderSide(color: theme.keyword, width: 1.5))),
               isScrollable: true,
@@ -71,7 +94,9 @@ class EditorTabBar extends StatelessWidget {
                 DefaultTabController.of(context)?.index = idx;
                 app.document = app.documents[idx];
                 app.notifyListeners();
-              })
+              }),
+          Expanded(child: Container()),
+          ...actions
         ]));
   }
 }

@@ -114,8 +114,13 @@ class Document {
 
   History history = History();
 
-  Document() {
+  Document({String path = ''}) {
     documentId = _documentId++;
+
+    if (path != '') {
+      docPath = _path.normalize(Directory(path).absolute.path);
+      fileName = _path.basename(path);
+    }
 
     listeners['onCreate']?.forEach((l) {
       l?.call(documentId);
@@ -202,7 +207,8 @@ class Document {
           .transform(const LineSplitter())
           .forEach((l) {
         Block block = Block(l, document: this);
-
+        block.originalLine = blocks.length;
+        // block.originalText = l;
         if (blocks.length < 100) {
           int c = countIndentSize(l);
           if (c > 0 && (c < detectedTabSpaces || detectedTabSpaces == 0)) {
@@ -301,7 +307,15 @@ class Document {
   }
 
   Block? blockAtLine(int index) {
-    if (index < 0 || index >= blocks.length) return null;
+    if (index < 0 || index >= blocks.length) {
+      return null;
+    }
+    if (index > 0) {
+      blocks[index].previous = blocks[index - 1];
+    }
+    if (index < blocks.length - 1) {
+      blocks[index].next = blocks[index + 1];
+    }
     return blocks[index]..line = index;
   }
 
@@ -325,7 +339,8 @@ class Document {
     block.next = blockAtLine(index + 1);
     block.previous?.next = block;
     block.next?.previous = block;
-    updateLineNumbers(index);
+
+    // updateLineNumbers(index);
 
     listeners['onAddBlock']?.forEach((l) {
       l?.call(documentId, block.blockId);
@@ -342,7 +357,8 @@ class Document {
     blocks.removeAt(index);
     previous?.next = next;
     next?.previous = previous;
-    updateLineNumbers(index);
+
+    // updateLineNumbers(index);
 
     if (block != null) {
       listeners['onRemoveBlock']?.forEach((l) {
@@ -793,6 +809,7 @@ class DocumentProvider extends ChangeNotifier {
   }
 
   void commit() {
+    doc.updateLineNumbers(0);
     doc.commit();
   }
 
@@ -1025,16 +1042,20 @@ class DocumentProvider extends ChangeNotifier {
         }
       case 'paste':
         {
-          ClipboardData? data = await Clipboard.getData('text/plain');
-          if (data == null) return;
-          List<String> lines = (data.text ?? '').split('\n');
-          int idx = 0;
-          lines.forEach((l) {
-            if (idx++ > 0) {
-              d.insertNewLine();
+          Clipboard.getData('text/plain').then((data) {
+            if (data == null) return;
+            List<String> lines = (data.text ?? '').split('\n');
+            int idx = 0;
+            d.begin();
+            for (final l in lines) {
+              if (idx++ > 0) {
+                d.insertNewLine();
+              }
+              d.insertText(l);
             }
-            d.insertText(l);
+            d.commit();
           });
+          didInputText = true;
           doScroll = true;
           break;
         }
@@ -1081,7 +1102,11 @@ class DocumentProvider extends ChangeNotifier {
         if (!d.hasSelection()) {
           d.duplicateLine();
         } else {
+          Cursor cur = d.cursor().copy();
           d.duplicateSelection();
+          d.cursor()
+            ..anchorBlock = cur.block
+            ..anchorColumn = cur.column;
         }
         doScroll = true;
         break;

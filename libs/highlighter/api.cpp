@@ -190,6 +190,7 @@ inline bool textstyles_equal(textstyle_t &first, textstyle_t &second) {
 
 static extension_list extensions;
 static std::vector<theme_ptr> themes;
+static icon_theme_ptr icons;
 static std::vector<language_info_ptr> languages;
 
 static textstyle_t textstyle_buffer[MAX_STYLED_SPANS];
@@ -317,6 +318,11 @@ EXPORT int load_theme(char *path) {
     themes.emplace_back(theme);
     return themes.size() - 1;
   }
+  return 0;
+}
+
+EXPORT int load_icons(char *path) {
+  icons = icon_theme_from_name(path, extensions);
   return 0;
 }
 
@@ -576,4 +582,12 @@ char *language_definition(int langId) {
   ss << lang->definition;
   strcpy(text_buffer, ss.str().c_str());
   return text_buffer;
+}
+
+EXPORT
+char* icon_for_filename(char* filename)
+{
+    icon_t icon = icon_for_file(icons, filename, extensions);
+    strcpy(text_buffer, icon.path.c_str());
+    return text_buffer;
 }

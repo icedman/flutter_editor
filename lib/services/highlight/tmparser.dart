@@ -35,12 +35,6 @@ class TMParser extends HLEngine {
 
   Map<int, HLLanguage> languages = {};
 
-  TMParser() {
-    loadTheme(Platform.isAndroid
-        ? '/sdcard/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json'
-        : '/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json');
-  }
-
   void loadTheme(String path) {
     themeId = FFIBridge.loadTheme(path);
 
@@ -64,6 +58,10 @@ class TMParser extends HLEngine {
     Future.delayed(const Duration(milliseconds: 0), () {
       theme.notifyListeners();
     });
+  }
+
+  void loadIcons(String path) {
+    FFIBridge.loadIcons(path);
   }
 
   List<LineDecoration> run(Block? block, int line, Document document) {

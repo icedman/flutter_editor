@@ -6,6 +6,10 @@ final HLTheme _theme = HLTheme();
 class HLTheme extends ChangeNotifier {
   String fontFamily = 'FiraCode';
   double fontSize = 18;
+
+  String uiFontFamily = 'FiraCode';
+  double uiFontSize = 16;
+
   double gutterFontSize = 16;
 
   Color foreground = Color(0xfff8f8f2);

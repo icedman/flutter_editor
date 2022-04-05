@@ -10,3 +10,5 @@ EXPORTS
     remove_block
     theme_color
     theme_info
+    load_icons
+    icon_for_filename

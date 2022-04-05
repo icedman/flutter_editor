@@ -3,17 +3,22 @@ import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 
 import 'package:editor/services/app.dart';
+import 'package:editor/services/util.dart';
 import 'package:editor/services/ui/ui.dart';
 import 'package:editor/services/highlight/theme.dart';
-import 'package:editor/services/highlight/highlighter.dart';
 
 class UIMenuPopup extends StatelessWidget {
-  UIMenuPopup({Key? key, this.position = Offset.zero, UIMenuData? this.menu})
+  UIMenuPopup(
+      {Key? key,
+      this.position = Offset.zero,
+      Size this.size = Size.zero,
+      UIMenuData? this.menu})
       : super(key: key);
 
   UIMenuData? menu;
 
   Offset position = Offset.zero;
+  Size size = Size.zero;
 
   @override
   Widget build(BuildContext context) {
@@ -34,10 +39,10 @@ class UIMenuPopup extends StatelessWidget {
     }
 
     TextStyle style = TextStyle(
-        fontFamily: theme.fontFamily,
-        fontSize: theme.fontSize,
+        fontFamily: theme.uiFontFamily,
+        fontSize: theme.uiFontSize,
         color: theme.comment);
-    Color bg = darken(theme.background, 0.04);
+    Color bg = darken(theme.background, sidebarDarken);
 
     const double maxWidth = 220;
     const int maxItems = 8;
@@ -47,7 +52,7 @@ class UIMenuPopup extends StatelessWidget {
     double itemHeight = (size.height + 2 + (padding * 2));
     int itemsCount = items.length;
     if (itemsCount > maxItems) itemsCount = maxItems;
-    double height = (itemHeight + 1.5) * itemsCount;
+    double height = 5 + (itemHeight + 1.5) * itemsCount;
 
     double dx = position.dx;
     double dy = position.dy + itemHeight;
@@ -92,10 +97,12 @@ class UIMenuPopup extends StatelessWidget {
             height: height,
             decoration: BoxDecoration(
                 color: bg,
-                border: Border.all(color: theme.comment, width: 1.5)),
+                border: Border.all(
+                    color: darken(theme.comment, sidebarDarken), width: 1.5)),
             child: Padding(
                 padding: EdgeInsets.all(padding),
                 child: ListView.builder(
+                    controller: ScrollController(),
                     padding: EdgeInsets.zero,
                     itemCount: items.length,
                     itemExtent: itemHeight,

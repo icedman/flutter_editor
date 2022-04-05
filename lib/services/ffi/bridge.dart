@@ -20,6 +20,8 @@ class FFIBridge {
   static late Function language_definition;
   static late Function theme_color;
   static late Function theme_info;
+  static late Function load_icons;
+  static late Function icon_for_filename;
 
   static bool initialized = false;
 
@@ -36,6 +38,16 @@ class FFIBridge {
     final _load_theme = nativeEditorApiLib
         .lookup<NativeFunction<Int32 Function(Pointer<Utf8>)>>('load_theme');
     load_theme = _load_theme.asFunction<int Function(Pointer<Utf8>)>();
+
+    final _load_icons = nativeEditorApiLib
+        .lookup<NativeFunction<Int32 Function(Pointer<Utf8>)>>('load_icons');
+    load_icons = _load_icons.asFunction<int Function(Pointer<Utf8>)>();
+
+    final _icon_for_filename = nativeEditorApiLib
+        .lookup<NativeFunction<Pointer<Utf8> Function(Pointer<Utf8>)>>(
+            'icon_for_filename');
+    icon_for_filename =
+        _icon_for_filename.asFunction<Pointer<Utf8> Function(Pointer<Utf8>)>();
 
     final _thm_color = nativeEditorApiLib.lookup<
         NativeFunction<ThemeColor Function(Pointer<Utf8>)>>('theme_color');
@@ -92,6 +104,20 @@ class FFIBridge {
     int res = load_theme(_path);
     calloc.free(_path);
     return res;
+  }
+
+  static int loadIcons(String path) {
+    final _path = path.toNativeUtf8();
+    int res = load_icons(_path);
+    calloc.free(_path);
+    return res;
+  }
+
+  static String iconForFileName(String path) {
+    final _path = path.toNativeUtf8();
+    Pointer<Utf8> res = icon_for_filename(_path);
+    calloc.free(_path);
+    return res.toDartString();
   }
 
   static int loadLanguage(String path) {

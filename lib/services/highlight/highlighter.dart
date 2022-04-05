@@ -4,63 +4,15 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
-import 'package:provider/provider.dart';
 
 import 'package:editor/editor/cursor.dart';
 import 'package:editor/editor/document.dart';
 import 'package:editor/editor/view.dart';
+import 'package:editor/services/util.dart';
 import 'package:editor/services/ffi/bridge.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/fhl.dart';
 import 'package:editor/services/highlight/tmparser.dart';
-
-const double sidebarDarken = 0.0425;
-const double tabbarDarken = 0.025;
-const double statusbarDarken = tabbarDarken;
-
-bool isDark(Color clr) {
-  return clr.computeLuminance() <= 0.5;
-}
-
-Color darken(Color color, [double amount = .1]) {
-  assert(amount >= 0 && amount <= 1);
-
-  final hsl = HSLColor.fromColor(color);
-  final hslDark = hsl.withLightness((hsl.lightness - amount).clamp(0.0, 1.0));
-  return hslDark.toColor();
-}
-
-Color lighten(Color color, [double amount = .1]) {
-  assert(amount >= 0 && amount <= 1);
-
-  final hsl = HSLColor.fromColor(color);
-  final hslLight = hsl.withLightness((hsl.lightness + amount).clamp(0.0, 1.0));
-
-  return hslLight.toColor();
-}
-
-Color darkenOrLighten(Color color, [double amount = .1]) {
-  return !isDark(color) ? lighten(color, amount) : darken(color, amount);
-}
-
-Color colorCombine(Color a, Color b, {int aw = 1, int bw = 1}) {
-  int red = (a.red * aw + b.red * bw) ~/ (aw + bw);
-  int green = (a.green * aw + b.green * bw) ~/ (aw + bw);
-  int blue = (a.blue * aw + b.blue * bw) ~/ (aw + bw);
-  return Color.fromRGBO(red, green, blue, 1);
-}
-
-Size getTextExtents(String text, TextStyle style,
-    {double minWidth = 0,
-    double maxWidth: double.infinity,
-    int? maxLines = 1}) {
-  final TextPainter textPainter = TextPainter(
-      text: TextSpan(text: text, style: style),
-      maxLines: maxLines,
-      textDirection: TextDirection.ltr)
-    ..layout(minWidth: minWidth, maxWidth: maxWidth);
-  return textPainter.size;
-}
 
 abstract class HLEngine {
   List<LineDecoration> run(Block? block, int line, Document document);

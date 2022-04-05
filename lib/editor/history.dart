@@ -18,10 +18,7 @@ class History {
   List<Action> actions = [];
 
   void begin(Document doc) {
-    cursors = [];
-    for (final c in doc.cursors) {
-      cursors.add(c.copy());
-    }
+    cursors = doc.cursors.map((c) => c.copy()).toList();
     actions = [];
   }
 
@@ -35,6 +32,7 @@ class History {
   }
 
   void add(Block? block) {
+    // print('add ${block?.text}');
     Action action = Action();
     action.type = 'add';
     action.block = block;
@@ -42,6 +40,7 @@ class History {
   }
 
   void remove(Block? block) {
+    // print('remove ${block?.text}');
     Action action = Action();
     action.type = 'remove';
     action.block = block;
@@ -76,7 +75,9 @@ class History {
   }
 
   void undo(Document doc) {
-    if (entries.length == 0) return;
+    if (entries.length == 0) {
+      return;
+    }
 
     HistoryEntry last = entries.removeLast();
     for (final a in last.actions.reversed) {

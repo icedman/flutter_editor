@@ -16,8 +16,10 @@ class AppProvider extends ChangeNotifier {
   double sidebarWidth = 240;
   double tabbarHeight = 32;
 
+  bool showKeyboard = false;
+  bool isKeyboardVisible = false;
   bool fixedSidebar = true;
-  bool openSidebar = false;
+  bool openSidebar = true;
 
   Document? open(String path, {bool focus = false}) {
     String p = _path.normalize(Directory(path).absolute.path);
@@ -30,7 +32,7 @@ class AppProvider extends ChangeNotifier {
         return d;
       }
     }
-    Document doc = Document()..docPath = p;
+    Document doc = Document(path: path);
     documents.add(doc);
     if (focus || documents.length == 1) {
       document = doc;

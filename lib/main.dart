@@ -4,10 +4,10 @@ import 'package:provider/provider.dart';
 import 'package:path/path.dart' as _path;
 
 import 'package:editor/explorer/layout.dart';
-import 'package:editor/explorer/tabbar.dart';
 import 'package:editor/explorer/explorer.dart';
 import 'package:editor/services/ffi/bridge.dart';
 import 'package:editor/services/app.dart';
+import 'package:editor/services/util.dart';
 import 'package:editor/services/ui/ui.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/tmparser.dart';
@@ -31,7 +31,13 @@ void main(List<String> args) async {
   }
 
   FFIBridge.initialize(extPath);
-  TMParser(); // loads the theme
+
+  // todo... move theme out of the parser
+  TMParser()
+    ..loadTheme(Platform.isAndroid
+        ? '/sdcard/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json'
+        : '/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json')
+    ..loadIcons('material-icon-theme');
 
   HLTheme theme = HLTheme.instance();
   AppProvider app = AppProvider();
@@ -48,7 +54,9 @@ void main(List<String> args) async {
 
   explorer.onSelect = (item) {
     if (!item.isDirectory) {
-      app.openSidebar = false;
+      if (!app.fixedSidebar) {
+        app.openSidebar = false;
+      }
       app.open(item.fullPath, focus: true);
     }
   };
@@ -65,11 +73,37 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     HLTheme theme = Provider.of<HLTheme>(context);
+
     ThemeData themeData = ThemeData(
-      fontFamily: 'FiraCode',
-      primaryColor: theme.foreground,
+      focusColor: Color.fromRGBO(0, 0, 0, 0.1),
+      brightness: isDark(theme.background) ? Brightness.dark : Brightness.light,
+      colorScheme: ColorScheme.fromSwatch(
+        primarySwatch: toMaterialColor(theme.background),
+        accentColor: toMaterialColor(theme.background),
+        brightness:
+            isDark(theme.background) ? Brightness.dark : Brightness.light,
+      ),
+      errorColor: Colors.red,
+      primarySwatch: toMaterialColor(darken(theme.background, sidebarDarken)),
+      primaryColor: theme.comment,
       backgroundColor: theme.background,
       scaffoldBackgroundColor: theme.background,
+      fontFamily: theme.uiFontFamily,
+      //fontSize: theme.uiFontSize,
+      textTheme: TextTheme().apply(
+        bodyColor: theme.comment,
+        displayColor: theme.comment,
+        fontFamily: theme.uiFontFamily,
+        //fontSize: theme.fontSize
+      ),
+      textSelectionTheme: TextSelectionThemeData(
+        selectionColor: const Color(0xc0c0c0c0).withOpacity(0.1),
+        cursorColor: theme.comment,
+        selectionHandleColor: const Color(0xc0c0c0c0).withOpacity(0.1),
+      ),
+      // scrollbarTheme: const ScrollbarThemeData().copyWith(
+      //     thumbColor:
+      //         MaterialStateProperty.all(const Color.fromRGBO(255, 255, 0, 0))),
     );
 
     return MaterialApp(

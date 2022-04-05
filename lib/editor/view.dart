@@ -6,11 +6,115 @@ import 'package:provider/provider.dart';
 import 'package:editor/editor/decorations.dart';
 import 'package:editor/editor/cursor.dart';
 import 'package:editor/editor/document.dart';
+import 'package:editor/services/util.dart';
 import 'package:editor/services/timer.dart';
 import 'package:editor/services/input.dart';
 import 'package:editor/services/ui/ui.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
+
+Offset screenToCursor(RenderObject? obj, Offset pos) {
+  List<RenderParagraph> pars = <RenderParagraph>[];
+  findRenderParagraphs(obj, pars);
+
+  RenderParagraph? lastPar;
+  RenderParagraph? targetPar;
+  int line = -1;
+
+  for (final par in pars) {
+    if (((par.text as TextSpan).children?.length ?? 0) > 0) lastPar = par;
+    TextSpan t = par.text as TextSpan;
+    Rect bounds = Offset.zero & par.size;
+    Offset offsetForCaret = par.localToGlobal(
+        par.getOffsetForCaret(const TextPosition(offset: 0), bounds));
+    Rect parBounds =
+        offsetForCaret & Size(par.size.width * 100, par.size.height);
+    if (parBounds.inflate(2).contains(pos)) {
+      targetPar = par;
+      break;
+    }
+  }
+
+  if (targetPar == null && lastPar != null) {
+    List<InlineSpan> children =
+        (lastPar.text as TextSpan).children ?? <InlineSpan>[];
+    if (children.isNotEmpty && children.last is CustomWidgetSpan) {
+      line = (children.last as CustomWidgetSpan).line;
+    }
+    int textOffset = -1;
+    return Offset(textOffset.toDouble(), line.toDouble());
+  }
+  if (targetPar == null) return Offset(-1, -1);
+
+  Rect bounds = Offset.zero & targetPar.size;
+  List<InlineSpan> children =
+      (targetPar.text as TextSpan).children ?? <InlineSpan>[];
+  Size fontCharSize = Size(0, 0);
+  int textOffset = 0;
+  bool found = false;
+
+  int nearestOffset = 0;
+  double nearest = -1;
+
+  for (var span in children) {
+    if (found) break;
+    if (!(span is TextSpan)) {
+      continue;
+    }
+
+    if (fontCharSize.width == 0) {
+      fontCharSize = getTextExtents(' ', span.style ?? TextStyle());
+    }
+
+    String txt = (span as TextSpan).text ?? '';
+    for (int i = 0; i < txt.length + 1; i++) {
+      Offset offsetForCaret = targetPar.localToGlobal(targetPar
+          .getOffsetForCaret(TextPosition(offset: textOffset), bounds));
+
+      Rect charBounds = offsetForCaret & fontCharSize;
+      if (charBounds.inflate(2).contains(Offset(pos.dx + 2, pos.dy + 1))) {
+        found = true;
+        break;
+      }
+
+      double dx = offsetForCaret.dx - pos.dx;
+      double dy = offsetForCaret.dy - (pos.dy - 4);
+      double dst = sqrt((dx * dx) + (dy * dy));
+
+      if (sqrt(dy * dy) > fontCharSize.height) {
+        dst += 1000;
+      }
+
+      if (nearest > dst || nearest == -1) {
+        nearest = dst;
+        nearestOffset = textOffset;
+      }
+      textOffset++;
+    }
+  }
+
+  if (children.isNotEmpty && children.last is CustomWidgetSpan) {
+    line = (children.last as CustomWidgetSpan).line;
+    Block? block = (children.last as CustomWidgetSpan).block;
+    line = block?.line ?? line;
+  }
+
+  if (!found) {
+    textOffset = nearestOffset;
+  }
+
+  return Offset(textOffset.toDouble(), line.toDouble());
+}
+
+void findRenderParagraphs(RenderObject? obj, List<RenderParagraph> res) {
+  if (obj is RenderParagraph) {
+    res.add(obj);
+    return;
+  }
+  obj?.visitChildren((child) {
+    findRenderParagraphs(child, res);
+  });
+}
 
 class GutterLine extends StatelessWidget {
   GutterLine(
@@ -32,7 +136,7 @@ class GutterLine extends StatelessWidget {
   Widget build(BuildContext context) {
     HLTheme theme = Provider.of<HLTheme>(context);
     return Container(
-        color: (block?.carets ?? []).length > 0
+        color: (block?.carets ?? []).isNotEmpty
             ? theme.selection
             : theme.background,
         height: height,
@@ -289,7 +393,7 @@ class _View extends State<View> {
         TextSpan t = p.text as TextSpan;
         List<InlineSpan> children = (t as TextSpan).children ?? <InlineSpan>[];
 
-        if (children.length > 0 && children.last is CustomWidgetSpan) {
+        if (children.isNotEmpty && children.last is CustomWidgetSpan) {
           int line = (children.last as CustomWidgetSpan).line;
           if (min == -1 || min > line) {
             min = line;

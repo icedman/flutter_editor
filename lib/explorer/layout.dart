@@ -3,11 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:editor/explorer/tabbar.dart';
-import 'package:editor/explorer/statusbar.dart';
 import 'package:editor/explorer/explorer.dart';
 import 'package:editor/services/app.dart';
+import 'package:editor/services/util.dart';
 import 'package:editor/services/ui/ui.dart';
-import 'package:editor/services/highlight/highlighter.dart';
 import 'package:editor/services/highlight/theme.dart';
 
 class AppLayout extends StatefulWidget {
@@ -48,9 +47,16 @@ class _AppLayout extends State<AppLayout> with WidgetsBindingObserver {
 
     app.bottomInset = bottomInset;
 
+    app.isKeyboardVisible = _isKeyboardVisible;
     app.screenWidth = MediaQuery.of(context).size.width;
     app.screenHeight = MediaQuery.of(context).size.height;
     app.notifyListeners();
+
+    if (app.sidebarWidth > app.screenWidth / 3) {
+      app.openSidebar = false;
+    } else {
+      app.openSidebar = true;
+    }
 
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
@@ -64,6 +70,7 @@ class _AppLayout extends State<AppLayout> with WidgetsBindingObserver {
     final screenHeight = MediaQuery.of(context).size.height;
     app.screenWidth = screenWidth;
     app.screenHeight = screenHeight;
+    app.isKeyboardVisible = _isKeyboardVisible;
 
     if (app.sidebarWidth > app.screenWidth / 3) {
       app.fixedSidebar = false;
@@ -79,6 +86,8 @@ class _AppLayout extends State<AppLayout> with WidgetsBindingObserver {
     Size sz = getTextExtents('item', style);
     app.tabbarHeight = sz.height + 8;
 
+    bool showSidebar = (app.fixedSidebar && app.openSidebar) || app.openSidebar;
+
     return DefaultTabController(
         animationDuration: Duration.zero,
         length: app.documents.length,
@@ -86,7 +95,9 @@ class _AppLayout extends State<AppLayout> with WidgetsBindingObserver {
             body: Stack(children: [
           Padding(
               padding: EdgeInsets.only(
-                  left: app.fixedSidebar ? app.sidebarWidth : 0),
+                  left: app.fixedSidebar && app.openSidebar
+                      ? app.sidebarWidth
+                      : 0),
               child: Column(children: [
                 Container(
                   height: app.tabbarHeight,
@@ -105,9 +116,7 @@ class _AppLayout extends State<AppLayout> with WidgetsBindingObserver {
                     height: app.screenHeight,
                     color: Colors.black.withOpacity(0.4))),
           ],
-          Container(
-              child:
-                  app.fixedSidebar || app.openSidebar ? ExplorerTree() : null),
+          Container(child: showSidebar ? ExplorerTree() : null),
           ...ui.popups
         ])));
   }
