@@ -21,3 +21,5 @@ This project is the more advanced version of editor_from_scratch (https://github
 
 ![screenshot](https://raw.githubusercontent.com/icedman/flutter_editor/main/screenshots/Screenshot%20from%202022-03-09%2018-11-43.png)
 ![screenshot](https://raw.githubusercontent.com/icedman/flutter_editor/main/screenshots/Screenshot%20from%202022-03-30%2010-04-44.png)
+![screenshot](https://raw.githubusercontent.com/icedman/flutter_editor/main/screenshots/Screenshot%20from%202022-04-01%2022-21-35.pngg)
+![screenshot](https://raw.githubusercontent.com/icedman/flutter_editor/main/screenshots/Screenshot%20from%202022-04-05%2010-47-24.png)
