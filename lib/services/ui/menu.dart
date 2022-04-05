@@ -7,24 +7,47 @@ import 'package:editor/services/util.dart';
 import 'package:editor/services/ui/ui.dart';
 import 'package:editor/services/highlight/theme.dart';
 
-class UIMenuPopup extends StatelessWidget {
+class UIMenuPopup extends StatefulWidget {
   UIMenuPopup(
       {Key? key,
       this.position = Offset.zero,
-      Size this.size = Size.zero,
+      double this.alignX = 0,
+      double this.alignY = 0,
       UIMenuData? this.menu})
       : super(key: key);
 
+  double alignX = 0;
+  double alignY = 0;
+  Offset position = Offset.zero;
   UIMenuData? menu;
 
-  Offset position = Offset.zero;
-  Size size = Size.zero;
+  @override
+  _UIMenuPopup createState() => _UIMenuPopup();
+}
+
+class _UIMenuPopup extends State<UIMenuPopup> {
+  late ScrollController scroller;
+
+  @override
+  void initState() {
+    super.initState();
+    scroller = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    scroller.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     HLTheme theme = Provider.of<HLTheme>(context);
     AppProvider app = Provider.of<AppProvider>(context);
     UIProvider ui = Provider.of<UIProvider>(context);
+
+    Offset position = widget.position;
+    UIMenuData? menu = widget.menu;
 
     _cancel() {
       Future.delayed(const Duration(microseconds: 0), () {
@@ -48,14 +71,14 @@ class UIMenuPopup extends StatelessWidget {
     const int maxItems = 8;
 
     double padding = 2;
-    Size size = getTextExtents('  ', style);
-    double itemHeight = (size.height + 2 + (padding * 2));
+    Size extents = getTextExtents(' ', style);
+    double itemHeight = (extents.height + 2 + (padding * 2));
     int itemsCount = items.length;
     if (itemsCount > maxItems) itemsCount = maxItems;
     double height = 5 + (itemHeight + 1.5) * itemsCount;
 
-    double dx = position.dx;
-    double dy = position.dy + itemHeight;
+    double dx = position.dx + (extents.width * widget.alignX);
+    double dy = position.dy + (itemHeight * widget.alignY);
     if (dx + maxWidth > app.screenWidth + 8) {
       dx = app.screenWidth - 8 - maxWidth;
     }
@@ -65,10 +88,26 @@ class UIMenuPopup extends StatelessWidget {
 
     Offset _position = Offset(dx, dy);
 
+    if (scroller.positions.isNotEmpty) {
+      double start = scroller.position.pixels / itemHeight;
+      double end = start + maxItems;
+      int index = menu?.menuIndex ?? 0;
+      if (index < start || index >= end) {
+        double target = index * itemHeight - (height / 2.5);
+        if (target < 0) {
+          target = 0;
+        }
+        if (target > scroller.position.maxScrollExtent) {
+          target = scroller.position.maxScrollExtent;
+        }
+        scroller.jumpTo(target);
+      }
+    }
+
     Widget _item(BuildContext context, int index) {
       UIMenuData? item = items[index];
       String s = item?.title ?? '';
-      return GestureDetector(
+      return InkWell(
           onTap: () {
             menu?.select(index);
             ui.clearPopups();
@@ -92,20 +131,22 @@ class UIMenuPopup extends StatelessWidget {
     return Positioned(
         top: _position.dy,
         left: _position.dx,
-        child: Container(
-            width: maxWidth + padding,
-            height: height,
-            decoration: BoxDecoration(
-                color: bg,
-                border: Border.all(
-                    color: darken(theme.comment, sidebarDarken), width: 1.5)),
-            child: Padding(
-                padding: EdgeInsets.all(padding),
-                child: ListView.builder(
-                    controller: ScrollController(),
-                    padding: EdgeInsets.zero,
-                    itemCount: items.length,
-                    itemExtent: itemHeight,
-                    itemBuilder: _item))));
+        child: Material(
+            color: bg,
+            child: Container(
+                width: maxWidth + padding,
+                height: height,
+                decoration: BoxDecoration(
+                    // color: bg,
+                    border: Border.all(
+                        color: darken(theme.background, 0), width: 1.5)),
+                child: Padding(
+                    padding: EdgeInsets.all(padding),
+                    child: ListView.builder(
+                        controller: scroller,
+                        padding: EdgeInsets.zero,
+                        itemCount: items.length,
+                        itemExtent: itemHeight,
+                        itemBuilder: _item)))));
   }
 }

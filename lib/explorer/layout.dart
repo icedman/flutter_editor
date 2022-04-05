@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'package:editor/explorer/tabbar.dart';
+import 'package:editor/explorer/statusbar.dart';
 import 'package:editor/explorer/explorer.dart';
 import 'package:editor/services/app.dart';
 import 'package:editor/services/util.dart';
@@ -80,14 +81,15 @@ class _AppLayout extends State<AppLayout> with WidgetsBindingObserver {
 
     HLTheme theme = Provider.of<HLTheme>(context);
     TextStyle style = TextStyle(
-        fontSize: theme.fontSize,
-        fontFamily: theme.fontFamily,
+        fontSize: theme.uiFontSize,
+        fontFamily: theme.uiFontFamily,
         color: theme.comment);
     Size sz = getTextExtents('item', style);
     app.tabbarHeight = sz.height + 8;
+    app.statusbarHeight = sz.height + 4;
 
     bool showSidebar = (app.fixedSidebar && app.openSidebar) || app.openSidebar;
-
+    // double statusbarHeight = 32;
     return DefaultTabController(
         animationDuration: Duration.zero,
         length: app.documents.length,
@@ -95,6 +97,7 @@ class _AppLayout extends State<AppLayout> with WidgetsBindingObserver {
             body: Stack(children: [
           Padding(
               padding: EdgeInsets.only(
+                  bottom: app.showStatusbar ? app.statusbarHeight : 0,
                   left: app.fixedSidebar && app.openSidebar
                       ? app.sidebarWidth
                       : 0),
@@ -116,7 +119,13 @@ class _AppLayout extends State<AppLayout> with WidgetsBindingObserver {
                     height: app.screenHeight,
                     color: Colors.black.withOpacity(0.4))),
           ],
-          Container(child: showSidebar ? ExplorerTree() : null),
+          Padding(
+              padding: EdgeInsets.only(
+                  bottom: app.showStatusbar ? app.statusbarHeight : 0),
+              child: showSidebar ? ExplorerTree() : null),
+          if (app.showStatusbar) ...[
+            Positioned(left: 0, right: 0, bottom: 0, child: Statusbar())
+          ],
           ...ui.popups
         ])));
   }

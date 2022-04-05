@@ -7,10 +7,31 @@ import 'package:editor/editor/editor.dart';
 import 'package:editor/explorer/explorer.dart';
 import 'package:editor/services/app.dart';
 import 'package:editor/services/util.dart';
+import 'package:editor/services/ui/ui.dart';
+import 'package:editor/services/ui/menu.dart';
 import 'package:editor/services/ffi/bridge.dart';
 import 'package:editor/services/highlight/theme.dart';
 
 class EditorTabBar extends StatelessWidget {
+  void showContextMenu(BuildContext context) {
+    RenderObject? obj = context.findRenderObject();
+    if (obj != null) {
+      RenderBox? box = obj as RenderBox;
+      Offset position = box.localToGlobal(Offset(box.size.width, 0));
+      UIProvider ui = Provider.of<UIProvider>(context, listen: false);
+      UIMenuData? menu = ui.menu('explorer::context');
+      menu?.items.clear();
+      menu?.menuIndex = -1;
+      for (final s in ['New Folder', 'New File']) {
+        menu?.items.add(UIMenuData()..title = s);
+      }
+      ui.setPopup(
+          UIMenuPopup(position: position, alignX: 0, alignY: 1, menu: menu),
+          blur: false,
+          shield: true);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     AppProvider app = Provider.of<AppProvider>(context);
@@ -23,7 +44,7 @@ class EditorTabBar extends StatelessWidget {
       if (isFocused) idx = tabs.length;
 
       String iconPath = FFIBridge.iconForFileName(doc.fileName);
-      Widget fileIcon = FileIcon(path: iconPath, size: theme.uiFontSize);
+      Widget fileIcon = FileIcon(path: iconPath, size: theme.uiFontSize + 2);
 
       tabs.add(Tab(
           key: ValueKey(doc.documentId),
@@ -70,8 +91,7 @@ class EditorTabBar extends StatelessWidget {
       ],
       IconButton(
           onPressed: () {
-            app.openSidebar = true;
-            app.notifyListeners();
+            showContextMenu(context);
           },
           icon: Icon(Icons.more_vert,
               color: theme.comment, size: theme.uiFontSize))

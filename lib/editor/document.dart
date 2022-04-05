@@ -340,7 +340,7 @@ class Document {
     block.previous?.next = block;
     block.next?.previous = block;
 
-    // updateLineNumbers(index);
+    updateLineNumbers(index);
 
     listeners['onAddBlock']?.forEach((l) {
       l?.call(documentId, block.blockId);
@@ -358,7 +358,7 @@ class Document {
     previous?.next = next;
     next?.previous = previous;
 
-    // updateLineNumbers(index);
+    updateLineNumbers(index);
 
     if (block != null) {
       listeners['onRemoveBlock']?.forEach((l) {
@@ -809,7 +809,6 @@ class DocumentProvider extends ChangeNotifier {
   }
 
   void commit() {
-    doc.updateLineNumbers(0);
     doc.commit();
   }
 

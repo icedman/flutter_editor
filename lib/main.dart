@@ -9,6 +9,7 @@ import 'package:editor/services/ffi/bridge.dart';
 import 'package:editor/services/app.dart';
 import 'package:editor/services/util.dart';
 import 'package:editor/services/ui/ui.dart';
+import 'package:editor/services/ui/status.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/tmparser.dart';
 
@@ -42,6 +43,7 @@ void main(List<String> args) async {
   HLTheme theme = HLTheme.instance();
   AppProvider app = AppProvider();
   UIProvider ui = UIProvider();
+  StatusProvider status = StatusProvider();
 
   app.open(path);
   // app.open('./tests/sqlite3.c');
@@ -66,6 +68,7 @@ void main(List<String> args) async {
     ChangeNotifierProvider(create: (context) => ui),
     ChangeNotifierProvider(create: (context) => theme),
     ChangeNotifierProvider(create: (context) => explorer),
+    ChangeNotifierProvider(create: (context) => status),
   ], child: App()));
 }
 

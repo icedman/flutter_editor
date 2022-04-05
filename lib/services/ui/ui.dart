@@ -9,7 +9,7 @@ class UIMenuData {
   Function? onSelect;
 
   void select(int index) {
-    if (items[index] != null) {
+    if (index >= 0 && index < items.length && items[index] != null) {
       onSelect?.call(items[index]);
     }
   }

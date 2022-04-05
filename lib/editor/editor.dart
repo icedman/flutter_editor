@@ -95,7 +95,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
 
     indexer.onResult = (res) {
       UIProvider ui = Provider.of<UIProvider>(context, listen: false);
-      UIMenuData? menu = ui.menu('${d.documentId}_search', onSelect: (item) {
+      UIMenuData? menu = ui.menu('search::${d.documentId}', onSelect: (item) {
         Document d = doc.doc;
         d.begin();
         d.clearCursors();
@@ -276,7 +276,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
 
     // todo!
     if (ui.popups.isNotEmpty) {
-      UIMenuData? menu = ui.menu('${d.documentId}_search');
+      UIMenuData? menu = ui.menu('search::${d.documentId}');
       int idx = menu?.menuIndex ?? 0;
       int size = menu?.items.length ?? 0;
       switch (cmd) {
@@ -325,10 +325,11 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
 
     if (modifiedBlocks.isNotEmpty) {
       // onInputText..
-      UIMenuData? menu = ui.menu('${d.documentId}_search');
-      menu?.title = 'Search!';
-      ui.setPopup(UIMenuPopup(position: decor.caretPosition, menu: menu),
-          blur: false, shield: false);
+      UIMenuData? menu = ui.menu('search::${d.documentId}');
+      ui.setPopup(
+          UIMenuPopup(position: decor.caretPosition, alignY: 1, menu: menu),
+          blur: false,
+          shield: false);
 
       Cursor cur = d.cursor().copy();
       cur.moveCursorLeft();

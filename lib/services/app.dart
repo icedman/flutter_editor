@@ -15,7 +15,9 @@ class AppProvider extends ChangeNotifier {
   double screenHeight = 0;
   double sidebarWidth = 240;
   double tabbarHeight = 32;
+  double statusbarHeight = 32;
 
+  bool showStatusbar = true;
   bool showKeyboard = false;
   bool isKeyboardVisible = false;
   bool fixedSidebar = true;
