@@ -17,6 +17,7 @@ import 'package:editor/minimap/minimap.dart';
 import 'package:editor/services/ui/ui.dart';
 import 'package:editor/services/ui/menu.dart';
 import 'package:editor/services/ui/status.dart';
+import 'package:editor/services/ui/modal.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 import 'package:editor/services/indexer/indexer.dart';
@@ -190,6 +191,25 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     String cmd = keys;
 
     switch (keys) {
+      case 'ctrl+q':
+        {
+          ui.setPopup(UIModal(
+            title: 'Delete',
+            message: 'Delete?',
+            buttons: [
+              UIButton(text: 'ok', onTap: () {
+                print('ok');
+              }),
+              UIButton(text: 'cancel', onTap: () {
+                print('cancel');
+              }),
+            ],
+          ),
+          blur: true,
+          shield: true);
+          return;
+        }
+
       case 'ctrl+f':
         cmd = 'search';
         break;

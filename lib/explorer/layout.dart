@@ -12,7 +12,11 @@ import 'package:editor/services/highlight/theme.dart';
 
 class Resizer extends StatefulWidget {
   Resizer(
-      {double? this.width, double? this.height, Function? this.onStart, Function? this.onUpdate, Function? this.onEnd});
+      {double? this.width,
+      double? this.height,
+      Function? this.onStart,
+      Function? this.onUpdate,
+      Function? this.onEnd});
 
   Function? onStart;
   Function? onUpdate;
@@ -32,9 +36,10 @@ class _Resizer extends State<Resizer> {
   @override
   Widget build(BuildContext) {
     return GestureDetector(
-        child: Container(width: widget.width, height: widget.height,
-          color: Colors.red.withOpacity(0)
-          ),
+        child: Container(
+            width: widget.width,
+            height: widget.height,
+            color: Colors.red.withOpacity(0)),
         onPanStart: (DragStartDetails details) {
           setState(() {
             dragStart = details.globalPosition;
@@ -46,7 +51,8 @@ class _Resizer extends State<Resizer> {
           Offset position = details.globalPosition;
           double dx = position.dx - dragStart.dx;
           double dy = position.dy - dragStart.dy;
-          widget.onUpdate?.call(position, Size(size.width + dx, size.height + dy));
+          widget.onUpdate
+              ?.call(position, Size(size.width + dx, size.height + dy));
         },
         onPanEnd: (DragEndDetails details) {
           setState(() {
@@ -183,8 +189,9 @@ class _AppLayout extends State<AppLayout> with WidgetsBindingObserver {
               padding: EdgeInsets.only(
                   bottom: app.showStatusbar ? app.statusbarHeight : 0,
                   left: ((app.fixedSidebar && app.openSidebar)
-                      ? app.sidebarWidth
-                      : 0) - sizerWidth/2),
+                          ? app.sidebarWidth
+                          : 0) -
+                      sizerWidth / 2),
               child: Resizer(
                   width: sizerWidth,
                   onStart: (position) {
@@ -203,7 +210,7 @@ class _AppLayout extends State<AppLayout> with WidgetsBindingObserver {
                     app.notifyListeners();
                   },
                   onEnd: () {})),
-                  
+
           // statusbar
           if (app.showStatusbar) ...[
             Positioned(left: 0, right: 0, bottom: 0, child: Statusbar())

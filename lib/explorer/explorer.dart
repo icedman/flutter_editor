@@ -9,6 +9,7 @@ import 'package:editor/services/util.dart';
 import 'package:editor/services/ffi/bridge.dart';
 import 'package:editor/services/ui/ui.dart';
 import 'package:editor/services/ui/menu.dart';
+import 'package:editor/services/ui/modal.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 import 'package:editor/services/explorer/filesystem.dart';
@@ -121,15 +122,6 @@ class ExplorerProvider extends ChangeNotifier implements ExplorerListener {
       }
     }
 
-    // if (removed.isNotEmpty) {
-    //   List<ExplorerItem?> newTree = [...tree];
-    //   tree = _previous;
-    //   Future.delayed(Duration(milliseconds: removed.length * interval), () {
-    //       tree = newTree;
-    //       notifyListeners();
-    //     });
-    // }
-
     notifyListeners();
   }
 }
@@ -150,14 +142,23 @@ class ExplorerTreeItem extends StatelessWidget {
       RenderBox? box = obj as RenderBox;
       Offset position = box.localToGlobal(Offset(box.size.width, 0));
       UIProvider ui = Provider.of<UIProvider>(context, listen: false);
-      UIMenuData? menu = ui.menu('explorer::context');
+      UIMenuData? menu = ui.menu('explorer::context', onSelect: (item) {
+        Future.delayed(const Duration(milliseconds: 50), () {
+          ui.setPopup(UIModal(message: 'Delete?'));
+        });
+      });
       menu?.items.clear();
       menu?.menuIndex = -1;
       for (final s in ['New Folder', 'New File']) {
         menu?.items.add(UIMenuData()..title = s);
       }
       ui.setPopup(
-          UIMenuPopup(position: position, alignX: -2, alignY: 0, menu: menu),
+          UIMenuPopup(
+            position: position,
+            alignX: -2,
+            alignY: 0,
+            menu: menu,
+          ),
           blur: false,
           shield: true);
     }
