@@ -63,7 +63,8 @@ class EditorTabBar extends StatelessWidget {
                   child: Padding(
                       padding: const EdgeInsets.all(6),
                       child: Icon(Icons.close,
-                          color: theme.comment, size: theme.uiFontSize)),
+                          color: isFocused ? theme.foreground : theme.comment,
+                          size: theme.uiFontSize)),
                   onTap: () {
                     app.close(doc.docPath);
                   },

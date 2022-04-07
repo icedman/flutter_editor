@@ -10,6 +10,53 @@ import 'package:editor/services/util.dart';
 import 'package:editor/services/ui/ui.dart';
 import 'package:editor/services/highlight/theme.dart';
 
+class Resizer extends StatefulWidget {
+  Resizer(
+      {double? this.width, double? this.height, Function? this.onStart, Function? this.onUpdate, Function? this.onEnd});
+
+  Function? onStart;
+  Function? onUpdate;
+  Function? onEnd;
+  double? width;
+  double? height;
+
+  @override
+  _Resizer createState() => _Resizer();
+}
+
+class _Resizer extends State<Resizer> {
+  Offset dragStart = Offset.zero;
+  bool dragging = false;
+  Size size = Size.zero;
+
+  @override
+  Widget build(BuildContext) {
+    return GestureDetector(
+        child: Container(width: widget.width, height: widget.height,
+          color: Colors.red.withOpacity(0)
+          ),
+        onPanStart: (DragStartDetails details) {
+          setState(() {
+            dragStart = details.globalPosition;
+            dragging = true;
+            size = widget.onStart?.call(dragStart) ?? Size.zero;
+          });
+        },
+        onPanUpdate: (DragUpdateDetails details) {
+          Offset position = details.globalPosition;
+          double dx = position.dx - dragStart.dx;
+          double dy = position.dy - dragStart.dy;
+          widget.onUpdate?.call(position, Size(size.width + dx, size.height + dy));
+        },
+        onPanEnd: (DragEndDetails details) {
+          setState(() {
+            dragging = false;
+            widget.onEnd?.call();
+          });
+        });
+  }
+}
+
 class AppLayout extends StatefulWidget {
   @override
   _AppLayout createState() => _AppLayout();
@@ -91,6 +138,7 @@ class _AppLayout extends State<AppLayout> with WidgetsBindingObserver {
     app.tabbarHeight = sz.height + 8;
     app.statusbarHeight = sz.height + 4;
 
+    double sizerWidth = 10;
     bool showSidebar = (app.fixedSidebar && app.openSidebar) || app.openSidebar;
     // double statusbarHeight = 32;
     return DefaultTabController(
@@ -98,6 +146,7 @@ class _AppLayout extends State<AppLayout> with WidgetsBindingObserver {
         length: app.documents.length,
         child: Scaffold(
             body: Stack(children: [
+          // main content (tabbar & tabs)
           Padding(
               padding: EdgeInsets.only(
                   bottom: app.showStatusbar ? app.statusbarHeight : 0,
@@ -111,6 +160,7 @@ class _AppLayout extends State<AppLayout> with WidgetsBindingObserver {
                 ),
                 Expanded(child: EditorTabs())
               ])),
+
           if (!app.fixedSidebar && app.openSidebar) ...[
             GestureDetector(
                 onTap: () {
@@ -122,13 +172,44 @@ class _AppLayout extends State<AppLayout> with WidgetsBindingObserver {
                     height: app.screenHeight,
                     color: Colors.black.withOpacity(0.4))),
           ],
+
+          // explorer
           Padding(
               padding: EdgeInsets.only(
                   bottom: app.showStatusbar ? app.statusbarHeight : 0),
               child: showSidebar ? ExplorerTree() : null),
+
+          Padding(
+              padding: EdgeInsets.only(
+                  bottom: app.showStatusbar ? app.statusbarHeight : 0,
+                  left: ((app.fixedSidebar && app.openSidebar)
+                      ? app.sidebarWidth
+                      : 0) - sizerWidth/2),
+              child: Resizer(
+                  width: sizerWidth,
+                  onStart: (position) {
+                    return Size(app.sidebarWidth, 0);
+                  },
+                  onUpdate: (position, size) {
+                    double w = size.width;
+                    double h = size.height;
+                    if (w < 100) {
+                      w = 100;
+                    }
+                    if (w > 400) {
+                      w = 400;
+                    }
+                    app.sidebarWidth = w;
+                    app.notifyListeners();
+                  },
+                  onEnd: () {})),
+                  
+          // statusbar
           if (app.showStatusbar) ...[
             Positioned(left: 0, right: 0, bottom: 0, child: Statusbar())
           ],
+
+          // popups
           ...ui.popups
         ])));
   }

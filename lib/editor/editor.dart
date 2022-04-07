@@ -342,8 +342,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       case 'jump_to_line':
         {
           ui.setPopup(GotoPopup(onSubmit: (line) {
-            command('cursor',
-                params: [line.toString(), '0']);
+            command('cursor', params: [line.toString(), '0']);
             return;
           }), blur: false, shield: false);
         }
