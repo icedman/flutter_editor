@@ -15,7 +15,8 @@ class Statusbar extends StatelessWidget {
 
     TextStyle style = TextStyle(
         fontFamily: theme.uiFontFamily,
-        fontSize: theme.uiFontSize,
+        fontSize: theme.uiFontSize - 2,
+        letterSpacing: -0.5,
         color: theme.comment);
 
     List<Widget> statuses = <Widget>[];
@@ -31,8 +32,9 @@ class Statusbar extends StatelessWidget {
             alignment: Alignment.centerLeft,
             height: app.statusbarHeight,
             child: Row(children: [
-              Text('status', style: style),
-              Text(status.status, style: style),
+              Padding(
+                  padding: const EdgeInsets.only(left: 12),
+                  child: Text(status.status, style: style)),
               Expanded(child: Container()),
               ...statuses
             ])));

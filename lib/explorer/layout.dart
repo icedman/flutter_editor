@@ -38,6 +38,7 @@ class _AppLayout extends State<AppLayout> with WidgetsBindingObserver {
   @override
   void didChangeMetrics() {
     AppProvider app = Provider.of<AppProvider>(context, listen: false);
+    UIProvider ui = Provider.of<UIProvider>(context, listen: false);
     final bottomInset = WidgetsBinding.instance!.window.viewInsets.bottom;
     final newValue = bottomInset > 0.0;
     if (newValue != _isKeyboardVisible) {
@@ -58,6 +59,8 @@ class _AppLayout extends State<AppLayout> with WidgetsBindingObserver {
     } else {
       app.openSidebar = true;
     }
+
+    ui.clearPopups();
 
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }

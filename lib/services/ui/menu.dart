@@ -10,12 +10,16 @@ import 'package:editor/services/highlight/theme.dart';
 class UIMenuPopup extends StatefulWidget {
   UIMenuPopup(
       {Key? key,
-      this.position = Offset.zero,
+      Offset this.position = Offset.zero,
+      double this.width = 220,
+      int this.visibleItems = 8,
       double this.alignX = 0,
       double this.alignY = 0,
       UIMenuData? this.menu})
       : super(key: key);
 
+  double width = 220;
+  int visibleItems = 8;
   double alignX = 0;
   double alignY = 0;
   Offset position = Offset.zero;
@@ -64,11 +68,12 @@ class _UIMenuPopup extends State<UIMenuPopup> {
     TextStyle style = TextStyle(
         fontFamily: theme.uiFontFamily,
         fontSize: theme.uiFontSize,
+        letterSpacing: -0.5,
         color: theme.comment);
     Color bg = darken(theme.background, sidebarDarken);
 
-    const double maxWidth = 220;
-    const int maxItems = 8;
+    double maxWidth = widget.width;
+    int maxItems = widget.visibleItems;
 
     double padding = 2;
     Size extents = getTextExtents(' ', style);

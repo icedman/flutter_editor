@@ -18,10 +18,12 @@ class AppProvider extends ChangeNotifier {
   double statusbarHeight = 32;
 
   bool showStatusbar = true;
-  bool showKeyboard = false;
-  bool isKeyboardVisible = false;
+  bool showTabbar = true;
   bool fixedSidebar = true;
   bool openSidebar = true;
+
+  bool showKeyboard = false;
+  bool isKeyboardVisible = false;
 
   Document? open(String path, {bool focus = false}) {
     String p = _path.normalize(Directory(path).absolute.path);

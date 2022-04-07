@@ -9,8 +9,8 @@ class StatusProvider extends ChangeNotifier {
 
   // todo convert to id, widget
   Map<int, String> statuses = <int, String>{
-    0: 'hello',
-    1: 'world',
+    0: '',
+    1: '',
     2: '',
     3: '',
   };

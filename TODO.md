@@ -1,9 +1,7 @@
-# auto
+# editor
 auto close
 auto indent (done)
 auto scroll - horizontal
-
-# commands
 indent (done)
 unindent (done)
 indexer (done)
@@ -15,10 +13,12 @@ comment block
 auto complete (done)
 search (partial)
 
+# statusbar
+
 # file explorer
 directory (done)
 file watcher
-fileicons
+fileicons (done)
 
 # native
 git

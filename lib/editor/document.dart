@@ -680,7 +680,7 @@ class Document {
 
   Cursor? find(Cursor cur, String s,
       {int direction = 1, bool regex = false, bool caseSensitive = false}) {
-    RegExp _wordRegExp = new RegExp(
+    RegExp _wordRegExp = RegExp(
       s,
       caseSensitive: caseSensitive,
       multiLine: false,
@@ -696,28 +696,36 @@ class Document {
       if (!caseSensitive && !regex) {
         t = t.toLowerCase();
       }
+
+      Cursor _cur = cur.normalized();
+      int col = (direction == 1) ? _cur.column : _cur.anchorColumn;
       int l = s.length;
-      String left = t.substring(0, cur.column);
-      String right = t.substring(cur.column);
+      String left = t.substring(0, col);
+      String right = t.substring(col);
+      String source = (direction == 1 ? right : left);
+
       int idx = -1;
       if (regex) {
-        final matches = _wordRegExp.allMatches(t);
+        final matches = _wordRegExp.allMatches(source);
+        print(regex);
         for (final m in matches) {
           var g = m.groups([0]);
-          var t = g[0] ?? '';
+          // var t = g[0] ?? '';
           l = m.end - m.start;
           idx = m.start;
           break;
         }
       } else {
-        idx = (direction == 1 ? right : left).indexOf(s);
+        idx = source.indexOf(s);
       }
 
       // found
       if (idx != -1) {
         Cursor res = cur.copy();
-        res.moveCursorToStartOfLine();
-        res.moveCursorRight(count: l, keepAnchor: true);
+        res.anchorColumn = idx;
+        res.anchorBlock = block;
+        res.column = idx + l;
+        res.block = block;
         return res;
       }
 
@@ -731,6 +739,7 @@ class Document {
           break;
         }
         cur.moveCursorPreviousLine();
+        cur.moveCursorToEndOfLine();
       }
 
       block = cur.block;

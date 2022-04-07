@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'package:editor/services/ui/status.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -8,12 +9,14 @@ import 'package:editor/editor/decorations.dart';
 import 'package:editor/editor/cursor.dart';
 import 'package:editor/editor/document.dart';
 import 'package:editor/editor/view.dart';
+import 'package:editor/editor/search.dart';
 import 'package:editor/services/app.dart';
 import 'package:editor/services/ffi/bridge.dart';
 import 'package:editor/services/input.dart';
 import 'package:editor/minimap/minimap.dart';
 import 'package:editor/services/ui/ui.dart';
 import 'package:editor/services/ui/menu.dart';
+import 'package:editor/services/ui/status.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 import 'package:editor/services/indexer/indexer.dart';
@@ -182,9 +185,19 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
   }
 
   void onShortcut(String keys) {
+    UIProvider ui = Provider.of<UIProvider>(context, listen: false);
+
     String cmd = keys;
 
     switch (keys) {
+      case 'ctrl+f':
+        cmd = 'search';
+        break;
+
+      case 'ctrl+g':
+        cmd = 'jump_to_line';
+        break;
+
       case 'ctrl+z':
         cmd = 'undo';
         break;
@@ -233,13 +246,13 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
         cmd = 'unfold';
         break;
 
-      case 'ctrl+w':
+      case 'ctrl+shift+w':
         cmd = 'settings-toggle-wrap';
         break;
-      case 'ctrl+g':
+      case 'ctrl+shift+g':
         cmd = 'settings-toggle-gutter';
         break;
-      case 'ctrl+m':
+      case 'ctrl+shift+m':
         cmd = 'settings-toggle-minimap';
         break;
     }
@@ -268,18 +281,14 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     Cursor cursor = d.cursor().copy();
 
     UIProvider ui = Provider.of<UIProvider>(context, listen: false);
-
-    if (cmd == 'cancel' && ui.popups.isNotEmpty) {
-      ui.clearPopups();
-      return;
-    }
-
-    // todo!
     if (ui.popups.isNotEmpty) {
       UIMenuData? menu = ui.menu('search::${d.documentId}');
       int idx = menu?.menuIndex ?? 0;
       int size = menu?.items.length ?? 0;
       switch (cmd) {
+        case 'cancel':
+          ui.clearPopups();
+          return;
         case 'up':
           if (idx > 0) {
             menu?.menuIndex--;
@@ -299,6 +308,46 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
             return;
           }
       }
+    }
+
+    switch (cmd) {
+      case 'search':
+        {
+          ui.setPopup(
+            SearchPopup(onSubmit: (text,
+                {int direction = 1,
+                bool caseSensitive = false,
+                bool regex = false,
+                String? replace}) {
+              Document d = doc.doc;
+              Cursor? cur = d.find(d.cursor().copy(), text,
+                  direction: direction,
+                  regex: regex,
+                  caseSensitive: caseSensitive);
+              if (cur != null) {
+                if (replace != null && d.hasSelection()) {
+                  d.insertText(replace);
+                }
+                d.clearCursors();
+                d.cursor().copyFrom(cur, keepAnchor: true);
+                doc.touch();
+              }
+            }),
+            blur: false,
+            shield: false,
+          );
+
+          return;
+        }
+      case 'jump_to_line':
+        {
+          ui.setPopup(GotoPopup(onSubmit: (line) {
+            command('cursor',
+                params: [line.toString(), '0']);
+            return;
+          }), blur: false, shield: false);
+        }
+        return;
     }
 
     List<Block> modifiedBlocks = [];
@@ -345,6 +394,10 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     } else {
       ui.clearPopups();
     }
+
+    StatusProvider status = Provider.of<StatusProvider>(context, listen: false);
+    status.setIndexedStatus(
+        0, 'Ln ${d.cursor().block?.line}, Col ${d.cursor().column}');
   }
 
   void onKeyDown(String key,

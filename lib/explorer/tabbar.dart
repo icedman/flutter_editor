@@ -56,6 +56,7 @@ class EditorTabBar extends StatelessWidget {
                     style: TextStyle(
                         fontFamily: theme.uiFontFamily,
                         fontSize: theme.uiFontSize,
+                        letterSpacing: -0.5,
                         color: isFocused ? theme.foreground : theme.comment)),
                 InkWell(
                   canRequestFocus: false,

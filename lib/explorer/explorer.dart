@@ -166,6 +166,7 @@ class ExplorerTreeItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     AppProvider app = Provider.of<AppProvider>(context);
+    UIProvider ui = Provider.of<UIProvider>(context);
     HLTheme theme = Provider.of<HLTheme>(context);
     ExplorerItem? _item = item ?? ExplorerItem('');
     bool expanded = _item.isExpanded;
@@ -215,6 +216,7 @@ class ExplorerTreeItem extends StatelessWidget {
                           // IconButton(icon: Icon(Icons.close), onPressed:() {}),
                         ]))))),
         onTap: () {
+          ui.clearPopups();
           if (_item.isDirectory) {
             _item.isExpanded = !expanded;
             if (_item.isExpanded) {
@@ -237,6 +239,7 @@ class ExplorerTree extends StatelessWidget {
     TextStyle style = TextStyle(
         fontSize: theme.uiFontSize,
         fontFamily: theme.uiFontFamily,
+        letterSpacing: -0.5,
         color: theme.comment);
 
     Size sz = getTextExtents('item', style);
