@@ -20,4 +20,5 @@ theme = executable(
     )
 
 theme_dep = declare_dependency(
+  include_directories : [ theme_inc, scopes_inc ],
   link_with : theme_lib)

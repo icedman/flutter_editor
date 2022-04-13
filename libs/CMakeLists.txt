@@ -84,9 +84,9 @@ add_library(editor_api
     ./tm-parser/textmate/scopes/types.cpp
     ./tm-parser/textmate/theme/theme.cpp
     ./tm-parser/textmate/theme/util.cpp
-    ./highlighter/util.cpp
-    ./highlighter/utf8.cpp
-    ./highlighter/extension.cpp
+    ./tm-parser/textmate/extensions/util.cpp
+    ./tm-parser/textmate/extensions/utf8.cpp
+    ./tm-parser/textmate/extensions/extension.cpp
     ./tinyxml2/tinyxml2.cpp
     ./jsoncpp/dist/jsoncpp.cpp
     ./highlighter/api.cpp
@@ -100,6 +100,7 @@ target_include_directories(editor_api
     ./tm-parser/textmate/parser
     ./tm-parser/textmate/scopes
     ./tm-parser/textmate/theme
+    ./tm-parser/textmate/extensions
     ./highlighter
 )
 

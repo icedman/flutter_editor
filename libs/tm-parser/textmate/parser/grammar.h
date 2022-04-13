@@ -46,6 +46,8 @@ struct grammar_t {
     stack_serialized_t serialize_state(stack_ptr stack);
     stack_ptr unserialize_state(stack_serialized_t stack);
 
+    std::vector<std::string> includes;
+
 private:
     struct rule_stack_t {
         rule_stack_t(rule_t const* rule, rule_stack_t const* parent = nullptr)

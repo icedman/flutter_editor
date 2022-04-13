@@ -139,6 +139,9 @@ inline textstyle_t construct_style(std::vector<span_info_t> &spans, int index) {
       if (span.scope.find("comment.block") == 0) {
         res.flags = res.flags | SCOPE_COMMENT_BLOCK;
       }
+      if (span.scope.find("comment.line") == 0) {
+        res.flags = res.flags | SCOPE_COMMENT;
+      }
       if (span.scope.find("string.quoted") == 0) {
         res.flags = res.flags | SCOPE_STRING;
       }
@@ -352,9 +355,10 @@ std::map<size_t, std::string> block_texts;
 
 class Block {
 public:
-  Block() : blockId(0), parser_state(NULL) {}
+  Block() : blockId(0), parser_state(NULL), commentLine(false) {}
 
   int blockId;
+  bool commentLine;
   parse::stack_ptr parser_state;
 };
 
@@ -434,7 +438,7 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
   const char *last = first + l;
 
   parse::stack_ptr parser_state;
-  if (documents[document]->blocks[previous_block] != NULL) {
+  if (documents[document]->blocks[previous_block] != NULL && !documents[document]->blocks[previous_block]->commentLine) {
     parser_state = documents[document]->blocks[previous_block]->parser_state;
   }
 
@@ -446,6 +450,17 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
 
   // TIMER_BEGIN
   parser_state = parse::parse(first, last, parser_state, scopes, firstLine);
+
+  // support multi-grammars
+  if (scopes.size() == 1 && lang->grammars.size() > 1) {
+    for (auto g : lang->grammars) {
+      scopes.clear();
+      parser_state = parse::parse(first, last, g->seed(), scopes, true);
+      if (scopes.size() > 1)
+        break;
+    }
+  }
+
   // TIMER_END
 
   // if ((cpu_time_used > 0.01)) {
@@ -455,6 +470,7 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
 
   add_block(document, block);
   documents[document]->blocks[block]->parser_state = parser_state;
+  documents[document]->blocks[block]->commentLine = false;
 
   std::map<size_t, scope::scope_t>::iterator it = scopes.begin();
   size_t n = 0;
@@ -572,6 +588,10 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
   textstyle_buffer[idx].start = 0;
   textstyle_buffer[idx].length = 0;
 
+  if (idx > 0) {
+    documents[document]->blocks[block]->commentLine = (textstyle_buffer[idx-1].flags & SCOPE_COMMENT);
+  }
+
   return textstyle_buffer;
 }
 
@@ -585,9 +605,8 @@ char *language_definition(int langId) {
 }
 
 EXPORT
-char* icon_for_filename(char* filename)
-{
-    icon_t icon = icon_for_file(icons, filename, extensions);
-    strcpy(text_buffer, icon.path.c_str());
-    return text_buffer;
+char *icon_for_filename(char *filename) {
+  icon_t icon = icon_for_file(icons, filename, extensions);
+  strcpy(text_buffer, icon.path.c_str());
+  return text_buffer;
 }

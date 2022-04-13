@@ -43,6 +43,7 @@ struct language_info_t {
   std::vector<std::string> pairClose;
 
   parse::grammar_ptr grammar;
+  std::vector<parse::grammar_ptr> grammars;
 
   Json::Value definition;
 };

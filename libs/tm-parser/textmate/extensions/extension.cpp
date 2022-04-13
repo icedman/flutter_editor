@@ -550,54 +550,60 @@ language_from_file(const std::string path,
   log("scopeName: %s", scopeName.c_str());
 
   if (!resolvedLanguage.empty()) {
-    for (int j = 0; j < 2; j++)
-      for (int i = 0; i < resolvedGrammars.size(); i++) {
-        Json::Value g = resolvedGrammars[i];
-        bool foundGrammar = false;
 
-        if (j == 0 && g.isMember("scopeName") &&
-            g["scopeName"].asString().compare(scopeName) == 0) {
-          foundGrammar = true;
-        }
+    // find all grammars
+    for (int i = 0; i < resolvedGrammars.size(); i++) {
+      Json::Value g = resolvedGrammars[i];
+      if (g.isMember("language") &&
+          g["language"].asString().compare(resolvedLanguage) == 0) {
 
-        if (j == 1 && g.isMember("language") &&
-            g["language"].asString().compare(resolvedLanguage) == 0) {
-          foundGrammar = true;
-        }
-
-        if (foundGrammar) {
-          std::string path =
-              resolvedExtension.path + "/" + g["path"].asString();
-
-          // path = convertTMLanguagetoJSON(path.c_str());
-
-          printf("grammar: %s\n", path.c_str());
-
-          log("grammar: %s", path.c_str());
-          log("extension: %s", resolvedExtension.path.c_str());
-
-          lang->grammar = parse::parse_grammar(loadPListOrJson(path));
-          lang->id = resolvedLanguage;
-
-          // language configuration
-          if (!resolvedConfiguration.empty()) {
-            path =
-                resolvedExtension.path + "/" + resolvedConfiguration.asString();
-          } else {
-            path = resolvedExtension.path + "/language-configuration.json";
-          }
-
-          load_language_configuration(path, lang);
-
-          log("language configuration: %s", path.c_str());
-          // std::cout << "langauge matched" << lang->id << std::endl;
-          // std::cout << path << std::endl;
-
-          // don't cache..? causes problem with highlighter thread
-          cache.emplace(suffix, lang);
-          return lang;
-        }
+        std::string path = resolvedExtension.path + "/" + g["path"].asString();
+        printf("%s\n", path.c_str());
+        lang->grammars.push_back(parse::parse_grammar(loadPListOrJson(path)));
       }
+    }
+
+    for (int i = 0; i < resolvedGrammars.size(); i++) {
+      Json::Value g = resolvedGrammars[i];
+      bool foundGrammar = false;
+
+      if (g.isMember("language") &&
+          g["language"].asString().compare(resolvedLanguage) == 0) {
+        foundGrammar = true;
+      }
+
+      if (foundGrammar) {
+        std::string path = resolvedExtension.path + "/" + g["path"].asString();
+
+        // path = convertTMLanguagetoJSON(path.c_str());
+
+        printf("grammar: %s\n", path.c_str());
+
+        log("grammar: %s", path.c_str());
+        log("extension: %s", resolvedExtension.path.c_str());
+
+        lang->grammar = parse::parse_grammar(loadPListOrJson(path));
+        lang->id = resolvedLanguage;
+
+        // language configuration
+        if (!resolvedConfiguration.empty()) {
+          path =
+              resolvedExtension.path + "/" + resolvedConfiguration.asString();
+        } else {
+          path = resolvedExtension.path + "/language-configuration.json";
+        }
+
+        load_language_configuration(path, lang);
+
+        log("language configuration: %s", path.c_str());
+        // std::cout << "langauge matched" << lang->id << std::endl;
+        // std::cout << path << std::endl;
+
+        // don't cache..? causes problem with highlighter thread
+        cache.emplace(suffix, lang);
+        return lang;
+      }
+    }
   }
 
   if (!lang->grammar) {

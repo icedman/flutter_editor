@@ -8,11 +8,11 @@
 namespace parse {
 
 static bool convert_array(Json::Value const& patterns,
-    std::vector<rule_ptr>& res)
+    std::vector<rule_ptr>& res, void *includes = NULL)
 {
     for (int i = 0; i < (int)patterns.size(); i++) {
         Json::Value rule = patterns[i];
-        if (rule_ptr child = convert_json(rule)) {
+        if (rule_ptr child = convert_json(rule, includes)) {
             res.push_back(child);
         }
     }
@@ -21,15 +21,17 @@ static bool convert_array(Json::Value const& patterns,
 }
 
 static bool convert_dictionary(Json::Value const& repository,
-    repository_ptr& res)
+    repository_ptr& res, void *includes = NULL)
 {
-
+    if (!repository.isObject()) {
+        return false;
+    }
     std::vector<std::string> keys = repository.getMemberNames();
     std::vector<std::string>::iterator it = keys.begin();
     while (it != keys.end()) {
         std::string first = *it;
         Json::Value second = repository[first];
-        if (rule_ptr child = convert_json(second)) {
+        if (rule_ptr child = convert_json(second, includes)) {
             res->emplace(first, child);
         }
         it++;
@@ -38,7 +40,7 @@ static bool convert_dictionary(Json::Value const& repository,
     return true;
 }
 
-rule_ptr convert_json(Json::Value const& json)
+rule_ptr convert_json(Json::Value const& json, void* includes)
 {
     rule_ptr res = std::make_shared<rule_t>();
     if (!json.isObject()) {
@@ -72,6 +74,16 @@ rule_ptr convert_json(Json::Value const& json)
         }
 
         *map_strings[i].str = json[map_strings[i].name].asString();
+
+        if (includes != NULL) {
+            std::vector<std::string>* _includes = (std::vector<std::string>*)includes;
+            if (strcmp(map_strings[i].name, "include") == 0) {
+                if (res->include_string.find("source") == 0) {
+                    // printf(">>%s\n", res->include_string.c_str());
+                    _includes->push_back(res->include_string);
+                }
+            }
+        }
     }
 
     //------------
@@ -99,13 +111,13 @@ rule_ptr convert_json(Json::Value const& json)
 
         *map_dictionary[i].repository = std::make_shared<repository_t>();
         convert_dictionary(json[map_dictionary[i].name],
-            *map_dictionary[i].repository);
+            *map_dictionary[i].repository, includes);
     }
 
     //------------
     // array
     //------------
-    convert_array(json["patterns"], res->children);
+    convert_array(json["patterns"], res->children, includes);
     return res;
 }
 

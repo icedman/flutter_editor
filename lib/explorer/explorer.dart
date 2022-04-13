@@ -45,7 +45,7 @@ class ExplorerProvider extends ChangeNotifier implements ExplorerListener {
 
   List<ExplorerItem?> tree = [];
   ExplorerItem? selected;
-  bool animate = true;
+  bool animate = false;
 
   Function? onSelect;
 
@@ -74,13 +74,13 @@ class ExplorerProvider extends ChangeNotifier implements ExplorerListener {
     List<ExplorerItem?> _previous = [...tree];
     tree = explorer.tree();
 
-    // if (!animate) {
-    //   for (final i in tree) {
-    //     i?.height = 1;
-    //   }
-    //   notifyListeners();
-    //   return;
-    // }
+    if (!animate) {
+      for (final i in tree) {
+        i?.height = 1;
+      }
+      notifyListeners();
+      return;
+    }
 
     Map<ExplorerItem?, List<bool>> hash = {};
     _previous.forEach((item) {
@@ -189,7 +189,7 @@ class ExplorerTreeItem extends StatelessWidget {
           Icon(Icons.folder, size: theme.uiFontSize + 2, color: theme.comment);
     } else {
       fileIcon = Padding(
-          padding: EdgeInsets.only(left: theme.uiFontSize / 2),
+          padding: EdgeInsets.only(left: 0 * theme.uiFontSize / 2),
           child: FileIcon(path: iconPath, size: theme.uiFontSize + 2));
     }
 
@@ -257,6 +257,7 @@ class ExplorerTree extends StatelessWidget {
         double height = 0,
         double opacity = 0,
         bool animate = true}) {
+          
       if (!animate) {
         return Container(height: height, child: child);
       }

@@ -20,6 +20,10 @@ grammar_t::grammar_t(Json::Value const& json)
     // std::cout << parsed << std::endl;
     // doc = parsed;
 
+    // for(auto s : includes) {
+    //     printf(">%s\n", s.c_str());
+    // }
+
     doc = json;
 }
 
@@ -135,13 +139,10 @@ void grammar_t::setup_includes(rule_ptr const& rule, rule_ptr const& base,
 
         if (!rule->include) {
             // if (base != self)
-            //   os_log_error(OS_LOG_DEFAULT,
-            //                "%{public}s → %{public}s: include not found
-            //                ‘%{public}s’", base->scope_string.c_str(),
+            //   printf("%s → %s: include not found ‘%s’\n", base->scope_string.c_str(),
             //                self->scope_string.c_str(), include.c_str());
             // else
-            //   os_log_error(OS_LOG_DEFAULT,
-            //                "%{public}s: include not found ‘%{public}s’",
+            //   printf("%s: include not found ‘%s’\n",
             //                self->scope_string.c_str(), include.c_str());
         }
     } else {
@@ -187,6 +188,7 @@ grammar_t::injection_grammars()
     return res;
 }
 
+// todo !!
 rule_ptr grammar_t::find_grammar(std::string const& scope,
     rule_ptr const& base)
 {
@@ -205,8 +207,8 @@ rule_ptr grammar_t::find_grammar(std::string const& scope,
 rule_ptr grammar_t::add_grammar(std::string const& scope,
     Json::Value const& json, rule_ptr const& base)
 {
+    rule_ptr grammar = convert_json(json, &includes);
 
-    rule_ptr grammar = convert_json(json);
     if (grammar) {
         _grammars.emplace(scope, grammar);
         setup_includes(grammar, base ? base : grammar, grammar,
