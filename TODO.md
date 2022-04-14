@@ -1,7 +1,7 @@
 # editor
 auto close
 auto indent (done)
-auto scroll - horizontal
+auto scroll - horizontal (done)
 indent (done)
 unindent (done)
 indexer (done)
@@ -19,6 +19,17 @@ search (partial)
 directory (done)
 file watcher
 fileicons (done)
+
+ui
+new folder
+new file
+delete folder
+delete file
+
+# ui
+registry
+element
+builder
 
 # native
 git

@@ -38,6 +38,7 @@ class LineDecoration {
   bool italic = false;
   bool bracket = false;
   bool open = false;
+  bool tab = false;
 
   Object toObject() {
     return {
@@ -94,15 +95,43 @@ class Highlighter {
     }
     List<LineDecoration> decors = block?.decors ?? [];
 
+    // tabs
+    int indentSize = Document.countIndentSize(text);
+    int tabSpaces = (block?.document?.detectedTabSpaces ?? 1);
+    int tabStops = indentSize ~/ tabSpaces;
+    Color tabStopColor = colorCombine(theme.comment, theme.background, bw: 3);
+
+    // print('$tabStops $indentSize');
+
+    for (int i = 0; i <= tabStops; i++) {
+      int start = i * tabSpaces;
+      int end = start;
+      decors.insert(
+          0,
+          LineDecoration()
+            ..start = start
+            ..end = end
+            ..color = tabStopColor
+            ..tab = true);
+    }
+
     text += ' ';
     String prevText = '';
     for (int i = 0; i < text.length; i++) {
       String ch = text[i];
       TextStyle style = defaultStyle.copyWith(letterSpacing: 0);
 
+      bool isTabStop = false;
+
       // decorate
       for (final d in decors) {
         if (i >= d.start && i <= d.end) {
+          if (d.tab) {
+            if (ch != ' ') continue;
+            ch = '|';
+            isTabStop = true;
+          }
+
           style = style.copyWith(color: d.color);
           if (d.italic) {
             style = style.copyWith(fontStyle: FontStyle.italic);
@@ -145,8 +174,11 @@ class Highlighter {
         if (line == (c.block?.line ?? 0)) {
           int l = (c.block?.text ?? '').length;
           if (i == c.column || (i == l && c.column > l)) {
-            block?.carets.add(
-                BlockCaret(position: i, color: style.color ?? Colors.white));
+            Color caretColor = style.color ?? Colors.white;
+            if (isTabStop) {
+              caretColor = theme.foreground;
+            }
+            block?.carets.add(BlockCaret(position: i, color: caretColor));
             break;
           }
         }

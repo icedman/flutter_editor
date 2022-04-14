@@ -28,12 +28,13 @@ class History {
       HistoryEntry entry = HistoryEntry();
       entry.cursors = cursors;
       entry.actions = actions;
-      
+
       if (entries.length > 1 && entry.actions.length == 1) {
         HistoryEntry prev = entries.last;
         if (prev.actions.length == 1) {
-          if (entry.actions[0].inserted != ' ' && prev.actions[0].type == entry.actions[0].type &&
-            prev.actions[0].block == entry.actions[0].block) {
+          if (entry.actions[0].inserted != ' ' &&
+              prev.actions[0].type == entry.actions[0].type &&
+              prev.actions[0].block == entry.actions[0].block) {
             return;
           }
         }
@@ -59,7 +60,7 @@ class History {
     actions.add(action);
   }
 
-  void update(Block? block, { String type = 'update', String inserted = '' }) {
+  void update(Block? block, {String type = 'update', String inserted = ''}) {
     // print('update ${block?.text}');
     Action action = Action();
     action.type = type;

@@ -39,6 +39,9 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
   late Highlighter highlighter;
   late IndexerIsolate indexer;
 
+  late FocusNode focusNode;
+  late FocusNode textFocusNode;
+
   bool _isKeyboardVisible =
       WidgetsBinding.instance!.window.viewInsets.bottom > 0.0;
 
@@ -50,6 +53,8 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
 
   @override
   void initState() {
+    super.initState();
+
     highlighter = Highlighter();
     indexer = IndexerIsolate();
     doc = DocumentProvider();
@@ -125,7 +130,8 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       }
     };
 
-    super.initState();
+    focusNode = FocusNode();
+    textFocusNode = FocusNode();
     WidgetsBinding.instance!.addObserver(this);
   }
 
@@ -133,6 +139,9 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
   void dispose() {
     pulse.cancel();
     indexer.dispose();
+
+    focusNode.dispose();
+    textFocusNode.dispose();
     WidgetsBinding.instance!.removeObserver(this);
     super.dispose();
   }
@@ -301,6 +310,13 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     }
   }
 
+  void _regainFocus() {
+    Future.delayed(const Duration(milliseconds: 50), () {
+      focusNode.requestFocus();
+      textFocusNode.requestFocus();
+    });
+  }
+
   void command(String cmd, {List<String> params = const <String>[]}) async {
     Document d = doc.doc;
     Cursor cursor = d.cursor().copy();
@@ -338,29 +354,26 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     switch (cmd) {
       case 'search':
         {
-          ui.setPopup(
-            SearchPopup(onSubmit: (text,
-                {int direction = 1,
-                bool caseSensitive = false,
-                bool regex = false,
-                String? replace}) {
-              Document d = doc.doc;
-              Cursor? cur = d.find(d.cursor().copy(), text,
-                  direction: direction,
-                  regex: regex,
-                  caseSensitive: caseSensitive);
-              if (cur != null) {
-                if (replace != null && d.hasSelection()) {
-                  d.insertText(replace);
-                }
-                d.clearCursors();
-                d.cursor().copyFrom(cur, keepAnchor: true);
-                doc.touch();
+          ui.setPopup(SearchPopup(onSubmit: (text,
+              {int direction = 1,
+              bool caseSensitive = false,
+              bool regex = false,
+              String? replace}) {
+            Document d = doc.doc;
+            Cursor? cur = d.find(d.cursor().copy(), text,
+                direction: direction,
+                regex: regex,
+                caseSensitive: caseSensitive);
+            if (cur != null) {
+              if (replace != null && d.hasSelection()) {
+                d.insertText(replace);
               }
-            }),
-            blur: false,
-            shield: false,
-          );
+              d.clearCursors();
+              d.cursor().copyFrom(cur, keepAnchor: true);
+              doc.scrollTo = cur.block?.line ?? 0;
+              doc.touch();
+            }
+          }), blur: false, shield: false, onClearPopups: _regainFocus);
 
           return;
         }
@@ -369,7 +382,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
           ui.setPopup(GotoPopup(onSubmit: (line) {
             command('cursor', params: [line.toString(), '0']);
             return;
-          }), blur: false, shield: false);
+          }), blur: false, shield: false, onClearPopups: _regainFocus);
         }
         return;
     }
@@ -636,6 +649,8 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
                     Expanded(
                         child: InputListener(
                             child: View(),
+                            focusNode: focusNode,
+                            textFocusNode: textFocusNode,
                             onKeyDown: onKeyDown,
                             onKeyUp: onKeyUp,
                             onTapDown: onTapDown,

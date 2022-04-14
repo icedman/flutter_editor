@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:editor/services/ffi/bridge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';
@@ -18,7 +17,8 @@ import 'package:editor/services/explorer/localfs.dart';
 const int animateK = 55;
 
 class FileIcon extends StatefulWidget {
-  FileIcon({String this.path = '', double this.size = 20}) : super(key: ValueKey(path));
+  FileIcon({String this.path = '', double this.size = 20})
+      : super(key: ValueKey(path));
 
   String path = '';
   double size = 20;
@@ -169,7 +169,7 @@ class ExplorerTreeItem extends StatelessWidget {
     AppProvider app = Provider.of<AppProvider>(context);
     UIProvider ui = Provider.of<UIProvider>(context);
     HLTheme theme = Provider.of<HLTheme>(context);
-    ExplorerItem? _item = item ?? ExplorerItem('');
+    ExplorerItem _item = item ?? ExplorerItem('');
     bool expanded = _item.isExpanded;
 
     double size = 16;
@@ -196,6 +196,7 @@ class ExplorerTreeItem extends StatelessWidget {
     return InkWell(
         child: GestureDetector(
             onSecondaryTapDown: (details) {
+              print(_item.fullPath);
               showContextMenu(context);
             },
             child: Container(

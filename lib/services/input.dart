@@ -29,6 +29,8 @@ class InputListener extends StatefulWidget {
   Function? onPanUpdate;
 
   bool showKeyboard = false;
+  late FocusNode focusNode;
+  late FocusNode textFocusNode;
 
   InputListener(
       {required Widget this.child,
@@ -37,14 +39,16 @@ class InputListener extends StatefulWidget {
       Function? this.onTapDown,
       Function? this.onDoubleTapDown,
       Function? this.onPanUpdate,
+      required FocusNode this.focusNode,
+      required FocusNode this.textFocusNode,
       bool this.showKeyboard = false});
   @override
   _InputListener createState() => _InputListener();
 }
 
 class _InputListener extends State<InputListener> {
-  late FocusNode focusNode;
-  late FocusNode textFocusNode;
+  // late FocusNode focusNode;
+  // late FocusNode textFocusNode;
   late TextEditingController controller;
 
   Offset lastTap = Offset.zero;
@@ -52,8 +56,8 @@ class _InputListener extends State<InputListener> {
   @override
   void initState() {
     super.initState();
-    focusNode = FocusNode();
-    textFocusNode = FocusNode();
+    // focusNode = FocusNode();
+    // textFocusNode = FocusNode();
     controller = CustomEditingController();
 
     controller.addListener(() {
@@ -73,10 +77,10 @@ class _InputListener extends State<InputListener> {
 
   @override
   void dispose() {
-    super.dispose();
-    focusNode.dispose();
-    textFocusNode.dispose();
+    // focusNode.dispose();
+    // textFocusNode.dispose();
     controller.dispose();
+    super.dispose();
   }
 
   @override
@@ -85,8 +89,8 @@ class _InputListener extends State<InputListener> {
     Document d = doc.doc;
     return Focus(
         onFocusChange: (focused) {
-          if (focused && !textFocusNode.hasFocus) {
-            textFocusNode.requestFocus();
+          if (focused && !widget.textFocusNode.hasFocus) {
+            widget.textFocusNode.requestFocus();
           }
         },
         child: Column(children: [
@@ -97,14 +101,14 @@ class _InputListener extends State<InputListener> {
                     lastTap = details.globalPosition;
                   },
                   onTapDown: (TapDownDetails details) {
-                    if (!focusNode.hasFocus) {
-                      focusNode.requestFocus();
-                      textFocusNode.unfocus();
+                    if (!widget.focusNode.hasFocus) {
+                      widget.focusNode.requestFocus();
+                      widget.textFocusNode.unfocus();
                       // FocusScope.of(context).unfocus();
                     }
-                    if (!textFocusNode.hasFocus) {
+                    if (!widget.textFocusNode.hasFocus) {
                       Future.delayed(const Duration(microseconds: 50), () {
-                        textFocusNode.requestFocus();
+                        widget.textFocusNode.requestFocus();
                       });
                     }
                     widget.onTapDown?.call(
@@ -136,7 +140,7 @@ class _InputListener extends State<InputListener> {
               child: !widget.showKeyboard
                   ? null
                   : TextField(
-                      focusNode: textFocusNode,
+                      focusNode: widget.textFocusNode,
                       autofocus: true,
                       maxLines: null,
                       enableInteractiveSelection: false,
@@ -144,7 +148,7 @@ class _InputListener extends State<InputListener> {
                           const InputDecoration(border: InputBorder.none),
                       controller: controller))
         ]),
-        focusNode: focusNode,
+        focusNode: widget.focusNode,
         autofocus: true,
         onKey: (FocusNode node, RawKeyEvent event) {
           // if (textFocusNode.hasFocus) {

@@ -7,6 +7,20 @@ import 'package:editor/services/util.dart';
 import 'package:editor/services/ui/ui.dart';
 import 'package:editor/services/highlight/theme.dart';
 
+class UIMenuData {
+  int menuIndex = 0;
+  String title = '';
+  List<UIMenuData> items = [];
+
+  Function? onSelect;
+
+  void select(int index) {
+    if (index >= 0 && index < items.length && items[index] != null) {
+      onSelect?.call(items[index]);
+    }
+  }
+}
+
 class UIMenuPopup extends StatefulWidget {
   UIMenuPopup(
       {Key? key,
@@ -84,8 +98,8 @@ class _UIMenuPopup extends State<UIMenuPopup> {
 
     double dx = position.dx + (extents.width * widget.alignX);
     double dy = position.dy + (itemHeight * widget.alignY);
-    if (dx + maxWidth > app.screenWidth + 8) {
-      dx = app.screenWidth - 8 - maxWidth;
+    if (dx + maxWidth > app.screenWidth + 2) {
+      dx = app.screenWidth - 2 - maxWidth;
     }
     if (dy + height > app.screenHeight + 40) {
       dy = position.dy - height - 4;

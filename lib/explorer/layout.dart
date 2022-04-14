@@ -10,6 +10,8 @@ import 'package:editor/services/util.dart';
 import 'package:editor/services/ui/ui.dart';
 import 'package:editor/services/highlight/theme.dart';
 
+final int animteSidebarK = 250;
+
 class Resizer extends StatefulWidget {
   Resizer(
       {double? this.width,
@@ -36,32 +38,32 @@ class _Resizer extends State<Resizer> {
   @override
   Widget build(BuildContext) {
     return MouseRegion(
-      cursor: SystemMouseCursors.resizeColumn,
-      child: GestureDetector(
-        child: Container(
-            width: widget.width,
-            height: widget.height,
-            color: Colors.red.withOpacity(0)),
-        onPanStart: (DragStartDetails details) {
-          setState(() {
-            dragStart = details.globalPosition;
-            dragging = true;
-            size = widget.onStart?.call(dragStart) ?? Size.zero;
-          });
-        },
-        onPanUpdate: (DragUpdateDetails details) {
-          Offset position = details.globalPosition;
-          double dx = position.dx - dragStart.dx;
-          double dy = position.dy - dragStart.dy;
-          widget.onUpdate
-              ?.call(position, Size(size.width + dx, size.height + dy));
-        },
-        onPanEnd: (DragEndDetails details) {
-          setState(() {
-            dragging = false;
-            widget.onEnd?.call();
-          });
-        }));
+        cursor: SystemMouseCursors.resizeColumn,
+        child: GestureDetector(
+            child: Container(
+                width: widget.width,
+                height: widget.height,
+                color: Colors.red.withOpacity(0)),
+            onPanStart: (DragStartDetails details) {
+              setState(() {
+                dragStart = details.globalPosition;
+                dragging = true;
+                size = widget.onStart?.call(dragStart) ?? Size.zero;
+              });
+            },
+            onPanUpdate: (DragUpdateDetails details) {
+              Offset position = details.globalPosition;
+              double dx = position.dx - dragStart.dx;
+              double dy = position.dy - dragStart.dy;
+              widget.onUpdate
+                  ?.call(position, Size(size.width + dx, size.height + dy));
+            },
+            onPanEnd: (DragEndDetails details) {
+              setState(() {
+                dragging = false;
+                widget.onEnd?.call();
+              });
+            }));
   }
 }
 
@@ -154,8 +156,9 @@ class _AppLayout extends State<AppLayout> with WidgetsBindingObserver {
         length: app.documents.length,
         child: Scaffold(
             body: Stack(children: [
-            
-          Padding(
+          AnimatedPadding(
+              curve: Curves.decelerate,
+              duration: Duration(milliseconds: animteSidebarK),
               padding: EdgeInsets.only(
                   bottom: app.showStatusbar ? app.statusbarHeight : 0,
                   left: app.fixedSidebar && app.openSidebar
@@ -182,35 +185,40 @@ class _AppLayout extends State<AppLayout> with WidgetsBindingObserver {
           ],
 
           // explorer
-          Padding(
-              padding: EdgeInsets.only(
-                  bottom: app.showStatusbar ? app.statusbarHeight : 0),
-              child: showSidebar ? ExplorerTree() : null),
+          AnimatedPositioned(
+              left: showSidebar ? 0 : -app.sidebarWidth,
+              curve: Curves.decelerate,
+              duration: Duration(milliseconds: animteSidebarK),
+              child: Padding(
+                  padding: EdgeInsets.only(
+                      bottom: app.showStatusbar ? app.statusbarHeight : 0),
+                  child: ExplorerTree())),
 
           // resizer
           Padding(
               padding: EdgeInsets.only(
                   bottom: app.showStatusbar ? app.statusbarHeight : 0,
-                  left: 0),
-                  
-              child: !(app.fixedSidebar && app.openSidebar) ? Container() : Resizer(
-                  width: sizerWidth,
-                  onStart: (position) {
-                    return Size(app.sidebarWidth, 0);
-                  },
-                  onUpdate: (position, size) {
-                    double w = size.width;
-                    double h = size.height;
-                    if (w < 100) {
-                      w = 100;
-                    }
-                    if (w > 400) {
-                      w = 400;
-                    }
-                    app.sidebarWidth = w;
-                    app.notifyListeners();
-                  },
-                  onEnd: () {})),
+                  left: app.sidebarWidth),
+              child: !showSidebar
+                  ? Container()
+                  : Resizer(
+                      width: sizerWidth,
+                      onStart: (position) {
+                        return Size(app.sidebarWidth, 0);
+                      },
+                      onUpdate: (position, size) {
+                        double w = size.width;
+                        double h = size.height;
+                        if (w < 100) {
+                          w = 100;
+                        }
+                        if (w > 400) {
+                          w = 400;
+                        }
+                        app.sidebarWidth = w;
+                        app.notifyListeners();
+                      },
+                      onEnd: () {})),
 
           // statusbar
           if (app.showStatusbar) ...[
@@ -218,7 +226,7 @@ class _AppLayout extends State<AppLayout> with WidgetsBindingObserver {
           ],
 
           // popups
-          ...ui.popups
+          ...ui.popups.map((pop) => pop.widget ?? Container())
         ])));
   }
 }

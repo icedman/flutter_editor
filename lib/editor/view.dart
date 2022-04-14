@@ -344,7 +344,7 @@ class _View extends State<View> {
         decor.onScroll(scroll);
 
         UIProvider ui = Provider.of<UIProvider>(context, listen: false);
-        ui.clearPopups();
+        ui.clearMenus();
       }
     });
 

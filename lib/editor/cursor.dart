@@ -601,10 +601,15 @@ class Cursor {
     Cursor cur = copy();
     cur.moveCursorUp();
     if (cur.block == block) return;
-    String t = cur.block?.text ?? '';
-    int c = Document.countIndentSize(t);
-    if (c == 0) return;
-    String tab = List.generate(c, (_) => ' ').join();
+    int stops = 0;
+    for (int i = 0; i < 8 && stops == 0; i++) {
+      String t = cur.block?.text ?? '';
+      stops = Document.countIndentSize(t);
+      cur.moveCursorPreviousLine();
+      if (t.length > 0) break;
+    }
+    if (stops == 0) return;
+    String tab = List.generate(stops, (_) => ' ').join();
     insertText(tab);
   }
 

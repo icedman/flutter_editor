@@ -12,7 +12,43 @@ import 'package:editor/services/ui/menu.dart';
 import 'package:editor/services/ffi/bridge.dart';
 import 'package:editor/services/highlight/theme.dart';
 
-class EditorTabBar extends StatelessWidget {
+class TabIconButton extends StatelessWidget {
+  TabIconButton({Widget? this.icon, Function? this.onPressed}) : super();
+
+  Widget? icon;
+  Function? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+        child: Padding(
+            padding: EdgeInsets.all(4),
+            child: Container(width: 32, height: 32, child: icon)),
+        onTap: () {
+          onPressed?.call();
+        });
+  }
+}
+
+class EditorTabBar extends StatefulWidget {
+  @override
+  _EditorTabBar createState() => _EditorTabBar();
+}
+
+class _EditorTabBar extends State<EditorTabBar> {
+  late ScrollController scroller;
+  @override
+  void initState() {
+    super.initState();
+    scroller = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    scroller.dispose();
+    super.dispose();
+  }
+
   void showContextMenu(BuildContext context) {
     RenderObject? obj = context.findRenderObject();
     if (obj != null) {
@@ -81,7 +117,7 @@ class EditorTabBar extends StatelessWidget {
 
     List<Widget> actions = [
       if (Platform.isAndroid) ...[
-        IconButton(
+        TabIconButton(
             onPressed: () {
               app.showKeyboard = !app.showKeyboard;
               app.notifyListeners();
@@ -91,7 +127,7 @@ class EditorTabBar extends StatelessWidget {
                 color: theme.comment,
                 size: theme.fontSize))
       ],
-      IconButton(
+      TabIconButton(
           onPressed: () {
             showContextMenu(context);
           },
@@ -102,28 +138,31 @@ class EditorTabBar extends StatelessWidget {
     return Material(
         color: darken(theme.background, tabbarDarken),
         child: Row(children: [
-          IconButton(
+          TabIconButton(
               onPressed: () {
                 app.openSidebar = !app.openSidebar;
                 app.notifyListeners();
               },
               icon: Icon(Icons.vertical_split,
                   color: theme.comment, size: theme.uiFontSize)),
-          TabBar(
-              indicatorSize: TabBarIndicatorSize.label,
-              indicator: BoxDecoration(
-                  color: theme.background,
-                  border: Border(
-                      top: BorderSide(color: theme.keyword, width: 1.5))),
-              isScrollable: true,
-              labelPadding: const EdgeInsets.only(left: 0, right: 0),
-              tabs: tabs,
-              onTap: (idx) {
-                DefaultTabController.of(context)?.index = idx;
-                app.document = app.documents[idx];
-                app.notifyListeners();
-              }),
-          Expanded(child: Container()),
+          Expanded(
+              child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: TabBar(
+                      indicatorSize: TabBarIndicatorSize.label,
+                      indicator: BoxDecoration(
+                          color: theme.background,
+                          border: Border(
+                              top: BorderSide(
+                                  color: theme.keyword, width: 1.5))),
+                      isScrollable: true,
+                      labelPadding: const EdgeInsets.only(left: 0, right: 0),
+                      tabs: tabs,
+                      onTap: (idx) {
+                        DefaultTabController.of(context)?.index = idx;
+                        app.document = app.documents[idx];
+                        app.notifyListeners();
+                      }))),
           ...actions
         ]));
   }

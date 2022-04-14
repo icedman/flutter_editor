@@ -108,6 +108,7 @@ class Document {
 
   String tabString = '    ';
   int detectedTabSpaces = 0;
+  bool enableAutoIndent = true;
 
   String lineComment = '';
   List<String> blockComment = [];
@@ -225,6 +226,11 @@ class Document {
     if (detectedTabSpaces > 0) {
       tabString = List.generate(detectedTabSpaces, (_) => ' ').join();
     }
+    if (tabString == '') {
+      tabString = '  ';
+      detectedTabSpaces = 2;
+    }
+
     updateLineNumbers(0);
 
     for (int i = 0; i < blocks.length; i++) {
@@ -663,6 +669,7 @@ class Document {
   }
 
   void autoIndent() {
+    if (!enableAutoIndent) return;
     cursors.forEach((c) {
       c.autoIndent();
     });
@@ -1050,12 +1057,17 @@ class DocumentProvider extends ChangeNotifier {
         }
       case 'paste':
         {
+          bool _enableAutoIndent = d.enableAutoIndent;
+          d.enableAutoIndent = false;
+          Future.delayed(const Duration(milliseconds: 100), () {
+            d.enableAutoIndent = _enableAutoIndent;
+          });
           Clipboard.getData('text/plain').then((data) {
             if (data == null) return;
             List<String> lines = (data.text ?? '').split('\n');
             int idx = 0;
             d.begin();
-            for (final l in lines) {
+            for (String l in lines) {
               if (idx++ > 0) {
                 d.insertNewLine();
               }

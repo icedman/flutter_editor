@@ -19,7 +19,7 @@ class SearchPopup extends StatefulWidget {
   Function? onSubmit;
   bool regex = false;
   bool replace = false;
-  bool ignoreCase = false;
+  bool ignoreCase = true;
   int searchDirection = 0;
 
   @override
@@ -130,6 +130,7 @@ class _SearchPopup extends State<SearchPopup> {
 
     return Positioned(
         right: 0,
+        top: app.tabbarHeight,
         child: Material(
             color: darken(theme.background, sidebarDarken),
             child: Container(
@@ -257,6 +258,7 @@ class _GotoPopup extends State<GotoPopup> {
     double sz = 20;
     return Positioned(
         right: 0,
+        top: app.tabbarHeight,
         child: Container(
             width: 400,
             decoration: BoxDecoration(
