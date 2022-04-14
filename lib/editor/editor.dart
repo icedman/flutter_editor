@@ -21,6 +21,7 @@ import 'package:editor/services/ui/modal.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 import 'package:editor/services/indexer/indexer.dart';
+import 'package:editor/services/keybindings.dart';
 
 class Editor extends StatefulWidget {
   Editor({Key? key, String this.path = '', Document? this.document})
@@ -195,102 +196,11 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
   }
 
   void onShortcut(String keys) {
+    AppProvider app = Provider.of<AppProvider>(context, listen: false);
     UIProvider ui = Provider.of<UIProvider>(context, listen: false);
 
-    String cmd = keys;
-
-    switch (keys) {
-      case 'ctrl+q':
-        {
-          ui.setPopup(
-              UIModal(
-                title: 'Delete',
-                message: 'Delete?',
-                buttons: [
-                  UIButton(
-                      text: 'ok',
-                      onTap: () {
-                        print('ok');
-                      }),
-                  UIButton(
-                      text: 'cancel',
-                      onTap: () {
-                        print('cancel');
-                      }),
-                ],
-              ),
-              blur: true,
-              shield: true);
-          return;
-        }
-
-      case 'ctrl+f':
-        cmd = 'search';
-        break;
-
-      case 'ctrl+g':
-        cmd = 'jump_to_line';
-        break;
-
-      case 'ctrl+z':
-        cmd = 'undo';
-        break;
-
-      case 'ctrl+]':
-        cmd = 'indent';
-        break;
-
-      case 'ctrl+[':
-        cmd = 'unindent';
-        break;
-
-      case 'ctrl+/':
-        cmd = 'toggle_comment';
-        break;
-
-      case 'ctrl+c':
-        cmd = 'copy';
-        break;
-      case 'ctrl+x':
-        cmd = 'cut';
-        break;
-      case 'ctrl+v':
-        cmd = 'paste';
-        break;
-      case 'ctrl+a':
-        cmd = 'select_all';
-        break;
-      case 'ctrl+d':
-        cmd = 'select_word';
-        break;
-      case 'ctrl+l':
-        cmd = 'select_line';
-        break;
-      case 'ctrl+shift+d':
-        cmd = 'duplicate_selection';
-        break;
-      case 'ctrl+s':
-        cmd = 'save';
-        break;
-
-      case 'ctrl+alt+[':
-        cmd = 'fold';
-        break;
-      case 'ctrl+alt+]':
-        cmd = 'unfold';
-        break;
-
-      case 'ctrl+shift+w':
-        cmd = 'settings-toggle-wrap';
-        break;
-      case 'ctrl+shift+g':
-        cmd = 'settings-toggle-gutter';
-        break;
-      case 'ctrl+shift+m':
-        cmd = 'settings-toggle-minimap';
-        break;
-    }
-    command(cmd);
+    Command? cmd = app.keybindings.resolve(keys);
+    command(cmd?.command ?? '');
   }
 
   void _makeDirty() {

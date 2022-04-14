@@ -2,13 +2,16 @@ import 'dart:io';
 import 'dart:async';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as _path;
 import 'package:editor/editor/document.dart';
 import 'package:editor/services/app.dart';
-import 'package:path/path.dart' as _path;
+import 'package:editor/services/keybindings.dart';
 
 class AppProvider extends ChangeNotifier {
   List<Document> documents = [];
   Document? document;
+  
+  late Keybindings keybindings;
 
   double bottomInset = 0;
   double screenWidth = 0;
@@ -24,6 +27,10 @@ class AppProvider extends ChangeNotifier {
 
   bool showKeyboard = false;
   bool isKeyboardVisible = false;
+  
+  void initialize() async {
+    keybindings = Keybindings();
+  }
 
   Document? open(String path, {bool focus = false}) {
     String p = _path.normalize(Directory(path).absolute.path);

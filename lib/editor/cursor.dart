@@ -46,7 +46,7 @@ class Cursor {
   bool get isNull {
     return document == null;
   }
-
+  
   Cursor copy() {
     return Cursor(
         document: document,
@@ -350,7 +350,15 @@ class Cursor {
     if (blockLine == anchorLine) {
       return (block?.text ?? '').substring(cur.column, cur.anchorColumn);
     }
-    res.add((cur.block?.text ?? '').substring(cur.column));
+    
+    // todo add safe substring
+    String curText = (cur.block?.text ?? '');
+    int col = cur.column;
+    if (col > curText.length) {
+      col = curText.length;
+    }
+    res.add(curText.substring(col));
+    
     Block? b = cur.block?.next;
     for (int i = blockLine + 1; b != null && i < anchorLine; i++) {
       res.add(b.text);
@@ -678,6 +686,9 @@ class Cursor {
     String t = cur.block?.text ?? '';
     if (t.startsWith(tab)) {
       cur.deleteText(numberOfCharacters: tab.length);
+    } else {
+      int indentSize = Document.countIndentSize(t);
+      cur.deleteText(numberOfCharacters: indentSize);
     }
   }
 

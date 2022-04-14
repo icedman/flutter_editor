@@ -98,6 +98,7 @@ class Highlighter {
     // tabs
     int indentSize = Document.countIndentSize(text);
     int tabSpaces = (block?.document?.detectedTabSpaces ?? 1);
+    if (tabSpaces == 0) tabSpaces = 2;
     int tabStops = indentSize ~/ tabSpaces;
     Color tabStopColor = colorCombine(theme.comment, theme.background, bw: 3);
 

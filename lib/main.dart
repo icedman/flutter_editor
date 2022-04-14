@@ -45,6 +45,7 @@ void main(List<String> args) async {
   UIProvider ui = UIProvider();
   StatusProvider status = StatusProvider();
 
+  app.initialize();
   app.open(path);
   // app.open('./tests/sqlite3.c');
 

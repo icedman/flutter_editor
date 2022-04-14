@@ -8,10 +8,12 @@ indexer (done)
 comment (done)
 uncomment (done)
 comment block
+redo
 
 # popups
 auto complete (done)
-search (partial)
+search (partial) 
+  add wrap to start of document
 
 # statusbar
 
