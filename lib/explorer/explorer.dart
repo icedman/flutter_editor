@@ -18,7 +18,7 @@ import 'package:editor/services/explorer/localfs.dart';
 const int animateK = 55;
 
 class FileIcon extends StatefulWidget {
-  FileIcon({String this.path = '', double this.size = 20});
+  FileIcon({String this.path = '', double this.size = 20}) : super(key: ValueKey(path));
 
   String path = '';
   double size = 20;

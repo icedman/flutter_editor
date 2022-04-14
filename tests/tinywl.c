@@ -2,7 +2,7 @@
 #include <getopt.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <stdlib.h> 
+#include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
 #include <wayland-server-core.h>

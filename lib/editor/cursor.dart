@@ -560,7 +560,7 @@ class Cursor {
     String left = l.substring(0, column);
     String right = l.substring(column);
 
-    document?.history.update(block);
+    document?.history.update(block, type: 'insert', inserted: text);
     block?.text = left + text + right;
     block?.makeDirty(highlight: true);
     moveCursorRight(count: text.length);

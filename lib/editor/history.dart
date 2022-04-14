@@ -4,6 +4,7 @@ import 'package:editor/editor/document.dart';
 class Action {
   String type = '';
   String text = '';
+  String inserted = '';
   Block? block;
 }
 
@@ -27,6 +28,17 @@ class History {
       HistoryEntry entry = HistoryEntry();
       entry.cursors = cursors;
       entry.actions = actions;
+      
+      if (entries.length > 1 && entry.actions.length == 1) {
+        HistoryEntry prev = entries.last;
+        if (prev.actions.length == 1) {
+          if (entry.actions[0].inserted != ' ' && prev.actions[0].type == entry.actions[0].type &&
+            prev.actions[0].block == entry.actions[0].block) {
+            return;
+          }
+        }
+      }
+
       entries.add(entry);
     }
   }
@@ -47,12 +59,13 @@ class History {
     actions.add(action);
   }
 
-  void update(Block? block) {
+  void update(Block? block, { String type = 'update', String inserted = '' }) {
     // print('update ${block?.text}');
     Action action = Action();
-    action.type = 'update';
+    action.type = type;
     action.block = block;
     action.text = block?.text ?? '';
+    action.inserted = inserted;
     actions.add(action);
   }
 
@@ -82,6 +95,7 @@ class History {
     HistoryEntry last = entries.removeLast();
     for (final a in last.actions.reversed) {
       switch (a.type) {
+        case 'insert':
         case 'update':
           a.block?.text = a.text;
           a.block?.makeDirty(highlight: true);

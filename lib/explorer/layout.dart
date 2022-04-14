@@ -35,7 +35,9 @@ class _Resizer extends State<Resizer> {
 
   @override
   Widget build(BuildContext) {
-    return GestureDetector(
+    return MouseRegion(
+      cursor: SystemMouseCursors.resizeColumn,
+      child: GestureDetector(
         child: Container(
             width: widget.width,
             height: widget.height,
@@ -59,7 +61,7 @@ class _Resizer extends State<Resizer> {
             dragging = false;
             widget.onEnd?.call();
           });
-        });
+        }));
   }
 }
 
@@ -152,7 +154,7 @@ class _AppLayout extends State<AppLayout> with WidgetsBindingObserver {
         length: app.documents.length,
         child: Scaffold(
             body: Stack(children: [
-          // main content (tabbar & tabs)
+            
           Padding(
               padding: EdgeInsets.only(
                   bottom: app.showStatusbar ? app.statusbarHeight : 0,
@@ -185,14 +187,13 @@ class _AppLayout extends State<AppLayout> with WidgetsBindingObserver {
                   bottom: app.showStatusbar ? app.statusbarHeight : 0),
               child: showSidebar ? ExplorerTree() : null),
 
+          // resizer
           Padding(
               padding: EdgeInsets.only(
                   bottom: app.showStatusbar ? app.statusbarHeight : 0,
-                  left: ((app.fixedSidebar && app.openSidebar)
-                          ? app.sidebarWidth
-                          : 0) -
-                      sizerWidth / 2),
-              child: Resizer(
+                  left: 0),
+                  
+              child: !(app.fixedSidebar && app.openSidebar) ? Container() : Resizer(
                   width: sizerWidth,
                   onStart: (position) {
                     return Size(app.sidebarWidth, 0);
