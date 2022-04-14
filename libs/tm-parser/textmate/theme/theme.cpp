@@ -312,7 +312,7 @@ theme_ptr parse_theme(Json::Value& themeItem)
     std::string const& uuid = themeItem["uuid"].asString();
 
     printf("theme uuid: %s\n", uuid.c_str());
-    
+
     // if (uuid == "") {
     //     return std::make_shared<theme_t>(themeItem);
     // }

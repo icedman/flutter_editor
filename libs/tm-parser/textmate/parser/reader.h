@@ -10,7 +10,7 @@
 
 namespace parse {
 
-rule_ptr convert_json(Json::Value const& json, void* includes = NULL);
+rule_ptr convert_json(Json::Value const& json);
 
 Json::Value rule_to_json(rule_ptr const& rule);
 

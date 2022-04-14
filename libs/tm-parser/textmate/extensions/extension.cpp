@@ -5,1019 +5,1010 @@
 #include <iostream>
 #include <string>
 
+#include "parse.h"
 #include "theme.h"
 #include "tinyxml2.h"
 #include "util.h"
 
-const char *defaultTheme =
-    "{\"type\":\"dark\",\"colors\":{\"dropdown.background\":\"#414339\",\"list."
-    "activeSelectionBackground\":\"#75715E\",\"quickInputList."
-    "focusBackground\":\"#414339\",\"dropdown.listBackground\":\"#1e1f1c\","
-    "\"list.inactiveSelectionBackground\":\"#414339\",\"list.hoverBackground\":"
-    "\"#3e3d32\",\"list.dropBackground\":\"#414339\",\"list."
-    "highlightForeground\":\"#f8f8f2\",\"button.background\":\"#75715E\","
-    "\"editor.background\":\"#272822\",\"editor.foreground\":\"#f8f8f2\","
-    "\"selection.background\":\"#878b9180\",\"editor."
-    "selectionHighlightBackground\":\"#575b6180\",\"editor."
-    "selectionBackground\":\"#878b9180\",\"minimap.selectionHighlight\":\"#"
-    "878b9180\",\"editor.wordHighlightBackground\":\"#4a4a7680\",\"editor."
-    "wordHighlightStrongBackground\":\"#6a6a9680\",\"editor."
-    "lineHighlightBackground\":\"#3e3d32\",\"editorLineNumber."
-    "activeForeground\":\"#c2c2bf\",\"editorCursor.foreground\":\"#f8f8f0\","
-    "\"editorWhitespace.foreground\":\"#464741\",\"editorIndentGuide."
-    "background\":\"#464741\",\"editorIndentGuide.activeBackground\":\"#"
-    "767771\",\"editorGroupHeader.tabsBackground\":\"#1e1f1c\",\"editorGroup."
-    "dropBackground\":\"#41433980\",\"tab.inactiveBackground\":\"#34352f\","
-    "\"tab.border\":\"#1e1f1c\",\"tab.inactiveForeground\":\"#ccccc7\",\"tab."
-    "lastPinnedBorder\":\"#414339\",\"widget.shadow\":\"#00000098\","
-    "\"progressBar.background\":\"#75715E\",\"badge.background\":\"#75715E\","
-    "\"badge.foreground\":\"#f8f8f2\",\"editorLineNumber.foreground\":\"#"
-    "90908a\",\"panelTitle.activeForeground\":\"#f8f8f2\",\"panelTitle."
-    "activeBorder\":\"#75715E\",\"panelTitle.inactiveForeground\":\"#75715E\","
-    "\"panel.border\":\"#414339\",\"settings.focusedRowBackground\":\"#"
-    "4143395A\",\"titleBar.activeBackground\":\"#1e1f1c\",\"statusBar."
-    "background\":\"#414339\",\"statusBar.noFolderBackground\":\"#414339\","
-    "\"statusBar.debuggingBackground\":\"#75715E\",\"statusBarItem."
-    "remoteBackground\":\"#AC6218\",\"ports.iconRunningProcessForeground\":\"#"
-    "ccccc7\",\"activityBar.background\":\"#272822\",\"activityBar."
-    "foreground\":\"#f8f8f2\",\"sideBar.background\":\"#1e1f1c\","
-    "\"sideBarSectionHeader.background\":\"#272822\",\"menu.background\":\"#"
-    "1e1f1c\",\"menu.foreground\":\"#cccccc\",\"pickerGroup.foreground\":\"#"
-    "75715E\",\"input.background\":\"#414339\",\"inputOption.activeBorder\":\"#"
-    "75715E\",\"focusBorder\":\"#75715E\",\"editorWidget.background\":\"#"
-    "1e1f1c\",\"debugToolBar.background\":\"#1e1f1c\",\"diffEditor."
-    "insertedTextBackground\":\"#4b661680\",\"diffEditor."
-    "removedTextBackground\":\"#90274A70\",\"inputValidation.errorBackground\":"
-    "\"#90274A\",\"inputValidation.errorBorder\":\"#f92672\",\"inputValidation."
-    "warningBackground\":\"#848528\",\"inputValidation.warningBorder\":\"#"
-    "e2e22e\",\"inputValidation.infoBackground\":\"#546190\",\"inputValidation."
-    "infoBorder\":\"#819aff\",\"editorHoverWidget.background\":\"#414339\","
-    "\"editorHoverWidget.border\":\"#75715E\",\"editorSuggestWidget."
-    "background\":\"#272822\",\"editorSuggestWidget.border\":\"#75715E\","
-    "\"editorGroup.border\":\"#34352f\",\"peekView.border\":\"#75715E\","
-    "\"peekViewEditor.background\":\"#272822\",\"peekViewResult.background\":"
-    "\"#1e1f1c\",\"peekViewTitle.background\":\"#1e1f1c\",\"peekViewResult."
-    "selectionBackground\":\"#414339\",\"peekViewResult."
-    "matchHighlightBackground\":\"#75715E\",\"peekViewEditor."
-    "matchHighlightBackground\":\"#75715E\",\"terminal.ansiBlack\":\"#333333\","
-    "\"terminal.ansiRed\":\"#C4265E\",\"terminal.ansiGreen\":\"#86B42B\","
-    "\"terminal.ansiYellow\":\"#B3B42B\",\"terminal.ansiBlue\":\"#6A7EC8\","
-    "\"terminal.ansiMagenta\":\"#8C6BC8\",\"terminal.ansiCyan\":\"#56ADBC\","
-    "\"terminal.ansiWhite\":\"#e3e3dd\",\"terminal.ansiBrightBlack\":\"#"
-    "666666\",\"terminal.ansiBrightRed\":\"#f92672\",\"terminal."
-    "ansiBrightGreen\":\"#A6E22E\",\"terminal.ansiBrightYellow\":\"#e2e22e\","
-    "\"terminal.ansiBrightBlue\":\"#819aff\",\"terminal.ansiBrightMagenta\":\"#"
-    "AE81FF\",\"terminal.ansiBrightCyan\":\"#66D9EF\",\"terminal."
-    "ansiBrightWhite\":\"#f8f8f2\"},\"tokenColors\":[{\"settings\":{"
-    "\"foreground\":\"#F8F8F2\"}},{\"scope\":[\"meta.embedded\",\"source."
-    "groovy.embedded\"],\"settings\":{\"foreground\":\"#F8F8F2\"}},{\"name\":"
-    "\"Comment\",\"scope\":\"comment\",\"settings\":{\"foreground\":\"#"
-    "88846f\"}},{\"name\":\"String\",\"scope\":\"string\",\"settings\":{"
-    "\"foreground\":\"#E6DB74\"}},{\"name\":\"Template "
-    "Definition\",\"scope\":[\"punctuation.definition.template-expression\","
-    "\"punctuation.section.embedded\"],\"settings\":{\"foreground\":\"#"
-    "F92672\"}},{\"name\":\"Reset JavaScript string interpolation "
-    "expression\",\"scope\":[\"meta.template.expression\"],\"settings\":{"
-    "\"foreground\":\"#F8F8F2\"}},{\"name\":\"Number\",\"scope\":\"constant."
-    "numeric\",\"settings\":{\"foreground\":\"#AE81FF\"}},{\"name\":\"Built-in "
-    "constant\",\"scope\":\"constant.language\",\"settings\":{\"foreground\":"
-    "\"#AE81FF\"}},{\"name\":\"User-defined "
-    "constant\",\"scope\":\"constant.character, "
-    "constant.other\",\"settings\":{\"foreground\":\"#AE81FF\"}},{\"name\":"
-    "\"Variable\",\"scope\":\"variable\",\"settings\":{\"fontStyle\":\"\","
-    "\"foreground\":\"#F8F8F2\"}},{\"name\":\"Keyword\",\"scope\":\"keyword\","
-    "\"settings\":{\"foreground\":\"#F92672\"}},{\"name\":\"Storage\","
-    "\"scope\":\"storage\",\"settings\":{\"fontStyle\":\"\",\"foreground\":\"#"
-    "F92672\"}},{\"name\":\"Storage "
-    "type\",\"scope\":\"storage.type\",\"settings\":{\"fontStyle\":\"italic\","
-    "\"foreground\":\"#66D9EF\"}},{\"name\":\"Class "
-    "name\",\"scope\":\"entity.name.type, entity.name.class, "
-    "entity.name.namespace, "
-    "entity.name.scope-resolution\",\"settings\":{\"fontStyle\":\"underline\","
-    "\"foreground\":\"#A6E22E\"}},{\"name\":\"Inherited "
-    "class\",\"scope\":\"entity.other.inherited-class\",\"settings\":{"
-    "\"fontStyle\":\"italic "
-    "underline\",\"foreground\":\"#A6E22E\"}},{\"name\":\"Function "
-    "name\",\"scope\":\"entity.name.function\",\"settings\":{\"fontStyle\":"
-    "\"\",\"foreground\":\"#A6E22E\"}},{\"name\":\"Function "
-    "argument\",\"scope\":\"variable.parameter\",\"settings\":{\"fontStyle\":"
-    "\"italic\",\"foreground\":\"#FD971F\"}},{\"name\":\"Tag "
-    "name\",\"scope\":\"entity.name.tag\",\"settings\":{\"fontStyle\":\"\","
-    "\"foreground\":\"#F92672\"}},{\"name\":\"Tag "
-    "attribute\",\"scope\":\"entity.other.attribute-name\",\"settings\":{"
-    "\"fontStyle\":\"\",\"foreground\":\"#A6E22E\"}},{\"name\":\"Library "
-    "function\",\"scope\":\"support.function\",\"settings\":{\"fontStyle\":"
-    "\"\",\"foreground\":\"#66D9EF\"}},{\"name\":\"Library "
-    "constant\",\"scope\":\"support.constant\",\"settings\":{\"fontStyle\":"
-    "\"\",\"foreground\":\"#66D9EF\"}},{\"name\":\"Library "
-    "class/type\",\"scope\":\"support.type, "
-    "support.class\",\"settings\":{\"fontStyle\":\"italic\",\"foreground\":\"#"
-    "66D9EF\"}},{\"name\":\"Library "
-    "variable\",\"scope\":\"support.other.variable\",\"settings\":{"
-    "\"fontStyle\":\"\"}},{\"name\":\"Invalid\",\"scope\":\"invalid\","
-    "\"settings\":{\"fontStyle\":\"\",\"foreground\":\"#F44747\"}},{\"name\":"
-    "\"Invalid "
-    "deprecated\",\"scope\":\"invalid.deprecated\",\"settings\":{"
-    "\"foreground\":\"#F44747\"}},{\"name\":\"JSON "
-    "String\",\"scope\":\"meta.structure.dictionary.json "
-    "string.quoted.double.json\",\"settings\":{\"foreground\":\"#CFCFC2\"}},{"
-    "\"name\":\"diff.header\",\"scope\":\"meta.diff, "
-    "meta.diff.header\",\"settings\":{\"foreground\":\"#75715E\"}},{\"name\":"
-    "\"diff.deleted\",\"scope\":\"markup.deleted\",\"settings\":{"
-    "\"foreground\":\"#F92672\"}},{\"name\":\"diff.inserted\",\"scope\":"
-    "\"markup.inserted\",\"settings\":{\"foreground\":\"#A6E22E\"}},{\"name\":"
-    "\"diff.changed\",\"scope\":\"markup.changed\",\"settings\":{"
-    "\"foreground\":\"#E6DB74\"}},{\"scope\":\"constant.numeric.line-number."
-    "find-in-files - "
-    "match\",\"settings\":{\"foreground\":\"#AE81FFA0\"}},{\"scope\":\"entity."
-    "name.filename.find-in-files\",\"settings\":{\"foreground\":\"#E6DB74\"}},{"
-    "\"name\":\"Markup "
-    "Quote\",\"scope\":\"markup.quote\",\"settings\":{\"foreground\":\"#"
-    "F92672\"}},{\"name\":\"Markup "
-    "Lists\",\"scope\":\"markup.list\",\"settings\":{\"foreground\":\"#"
-    "E6DB74\"}},{\"name\":\"Markup Styling\",\"scope\":\"markup.bold, "
-    "markup.italic\",\"settings\":{\"foreground\":\"#66D9EF\"}},{\"name\":"
-    "\"Markup "
-    "Inline\",\"scope\":\"markup.inline.raw\",\"settings\":{\"fontStyle\":\"\","
-    "\"foreground\":\"#FD971F\"}},{\"name\":\"Markup "
-    "Headings\",\"scope\":\"markup.heading\",\"settings\":{\"foreground\":\"#"
-    "A6E22E\"}},{\"name\":\"Markup Setext "
-    "Header\",\"scope\":\"markup.heading.setext\",\"settings\":{\"foreground\":"
-    "\"#A6E22E\",\"fontStyle\":\"bold\"}},{\"name\":\"Markup "
-    "Headings\",\"scope\":\"markup.heading.markdown\",\"settings\":{"
-    "\"fontStyle\":\"bold\"}},{\"name\":\"Markdown "
-    "Quote\",\"scope\":\"markup.quote.markdown\",\"settings\":{\"fontStyle\":"
-    "\"italic\",\"foreground\":\"#75715E\"}},{\"name\":\"Markdown "
-    "Bold\",\"scope\":\"markup.bold.markdown\",\"settings\":{\"fontStyle\":"
-    "\"bold\"}},{\"name\":\"Markdown Link "
-    "Title/"
-    "Description\",\"scope\":\"string.other.link.title.markdown,string.other."
-    "link.description.markdown\",\"settings\":{\"foreground\":\"#AE81FF\"}},{"
-    "\"name\":\"Markdown Underline "
-    "Link/"
-    "Image\",\"scope\":\"markup.underline.link.markdown,markup.underline.link."
-    "image.markdown\",\"settings\":{\"foreground\":\"#E6DB74\"}},{\"name\":"
-    "\"Markdown "
-    "Emphasis\",\"scope\":\"markup.italic.markdown\",\"settings\":{"
-    "\"fontStyle\":\"italic\"}},{\"name\":\"Markdown Punctuation Definition "
-    "Link\",\"scope\":\"markup.list.unnumbered.markdown, "
-    "markup.list.numbered.markdown\",\"settings\":{\"foreground\":\"#f8f8f2\"}}"
-    ",{\"name\":\"Markdown List "
-    "Punctuation\",\"scope\":[\"punctuation.definition.list.begin.markdown\"],"
-    "\"settings\":{\"foreground\":\"#A6E22E\"}},{\"scope\":\"token.info-"
-    "token\",\"settings\":{\"foreground\":\"#6796e6\"}},{\"scope\":\"token."
-    "warn-token\",\"settings\":{\"foreground\":\"#cd9731\"}},{\"scope\":"
-    "\"token.error-token\",\"settings\":{\"foreground\":\"#f44747\"}},{"
-    "\"scope\":\"token.debug-token\",\"settings\":{\"foreground\":\"#b267e6\"}}"
-    ",{\"name\":\"this.self\",\"scope\":\"variable.language\",\"settings\":{"
-    "\"foreground\":\"#FD971F\"}}],\"semanticHighlighting\":true}";
+const char* defaultTheme = "{\"type\":\"dark\",\"colors\":{\"dropdown.background\":\"#414339\",\"list."
+                           "activeSelectionBackground\":\"#75715E\",\"quickInputList."
+                           "focusBackground\":\"#414339\",\"dropdown.listBackground\":\"#1e1f1c\","
+                           "\"list.inactiveSelectionBackground\":\"#414339\",\"list.hoverBackground\":"
+                           "\"#3e3d32\",\"list.dropBackground\":\"#414339\",\"list."
+                           "highlightForeground\":\"#f8f8f2\",\"button.background\":\"#75715E\","
+                           "\"editor.background\":\"#272822\",\"editor.foreground\":\"#f8f8f2\","
+                           "\"selection.background\":\"#878b9180\",\"editor."
+                           "selectionHighlightBackground\":\"#575b6180\",\"editor."
+                           "selectionBackground\":\"#878b9180\",\"minimap.selectionHighlight\":\"#"
+                           "878b9180\",\"editor.wordHighlightBackground\":\"#4a4a7680\",\"editor."
+                           "wordHighlightStrongBackground\":\"#6a6a9680\",\"editor."
+                           "lineHighlightBackground\":\"#3e3d32\",\"editorLineNumber."
+                           "activeForeground\":\"#c2c2bf\",\"editorCursor.foreground\":\"#f8f8f0\","
+                           "\"editorWhitespace.foreground\":\"#464741\",\"editorIndentGuide."
+                           "background\":\"#464741\",\"editorIndentGuide.activeBackground\":\"#"
+                           "767771\",\"editorGroupHeader.tabsBackground\":\"#1e1f1c\",\"editorGroup."
+                           "dropBackground\":\"#41433980\",\"tab.inactiveBackground\":\"#34352f\","
+                           "\"tab.border\":\"#1e1f1c\",\"tab.inactiveForeground\":\"#ccccc7\",\"tab."
+                           "lastPinnedBorder\":\"#414339\",\"widget.shadow\":\"#00000098\","
+                           "\"progressBar.background\":\"#75715E\",\"badge.background\":\"#75715E\","
+                           "\"badge.foreground\":\"#f8f8f2\",\"editorLineNumber.foreground\":\"#"
+                           "90908a\",\"panelTitle.activeForeground\":\"#f8f8f2\",\"panelTitle."
+                           "activeBorder\":\"#75715E\",\"panelTitle.inactiveForeground\":\"#75715E\","
+                           "\"panel.border\":\"#414339\",\"settings.focusedRowBackground\":\"#"
+                           "4143395A\",\"titleBar.activeBackground\":\"#1e1f1c\",\"statusBar."
+                           "background\":\"#414339\",\"statusBar.noFolderBackground\":\"#414339\","
+                           "\"statusBar.debuggingBackground\":\"#75715E\",\"statusBarItem."
+                           "remoteBackground\":\"#AC6218\",\"ports.iconRunningProcessForeground\":\"#"
+                           "ccccc7\",\"activityBar.background\":\"#272822\",\"activityBar."
+                           "foreground\":\"#f8f8f2\",\"sideBar.background\":\"#1e1f1c\","
+                           "\"sideBarSectionHeader.background\":\"#272822\",\"menu.background\":\"#"
+                           "1e1f1c\",\"menu.foreground\":\"#cccccc\",\"pickerGroup.foreground\":\"#"
+                           "75715E\",\"input.background\":\"#414339\",\"inputOption.activeBorder\":\"#"
+                           "75715E\",\"focusBorder\":\"#75715E\",\"editorWidget.background\":\"#"
+                           "1e1f1c\",\"debugToolBar.background\":\"#1e1f1c\",\"diffEditor."
+                           "insertedTextBackground\":\"#4b661680\",\"diffEditor."
+                           "removedTextBackground\":\"#90274A70\",\"inputValidation.errorBackground\":"
+                           "\"#90274A\",\"inputValidation.errorBorder\":\"#f92672\",\"inputValidation."
+                           "warningBackground\":\"#848528\",\"inputValidation.warningBorder\":\"#"
+                           "e2e22e\",\"inputValidation.infoBackground\":\"#546190\",\"inputValidation."
+                           "infoBorder\":\"#819aff\",\"editorHoverWidget.background\":\"#414339\","
+                           "\"editorHoverWidget.border\":\"#75715E\",\"editorSuggestWidget."
+                           "background\":\"#272822\",\"editorSuggestWidget.border\":\"#75715E\","
+                           "\"editorGroup.border\":\"#34352f\",\"peekView.border\":\"#75715E\","
+                           "\"peekViewEditor.background\":\"#272822\",\"peekViewResult.background\":"
+                           "\"#1e1f1c\",\"peekViewTitle.background\":\"#1e1f1c\",\"peekViewResult."
+                           "selectionBackground\":\"#414339\",\"peekViewResult."
+                           "matchHighlightBackground\":\"#75715E\",\"peekViewEditor."
+                           "matchHighlightBackground\":\"#75715E\",\"terminal.ansiBlack\":\"#333333\","
+                           "\"terminal.ansiRed\":\"#C4265E\",\"terminal.ansiGreen\":\"#86B42B\","
+                           "\"terminal.ansiYellow\":\"#B3B42B\",\"terminal.ansiBlue\":\"#6A7EC8\","
+                           "\"terminal.ansiMagenta\":\"#8C6BC8\",\"terminal.ansiCyan\":\"#56ADBC\","
+                           "\"terminal.ansiWhite\":\"#e3e3dd\",\"terminal.ansiBrightBlack\":\"#"
+                           "666666\",\"terminal.ansiBrightRed\":\"#f92672\",\"terminal."
+                           "ansiBrightGreen\":\"#A6E22E\",\"terminal.ansiBrightYellow\":\"#e2e22e\","
+                           "\"terminal.ansiBrightBlue\":\"#819aff\",\"terminal.ansiBrightMagenta\":\"#"
+                           "AE81FF\",\"terminal.ansiBrightCyan\":\"#66D9EF\",\"terminal."
+                           "ansiBrightWhite\":\"#f8f8f2\"},\"tokenColors\":[{\"settings\":{"
+                           "\"foreground\":\"#F8F8F2\"}},{\"scope\":[\"meta.embedded\",\"source."
+                           "groovy.embedded\"],\"settings\":{\"foreground\":\"#F8F8F2\"}},{\"name\":"
+                           "\"Comment\",\"scope\":\"comment\",\"settings\":{\"foreground\":\"#"
+                           "88846f\"}},{\"name\":\"String\",\"scope\":\"string\",\"settings\":{"
+                           "\"foreground\":\"#E6DB74\"}},{\"name\":\"Template "
+                           "Definition\",\"scope\":[\"punctuation.definition.template-expression\","
+                           "\"punctuation.section.embedded\"],\"settings\":{\"foreground\":\"#"
+                           "F92672\"}},{\"name\":\"Reset JavaScript string interpolation "
+                           "expression\",\"scope\":[\"meta.template.expression\"],\"settings\":{"
+                           "\"foreground\":\"#F8F8F2\"}},{\"name\":\"Number\",\"scope\":\"constant."
+                           "numeric\",\"settings\":{\"foreground\":\"#AE81FF\"}},{\"name\":\"Built-in "
+                           "constant\",\"scope\":\"constant.language\",\"settings\":{\"foreground\":"
+                           "\"#AE81FF\"}},{\"name\":\"User-defined "
+                           "constant\",\"scope\":\"constant.character, "
+                           "constant.other\",\"settings\":{\"foreground\":\"#AE81FF\"}},{\"name\":"
+                           "\"Variable\",\"scope\":\"variable\",\"settings\":{\"fontStyle\":\"\","
+                           "\"foreground\":\"#F8F8F2\"}},{\"name\":\"Keyword\",\"scope\":\"keyword\","
+                           "\"settings\":{\"foreground\":\"#F92672\"}},{\"name\":\"Storage\","
+                           "\"scope\":\"storage\",\"settings\":{\"fontStyle\":\"\",\"foreground\":\"#"
+                           "F92672\"}},{\"name\":\"Storage "
+                           "type\",\"scope\":\"storage.type\",\"settings\":{\"fontStyle\":\"italic\","
+                           "\"foreground\":\"#66D9EF\"}},{\"name\":\"Class "
+                           "name\",\"scope\":\"entity.name.type, entity.name.class, "
+                           "entity.name.namespace, "
+                           "entity.name.scope-resolution\",\"settings\":{\"fontStyle\":\"underline\","
+                           "\"foreground\":\"#A6E22E\"}},{\"name\":\"Inherited "
+                           "class\",\"scope\":\"entity.other.inherited-class\",\"settings\":{"
+                           "\"fontStyle\":\"italic "
+                           "underline\",\"foreground\":\"#A6E22E\"}},{\"name\":\"Function "
+                           "name\",\"scope\":\"entity.name.function\",\"settings\":{\"fontStyle\":"
+                           "\"\",\"foreground\":\"#A6E22E\"}},{\"name\":\"Function "
+                           "argument\",\"scope\":\"variable.parameter\",\"settings\":{\"fontStyle\":"
+                           "\"italic\",\"foreground\":\"#FD971F\"}},{\"name\":\"Tag "
+                           "name\",\"scope\":\"entity.name.tag\",\"settings\":{\"fontStyle\":\"\","
+                           "\"foreground\":\"#F92672\"}},{\"name\":\"Tag "
+                           "attribute\",\"scope\":\"entity.other.attribute-name\",\"settings\":{"
+                           "\"fontStyle\":\"\",\"foreground\":\"#A6E22E\"}},{\"name\":\"Library "
+                           "function\",\"scope\":\"support.function\",\"settings\":{\"fontStyle\":"
+                           "\"\",\"foreground\":\"#66D9EF\"}},{\"name\":\"Library "
+                           "constant\",\"scope\":\"support.constant\",\"settings\":{\"fontStyle\":"
+                           "\"\",\"foreground\":\"#66D9EF\"}},{\"name\":\"Library "
+                           "class/type\",\"scope\":\"support.type, "
+                           "support.class\",\"settings\":{\"fontStyle\":\"italic\",\"foreground\":\"#"
+                           "66D9EF\"}},{\"name\":\"Library "
+                           "variable\",\"scope\":\"support.other.variable\",\"settings\":{"
+                           "\"fontStyle\":\"\"}},{\"name\":\"Invalid\",\"scope\":\"invalid\","
+                           "\"settings\":{\"fontStyle\":\"\",\"foreground\":\"#F44747\"}},{\"name\":"
+                           "\"Invalid "
+                           "deprecated\",\"scope\":\"invalid.deprecated\",\"settings\":{"
+                           "\"foreground\":\"#F44747\"}},{\"name\":\"JSON "
+                           "String\",\"scope\":\"meta.structure.dictionary.json "
+                           "string.quoted.double.json\",\"settings\":{\"foreground\":\"#CFCFC2\"}},{"
+                           "\"name\":\"diff.header\",\"scope\":\"meta.diff, "
+                           "meta.diff.header\",\"settings\":{\"foreground\":\"#75715E\"}},{\"name\":"
+                           "\"diff.deleted\",\"scope\":\"markup.deleted\",\"settings\":{"
+                           "\"foreground\":\"#F92672\"}},{\"name\":\"diff.inserted\",\"scope\":"
+                           "\"markup.inserted\",\"settings\":{\"foreground\":\"#A6E22E\"}},{\"name\":"
+                           "\"diff.changed\",\"scope\":\"markup.changed\",\"settings\":{"
+                           "\"foreground\":\"#E6DB74\"}},{\"scope\":\"constant.numeric.line-number."
+                           "find-in-files - "
+                           "match\",\"settings\":{\"foreground\":\"#AE81FFA0\"}},{\"scope\":\"entity."
+                           "name.filename.find-in-files\",\"settings\":{\"foreground\":\"#E6DB74\"}},{"
+                           "\"name\":\"Markup "
+                           "Quote\",\"scope\":\"markup.quote\",\"settings\":{\"foreground\":\"#"
+                           "F92672\"}},{\"name\":\"Markup "
+                           "Lists\",\"scope\":\"markup.list\",\"settings\":{\"foreground\":\"#"
+                           "E6DB74\"}},{\"name\":\"Markup Styling\",\"scope\":\"markup.bold, "
+                           "markup.italic\",\"settings\":{\"foreground\":\"#66D9EF\"}},{\"name\":"
+                           "\"Markup "
+                           "Inline\",\"scope\":\"markup.inline.raw\",\"settings\":{\"fontStyle\":\"\","
+                           "\"foreground\":\"#FD971F\"}},{\"name\":\"Markup "
+                           "Headings\",\"scope\":\"markup.heading\",\"settings\":{\"foreground\":\"#"
+                           "A6E22E\"}},{\"name\":\"Markup Setext "
+                           "Header\",\"scope\":\"markup.heading.setext\",\"settings\":{\"foreground\":"
+                           "\"#A6E22E\",\"fontStyle\":\"bold\"}},{\"name\":\"Markup "
+                           "Headings\",\"scope\":\"markup.heading.markdown\",\"settings\":{"
+                           "\"fontStyle\":\"bold\"}},{\"name\":\"Markdown "
+                           "Quote\",\"scope\":\"markup.quote.markdown\",\"settings\":{\"fontStyle\":"
+                           "\"italic\",\"foreground\":\"#75715E\"}},{\"name\":\"Markdown "
+                           "Bold\",\"scope\":\"markup.bold.markdown\",\"settings\":{\"fontStyle\":"
+                           "\"bold\"}},{\"name\":\"Markdown Link "
+                           "Title/"
+                           "Description\",\"scope\":\"string.other.link.title.markdown,string.other."
+                           "link.description.markdown\",\"settings\":{\"foreground\":\"#AE81FF\"}},{"
+                           "\"name\":\"Markdown Underline "
+                           "Link/"
+                           "Image\",\"scope\":\"markup.underline.link.markdown,markup.underline.link."
+                           "image.markdown\",\"settings\":{\"foreground\":\"#E6DB74\"}},{\"name\":"
+                           "\"Markdown "
+                           "Emphasis\",\"scope\":\"markup.italic.markdown\",\"settings\":{"
+                           "\"fontStyle\":\"italic\"}},{\"name\":\"Markdown Punctuation Definition "
+                           "Link\",\"scope\":\"markup.list.unnumbered.markdown, "
+                           "markup.list.numbered.markdown\",\"settings\":{\"foreground\":\"#f8f8f2\"}}"
+                           ",{\"name\":\"Markdown List "
+                           "Punctuation\",\"scope\":[\"punctuation.definition.list.begin.markdown\"],"
+                           "\"settings\":{\"foreground\":\"#A6E22E\"}},{\"scope\":\"token.info-"
+                           "token\",\"settings\":{\"foreground\":\"#6796e6\"}},{\"scope\":\"token."
+                           "warn-token\",\"settings\":{\"foreground\":\"#cd9731\"}},{\"scope\":"
+                           "\"token.error-token\",\"settings\":{\"foreground\":\"#f44747\"}},{"
+                           "\"scope\":\"token.debug-token\",\"settings\":{\"foreground\":\"#b267e6\"}}"
+                           ",{\"name\":\"this.self\",\"scope\":\"variable.language\",\"settings\":{"
+                           "\"foreground\":\"#FD971F\"}}],\"semanticHighlighting\":true}";
 
 static std::map<std::string, struct extension_t> mappedExtensions;
 
-static bool file_exists(const char *path) {
-  bool exists = false;
-  FILE *fp = fopen(path, "r");
-  if (fp) {
-    exists = true;
-    fclose(fp);
-  }
-  return exists;
+static bool file_exists(const char* path)
+{
+    bool exists = false;
+    FILE* fp = fopen(path, "r");
+    if (fp) {
+        exists = true;
+        fclose(fp);
+    }
+    return exists;
 }
 
-void parseXMLElement(Json::Value &target, tinyxml2::XMLElement *element);
-void parseXMLElementArray(Json::Value &target, tinyxml2::XMLElement *element);
+void parseXMLElement(Json::Value& target, tinyxml2::XMLElement* element);
+void parseXMLElementArray(Json::Value& target, tinyxml2::XMLElement* element);
 
-void parseXMLElementArray(Json::Value &target, tinyxml2::XMLElement *element) {
-  if (!element)
-    return;
-  tinyxml2::XMLElement *pChild = element->FirstChildElement();
-  int idx = 0;
-  while (pChild) {
-    std::string name = pChild->Name();
-    if (name == "string") {
-      target[idx++] = pChild->GetText();
+void parseXMLElementArray(Json::Value& target, tinyxml2::XMLElement* element)
+{
+    if (!element)
+        return;
+    tinyxml2::XMLElement* pChild = element->FirstChildElement();
+    int idx = 0;
+    while (pChild) {
+        std::string name = pChild->Name();
+        if (name == "string") {
+            target[idx++] = pChild->GetText();
+        }
+        if (name == "dict") {
+            Json::Value val;
+            parseXMLElement(val, pChild);
+            target[idx++] = val;
+        }
+        if (name == "array") {
+            Json::Value val;
+            parseXMLElementArray(val, pChild);
+            target[idx++] = val;
+        }
+        pChild = pChild->NextSiblingElement();
     }
-    if (name == "dict") {
-      Json::Value val;
-      parseXMLElement(val, pChild);
-      target[idx++] = val;
-    }
-    if (name == "array") {
-      Json::Value val;
-      parseXMLElementArray(val, pChild);
-      target[idx++] = val;
-    }
-    pChild = pChild->NextSiblingElement();
-  }
 }
 
-void parseXMLElement(Json::Value &target, tinyxml2::XMLElement *element) {
-  if (!element)
-    return;
-  tinyxml2::XMLElement *pChild = element->FirstChildElement();
+void parseXMLElement(Json::Value& target, tinyxml2::XMLElement* element)
+{
+    if (!element)
+        return;
+    tinyxml2::XMLElement* pChild = element->FirstChildElement();
 
-  std::string key = "";
-  while (pChild) {
-    std::string name = pChild->Name();
-    if (name == "key") {
-      key = pChild->GetText();
+    std::string key = "";
+    while (pChild) {
+        std::string name = pChild->Name();
+        if (name == "key") {
+            key = pChild->GetText();
+        }
+        if (name == "string") {
+            std::string v = pChild->GetText();
+            target[key.c_str()] = v.c_str();
+        }
+        if (name == "dict") {
+            Json::Value val;
+            parseXMLElement(val, pChild);
+            target[key.c_str()] = val;
+        }
+        if (name == "array") {
+            Json::Value val;
+            parseXMLElementArray(val, pChild);
+            target[key.c_str()] = val;
+        }
+        pChild = pChild->NextSiblingElement();
     }
-    if (name == "string") {
-      std::string v = pChild->GetText();
-      target[key.c_str()] = v.c_str();
-    }
-    if (name == "dict") {
-      Json::Value val;
-      parseXMLElement(val, pChild);
-      target[key.c_str()] = val;
-    }
-    if (name == "array") {
-      Json::Value val;
-      parseXMLElementArray(val, pChild);
-      target[key.c_str()] = val;
-    }
-    pChild = pChild->NextSiblingElement();
-  }
 }
 
 // std::string convertTMLanguagetoJSON(const char *path) {
-Json::Value loadPListOrJson(std::string path) {
-  if (path.find(".json") != std::string::npos) {
-    return parse::loadJson(path.c_str());
-  }
-  Json::Value result;
+Json::Value load_plist_or_json(std::string path)
+{
+    if (path.find(".json") != std::string::npos) {
+        return parse::loadJson(path.c_str());
+    }
+    Json::Value result;
 
-  printf("convert!\n");
-  tinyxml2::XMLDocument doc;
-  doc.LoadFile(path.c_str());
-  tinyxml2::XMLElement *pRoot = doc.RootElement();
-  if (pRoot == nullptr)
+    printf("convert!\n");
+    tinyxml2::XMLDocument doc;
+    doc.LoadFile(path.c_str());
+    tinyxml2::XMLElement* pRoot = doc.RootElement();
+    if (pRoot == nullptr)
+        return result;
+
+    parseXMLElement(result, pRoot->FirstChildElement());
+
     return result;
-
-  parseXMLElement(result, pRoot->FirstChildElement());
-
-  return result;
 }
 
-bool is_extension_available(const std::string id) {
-  // printf(">find %s\n", id.c_str());
-  return mappedExtensions.find(id) != mappedExtensions.end();
+bool is_extension_available(const std::string id)
+{
+    // printf(">find %s\n", id.c_str());
+    return mappedExtensions.find(id) != mappedExtensions.end();
 }
 
 void reset_extension_cache() { mappedExtensions.clear(); }
 
 void load_extensions(const std::string _path,
-                     std::vector<struct extension_t> &extensions) {
-  char *cpath = (char *)malloc(_path.length() + 1 * sizeof(char));
-  strcpy(cpath, _path.c_str());
-  expand_path((char **)(&cpath));
+    std::vector<struct extension_t>& extensions)
+{
+    char* cpath = (char*)malloc(_path.length() + 1 * sizeof(char));
+    strcpy(cpath, _path.c_str());
+    expand_path((char**)(&cpath));
 
-  const std::string path(cpath);
-  free(cpath);
+    const std::string path(cpath);
+    free(cpath);
 
-  // Json::Value contribs;
-  printf("loading extensions in %s\n", path.c_str());
-  // std::vector<std::string> filter = { "themes", "iconThemes", "languages" };
+    // Json::Value contribs;
+    printf("loading extensions in %s\n", path.c_str());
+    // std::vector<std::string> filter = { "themes", "iconThemes", "languages" };
 
-  for (const auto &extensionPath : enumerate_dir(path)) {
-    std::string package = extensionPath + "/package.json";
-    std::string packageNLS = extensionPath + "/package.nls.json";
+    for (const auto& extensionPath : enumerate_dir(path)) {
+        std::string package = extensionPath + "/package.json";
+        std::string packageNLS = extensionPath + "/package.nls.json";
 
-    // printf("extension: %s\n", package.c_str());
+        // printf("extension: %s\n", package.c_str());
 
-    struct extension_t ex = {.id = "",
-                             .publisher = "",
-                             .path = extensionPath,
-                             .hasThemes = false,
-                             .hasIcons = false,
-                             .hasGrammars = false,
-                             .hasCommands = false,
-                             .addToHistory = false};
+        struct extension_t ex = { .id = "",
+            .publisher = "",
+            .path = extensionPath,
+            .hasThemes = false,
+            .hasIcons = false,
+            .hasGrammars = false,
+            .hasCommands = false,
+            .addToHistory = false };
 
-    ex.nlsPath = packageNLS;
-    ex.nlsLoaded = false;
-    ex.package = parse::loadJson(package);
-    if (!ex.package.isObject()) {
-      continue;
+        ex.nlsPath = packageNLS;
+        ex.nlsLoaded = false;
+        ex.package = parse::loadJson(package);
+        if (!ex.package.isObject()) {
+            continue;
+        }
+        ex.name = ex.package["name"].asString();
+
+        std::string publisher;
+        if (ex.package.isMember("publisher")) {
+            publisher = ex.package["publisher"].asString();
+            ex.id = publisher;
+            ex.id += ".";
+            ex.id += ex.package["name"].asString();
+        }
+
+        // printf("%s\n", ex.id.c_str());
+
+        if (ex.package.isMember("__metadata") && ex.package["__metadata"].isMember("publisherDisplayName")) {
+            publisher = ex.package["__metadata"]["publisherDisplayName"].asString();
+        }
+        if (publisher.length() > 0) {
+            publisher = package_string(ex, publisher);
+            ex.publisher = publisher;
+        }
+
+        bool append = false;
+        if (ex.package.isMember("contributes")) {
+            if (ex.package["contributes"].isMember("themes")) {
+                ex.hasThemes = true;
+            }
+            if (ex.package["contributes"].isMember("iconThemes")) {
+                ex.hasIcons = true;
+            }
+            if (ex.package["contributes"].isMember("languages")) {
+                ex.hasGrammars = true;
+            }
+            if (ex.hasThemes || ex.hasIcons || ex.hasGrammars) {
+                append = true;
+            }
+
+            // extract grammar infos
+            if (ex.hasGrammars) {
+                Json::Value grammars = ex.package["contributes"]["grammars"];
+                if (grammars.isArray()) {
+                    for (int i = 0; i < grammars.size(); i++) {
+                        grammar_info_t gi;
+                        if (grammars[i].isMember("language") && grammars[i].isMember("scopeName") && grammars[i].isMember("path")) {
+                            gi.language = grammars[i]["language"].asString();
+                            gi.scopeName = grammars[i]["scopeName"].asString();
+                            gi.path = extensionPath + "/" + grammars[i]["path"].asString();
+                            ex.grammars.push_back(gi);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (append) {
+            if (ex.package["name"].asString() == "meson") {
+                log(ex.package["name"].asString().c_str());
+                log("extensions path %s", ex.path.c_str());
+            }
+
+            mappedExtensions.emplace(ex.id, ex);
+            // extensions.emplace_back(ex);
+        } else {
+            printf(">exclude %s\n", ex.path.c_str());
+        }
     }
-    ex.name = ex.package["name"].asString();
 
-    std::string publisher;
-    if (ex.package.isMember("publisher")) {
-      publisher = ex.package["publisher"].asString();
-      ex.id = publisher;
-      ex.id += ".";
-      ex.id += ex.package["name"].asString();
+    extensions.clear();
+    for (auto it = mappedExtensions.begin(); it != mappedExtensions.end(); it++) {
+        extensions.emplace_back(it->second);
     }
 
-    // printf("%s\n", ex.id.c_str());
-
-    if (ex.package.isMember("__metadata") &&
-        ex.package["__metadata"].isMember("publisherDisplayName")) {
-      publisher = ex.package["__metadata"]["publisherDisplayName"].asString();
-    }
-    if (publisher.length() > 0) {
-      publisher = package_string(ex, publisher);
-      ex.publisher = publisher;
-    }
-
-    bool append = false;
-    if (ex.package.isMember("contributes")) {
-      if (ex.package["contributes"].isMember("themes")) {
-        ex.hasThemes = true;
-      }
-      if (ex.package["contributes"].isMember("iconThemes")) {
-        ex.hasIcons = true;
-      }
-      if (ex.package["contributes"].isMember("languages")) {
-        ex.hasGrammars = true;
-      }
-      if (ex.hasThemes || ex.hasIcons || ex.hasGrammars) {
-        append = true;
-      }
-      /*
-      std::vector<std::string> keys =
-      ex.package["contributes"].getMemberNames();
-      std::vector<std::string>::iterator c_it = keys.begin();
-      while (c_it != keys.end()) {
-          std::string name = *c_it;
-
-          // if (filter.contains(name.c_str())) {
-          if (std::find(filter.begin(), filter.end(), name) != filter.end()) {
-              append = true;
-
-              // Json::Value obj;
-              // obj["name"] = ex.package["name"];
-              // obj["package"] = package.toStdString();
-              // contribs[name].append(obj);
-
-              break;
-          }
-
-          c_it++;
-      }
-      */
-    }
-
-    if (append) {
-      if (ex.package["name"].asString() == "meson") {
-        log(ex.package["name"].asString().c_str());
-        log("extensions path %s", ex.path.c_str());
-      }
-
-      mappedExtensions.emplace(ex.id, ex);
-      // extensions.emplace_back(ex);
-    } else {
-      printf(">exclude %s\n", ex.path.c_str());
-    }
-  }
-
-  extensions.clear();
-  for (auto it = mappedExtensions.begin(); it != mappedExtensions.end(); it++) {
-    extensions.emplace_back(it->second);
-  }
-
-  // std::cout << contribs;
+    // std::cout << contribs;
+    parse::set_extensions(&extensions);
 }
 
 static bool load_language_configuration(const std::string path,
-                                        language_info_ptr lang) {
-  Json::Value root = parse::loadJson(path);
-  if (root.empty()) {
-    log("unable to load configuration file %s", path.c_str());
-    return false;
-  }
-
-  lang->definition = root;
-
-  if (root.isMember("comments")) {
-    Json::Value comments = root["comments"];
-
-    if (comments.isMember("lineComment")) {
-      lang->lineComment = comments["lineComment"].asString();
+    language_info_ptr lang)
+{
+    Json::Value root = parse::loadJson(path);
+    if (root.empty()) {
+        log("unable to load configuration file %s", path.c_str());
+        return false;
     }
 
-    if (comments.isMember("blockComment")) {
-      Json::Value blockComment = comments["blockComment"];
-      if (blockComment.isArray() && blockComment.size() == 2) {
-        std::string beginComment = comments["blockComment"][0].asString();
-        std::string endComment = comments["blockComment"][1].asString();
-        if (beginComment.length() && endComment.length()) {
-          lang->blockCommentStart = beginComment;
-          lang->blockCommentEnd = endComment;
+    lang->definition = root;
+
+    if (root.isMember("comments")) {
+        Json::Value comments = root["comments"];
+
+        if (comments.isMember("lineComment")) {
+            lang->lineComment = comments["lineComment"].asString();
         }
-      }
-    }
-  }
 
-  if (root.isMember("brackets")) {
-    Json::Value brackets = root["brackets"];
-    if (brackets.isArray()) {
-      for (int i = 0; i < brackets.size(); i++) {
-        Json::Value pair = brackets[i];
-        if (pair.isArray() && pair.size() == 2) {
-          if (pair[0].isString() && pair[1].isString()) {
-            lang->bracketOpen.push_back(pair[0].asString());
-            lang->bracketClose.push_back(pair[1].asString());
-          }
+        if (comments.isMember("blockComment")) {
+            Json::Value blockComment = comments["blockComment"];
+            if (blockComment.isArray() && blockComment.size() == 2) {
+                std::string beginComment = comments["blockComment"][0].asString();
+                std::string endComment = comments["blockComment"][1].asString();
+                if (beginComment.length() && endComment.length()) {
+                    lang->blockCommentStart = beginComment;
+                    lang->blockCommentEnd = endComment;
+                }
+            }
         }
-      }
-      lang->brackets = lang->bracketOpen.size();
-      lang->hasCurly = false;
-      lang->hasRound = false;
-      lang->hasSquare = false;
-      for (auto &b : lang->bracketOpen) {
-        lang->hasCurly |= (b == "{");
-        lang->hasRound |= (b == "(");
-        lang->hasSquare |= (b == "[");
-      }
     }
-  }
 
-  if (root.isMember("autoClosingPairs")) {
-    Json::Value pairs = root["autoClosingPairs"];
-    if (pairs.isArray()) {
-      for (int i = 0; i < pairs.size(); i++) {
-        Json::Value pair = pairs[i];
-        if (pair.isObject()) {
-          if (pair.isMember("open") && pair.isMember("close")) {
-            lang->pairOpen.push_back(pair["open"].asString());
-            lang->pairClose.push_back(pair["close"].asString());
-          }
+    if (root.isMember("brackets")) {
+        Json::Value brackets = root["brackets"];
+        if (brackets.isArray()) {
+            for (int i = 0; i < brackets.size(); i++) {
+                Json::Value pair = brackets[i];
+                if (pair.isArray() && pair.size() == 2) {
+                    if (pair[0].isString() && pair[1].isString()) {
+                        lang->bracketOpen.push_back(pair[0].asString());
+                        lang->bracketClose.push_back(pair[1].asString());
+                    }
+                }
+            }
+            lang->brackets = lang->bracketOpen.size();
+            lang->hasCurly = false;
+            lang->hasRound = false;
+            lang->hasSquare = false;
+            for (auto& b : lang->bracketOpen) {
+                lang->hasCurly |= (b == "{");
+                lang->hasRound |= (b == "(");
+                lang->hasSquare |= (b == "[");
+            }
         }
-      }
-      lang->pairs = lang->pairOpen.size();
     }
-  }
 
-  return true;
+    if (root.isMember("autoClosingPairs")) {
+        Json::Value pairs = root["autoClosingPairs"];
+        if (pairs.isArray()) {
+            for (int i = 0; i < pairs.size(); i++) {
+                Json::Value pair = pairs[i];
+                if (pair.isObject()) {
+                    if (pair.isMember("open") && pair.isMember("close")) {
+                        lang->pairOpen.push_back(pair["open"].asString());
+                        lang->pairClose.push_back(pair["close"].asString());
+                    }
+                }
+            }
+            lang->pairs = lang->pairOpen.size();
+        }
+    }
+
+    return true;
 }
 
 language_info_ptr
 language_from_file(const std::string path,
-                   std::vector<struct extension_t> &extensions) {
-  static std::map<std::string, language_info_ptr> cache;
-  language_info_ptr lang = std::make_shared<language_info_t>();
+    std::vector<struct extension_t>& extensions)
+{
+    static std::map<std::string, language_info_ptr> cache;
+    language_info_ptr lang = std::make_shared<language_info_t>();
 
-  std::set<char> delims = {'/', '\\'};
-  std::vector<std::string> spath = split_path(path, delims);
-  std::string fileName = spath.back();
+    std::set<char> delims = { '/', '\\' };
+    std::vector<std::string> spath = split_path(path, delims);
+    std::string fileName = spath.back();
 
-  std::set<char> delims_file = {'.'};
-  std::vector<std::string> sfile = split_path(fileName, delims_file);
+    std::set<char> delims_file = { '.' };
+    std::vector<std::string> sfile = split_path(fileName, delims_file);
 
-  std::string suffix = ".";
-  suffix += sfile.back();
+    std::string suffix = ".";
+    suffix += sfile.back();
 
-  log("%s file: %s suffix: %s", path.c_str(), fileName.c_str(), suffix.c_str());
+    log("%s file: %s suffix: %s", path.c_str(), fileName.c_str(), suffix.c_str());
 
-  auto it = cache.find(suffix);
-  if (it != cache.end()) {
-    return it->second;
-  }
-
-  // check cache
-  struct extension_t resolvedExtension;
-  std::string resolvedLanguage;
-  Json::Value resolvedGrammars;
-  Json::Value resolvedConfiguration;
-
-  for (auto &ext : extensions) {
-    if (!ext.hasGrammars)
-      continue;
-    Json::Value contribs = ext.package["contributes"];
-    if (!contribs.isMember("languages") || !contribs.isMember("grammars")) {
-      continue;
+    auto it = cache.find(suffix);
+    if (it != cache.end()) {
+        return it->second;
     }
-    Json::Value langs = contribs["languages"];
-    for (int i = 0; i < langs.size(); i++) {
-      Json::Value lang = langs[i];
-      if (!lang.isMember("id")) {
-        continue;
-      }
 
-      if (!lang.isMember("file")) {
-      }
+    // check cache
+    struct extension_t resolvedExtension;
+    std::string resolvedLanguage;
+    Json::Value resolvedGrammars;
+    Json::Value resolvedConfiguration;
 
-      bool found = false;
-      // if (lang.isMember("filenames")) {
-      //     Json::Value fns = lang["filenames"];
-      //     for (int j = 0; j < fns.size(); j++) {
-      //         Json::Value fn = fns[j];
-      //         if (fn.asString() == fileName) {
-      //             resolvedExtension = ext;
-      //             resolvedLanguage = lang["id"].asString();
-      //             resolvedGrammars = contribs["grammars"];
-      //             found = true;
-      //             break;
-      //         }
-      //     }
-      // }
+    for (auto& ext : extensions) {
+        if (!ext.hasGrammars)
+            continue;
+        Json::Value contribs = ext.package["contributes"];
+        if (!contribs.isMember("languages") || !contribs.isMember("grammars")) {
+            continue;
+        }
+        Json::Value langs = contribs["languages"];
+        for (int i = 0; i < langs.size(); i++) {
+            Json::Value lang = langs[i];
+            if (!lang.isMember("id")) {
+                continue;
+            }
 
-      if (!found && lang.isMember("extensions")) {
-        Json::Value exts = lang["extensions"];
-        for (int j = 0; j < exts.size(); j++) {
-          Json::Value ex = exts[j];
+            if (!lang.isMember("file")) {
+            }
 
-          if (ex.asString() == suffix) {
-            resolvedExtension = ext;
-            resolvedLanguage = lang["id"].asString();
-            resolvedGrammars = contribs["grammars"];
+            bool found = false;
+            // if (lang.isMember("filenames")) {
+            //     Json::Value fns = lang["filenames"];
+            //     for (int j = 0; j < fns.size(); j++) {
+            //         Json::Value fn = fns[j];
+            //         if (fn.asString() == fileName) {
+            //             resolvedExtension = ext;
+            //             resolvedLanguage = lang["id"].asString();
+            //             resolvedGrammars = contribs["grammars"];
+            //             found = true;
+            //             break;
+            //         }
+            //     }
+            // }
 
-            // log("resolved %s", resolvedLanguage.c_str());
-            // log("resolved path %s", ext.path.c_str());
-            found = true;
+            if (!found && lang.isMember("extensions")) {
+                Json::Value exts = lang["extensions"];
+                for (int j = 0; j < exts.size(); j++) {
+                    Json::Value ex = exts[j];
+
+                    if (ex.asString() == suffix) {
+                        resolvedExtension = ext;
+                        resolvedLanguage = lang["id"].asString();
+                        resolvedGrammars = contribs["grammars"];
+
+                        // log("resolved %s", resolvedLanguage.c_str());
+                        // log("resolved path %s", ext.path.c_str());
+                        found = true;
+                        break;
+                    }
+                }
+            }
+
+            if (found) {
+                if (lang.isMember("configuration")) {
+                    resolvedConfiguration = lang["configuration"];
+                }
+                ext.addToHistory = true;
+                break;
+            }
+        }
+
+        if (!resolvedLanguage.empty())
             break;
-          }
-        }
-      }
-
-      if (found) {
-        if (lang.isMember("configuration")) {
-          resolvedConfiguration = lang["configuration"];
-        }
-        ext.addToHistory = true;
-        break;
-      }
     }
 
-    if (!resolvedLanguage.empty())
-      break;
-  }
+    std::string scopeName = "source.";
+    scopeName += resolvedLanguage;
+    log("scopeName: %s", scopeName.c_str());
 
-  std::string scopeName = "source.";
-  scopeName += resolvedLanguage;
-  log("scopeName: %s", scopeName.c_str());
+    if (!resolvedLanguage.empty()) {
 
-  if (!resolvedLanguage.empty()) {
+        for (int i = 0; i < resolvedGrammars.size(); i++) {
+            Json::Value g = resolvedGrammars[resolvedGrammars.size() - 1 - i];
+            bool foundGrammar = false;
 
-    // find all grammars
-    for (int i = 0; i < resolvedGrammars.size(); i++) {
-      Json::Value g = resolvedGrammars[i];
-      if (g.isMember("language") &&
-          g["language"].asString().compare(resolvedLanguage) == 0) {
+            if (g.isMember("language") && g["language"].asString().compare(resolvedLanguage) == 0) {
+                foundGrammar = true;
+            }
 
-        std::string path = resolvedExtension.path + "/" + g["path"].asString();
-        printf("%s\n", path.c_str());
-        lang->grammars.push_back(parse::parse_grammar(loadPListOrJson(path)));
-      }
-    }
+            if (foundGrammar) {
+                std::string path = resolvedExtension.path + "/" + g["path"].asString();
 
-    for (int i = 0; i < resolvedGrammars.size(); i++) {
-      Json::Value g = resolvedGrammars[i];
-      bool foundGrammar = false;
+                log("grammar: %s\n", path.c_str());
+                log("grammar: %s", path.c_str());
+                log("extension: %s", resolvedExtension.path.c_str());
 
-      if (g.isMember("language") &&
-          g["language"].asString().compare(resolvedLanguage) == 0) {
-        foundGrammar = true;
-      }
+                lang->grammar = parse::parse_grammar(load_plist_or_json(path));
+                lang->id = resolvedLanguage;
 
-      if (foundGrammar) {
-        std::string path = resolvedExtension.path + "/" + g["path"].asString();
+                // language configuration
+                if (!resolvedConfiguration.empty()) {
+                    path = resolvedExtension.path + "/" + resolvedConfiguration.asString();
+                } else {
+                    path = resolvedExtension.path + "/language-configuration.json";
+                }
 
-        // path = convertTMLanguagetoJSON(path.c_str());
+                load_language_configuration(path, lang);
 
-        printf("grammar: %s\n", path.c_str());
+                log("language configuration: %s", path.c_str());
+                // std::cout << "langauge matched" << lang->id << std::endl;
+                // std::cout << path << std::endl;
 
-        log("grammar: %s", path.c_str());
-        log("extension: %s", resolvedExtension.path.c_str());
+                // don't cache..? causes problem with highlighter thread
+                cache.emplace(suffix, lang);
 
-        lang->grammar = parse::parse_grammar(loadPListOrJson(path));
-        lang->id = resolvedLanguage;
-
-        // language configuration
-        if (!resolvedConfiguration.empty()) {
-          path =
-              resolvedExtension.path + "/" + resolvedConfiguration.asString();
-        } else {
-          path = resolvedExtension.path + "/language-configuration.json";
+                return lang;
+            }
         }
-
-        load_language_configuration(path, lang);
-
-        log("language configuration: %s", path.c_str());
-        // std::cout << "langauge matched" << lang->id << std::endl;
-        // std::cout << path << std::endl;
-
-        // don't cache..? causes problem with highlighter thread
-        cache.emplace(suffix, lang);
-        return lang;
-      }
     }
-  }
 
-  if (!lang->grammar) {
-    Json::Value empty;
-    empty["scopeName"] = suffix;
-    lang->id = suffix;
-    lang->grammar = parse::parse_grammar(empty);
-  }
+    if (!lang->grammar) {
+        Json::Value empty;
+        empty["scopeName"] = suffix;
+        lang->id = suffix;
+        lang->grammar = parse::parse_grammar(empty);
+    }
 
-  // if (suffix != ".") {
-  //     cache.emplace(suffix, lang);
-  // }
-  return lang;
+    // if (suffix != ".") {
+    //     cache.emplace(suffix, lang);
+    // }
+    return lang;
 }
 
 icon_theme_ptr
 icon_theme_from_name(const std::string path,
-                     std::vector<struct extension_t> &extensions) {
-  icon_theme_ptr icons = std::make_shared<icon_theme_t>();
+    std::vector<struct extension_t>& extensions)
+{
+    icon_theme_ptr icons = std::make_shared<icon_theme_t>();
 
-  std::string theme_path = path;
-  std::string icons_path;
-  bool found = false;
+    std::string theme_path = path;
+    std::string icons_path;
+    bool found = false;
 
-  for (auto &ext : extensions) {
-    if (!ext.hasIcons)
-      continue;
-    Json::Value contribs = ext.package["contributes"];
-    // if (!contribs.isMember("iconThemes")) {
-    //     continue;
+    for (auto& ext : extensions) {
+        if (!ext.hasIcons)
+            continue;
+        Json::Value contribs = ext.package["contributes"];
+        // if (!contribs.isMember("iconThemes")) {
+        //     continue;
+        // }
+
+        Json::Value themes = contribs["iconThemes"];
+        for (int i = 0; i < themes.size(); i++) {
+            Json::Value theme = themes[i];
+            if (theme["id"].asString() == theme_path || theme["label"].asString() == theme_path) {
+                theme_path = ext.path + "/" + theme["path"].asString();
+                icons_path = theme_path;
+
+                std::set<char> delims = { '/', '\\' };
+                std::vector<std::string> spath = split_path(icons_path, delims);
+                if (spath.size() > 0) {
+                    spath.pop_back();
+                }
+                icons_path = join(spath, '/');
+
+                icons->path = ext.path;
+                found = true;
+                break;
+            }
+        }
+
+        if (found) {
+            ext.addToHistory = true;
+            break;
+        }
+    }
+
+    if (!found) {
+        return icons;
+    }
+
+    Json::Value json = parse::loadJson(theme_path);
+    icons->icons_path = icons_path;
+
+    // if (json.isMember("fonts")) {
+    //     Json::Value fonts = json["fonts"];
+    //     Json::Value font = fonts[0];
+    //     Json::Value family = font["id"];
+    //     Json::Value src = font["src"][0];
+    //     Json::Value src_path = src["path"];
+    //     std::string real_font_path = icons_path + '/' + src_path.asString();
+    //     printf("%s\n", real_font_path.c_str());
     // }
 
-    Json::Value themes = contribs["iconThemes"];
-    for (int i = 0; i < themes.size(); i++) {
-      Json::Value theme = themes[i];
-      if (theme["id"].asString() == theme_path ||
-          theme["label"].asString() == theme_path) {
-        theme_path = ext.path + "/" + theme["path"].asString();
-        icons_path = theme_path;
-
-        std::set<char> delims = {'/', '\\'};
-        std::vector<std::string> spath = split_path(icons_path, delims);
-        if (spath.size() > 0) {
-          spath.pop_back();
-        }
-        icons_path = join(spath, '/');
-
-        icons->path = ext.path;
-        found = true;
-        break;
-      }
-    }
-
-    if (found) {
-      ext.addToHistory = true;
-      break;
-    }
-  }
-
-  if (!found) {
+    icons->definition = json;
     return icons;
-  }
-
-  Json::Value json = parse::loadJson(theme_path);
-  icons->icons_path = icons_path;
-
-  // if (json.isMember("fonts")) {
-  //     Json::Value fonts = json["fonts"];
-  //     Json::Value font = fonts[0];
-  //     Json::Value family = font["id"];
-  //     Json::Value src = font["src"][0];
-  //     Json::Value src_path = src["path"];
-  //     std::string real_font_path = icons_path + '/' + src_path.asString();
-  //     printf("%s\n", real_font_path.c_str());
-  // }
-
-  icons->definition = json;
-  return icons;
 }
 
 theme_ptr theme_from_name(const std::string path,
-                          std::vector<struct extension_t> &extensions,
-                          const std::string uiTheme) {
-  std::string theme_path = path;
-  std::string ext_path = path;
-  bool found = false;
+    std::vector<struct extension_t>& extensions,
+    const std::string uiTheme)
+{
+    std::string theme_path = path;
+    std::string ext_path = path;
+    bool found = false;
 
-  // theme_path =
-  // "C:\\Users\\iceman\\.editor\\extensions\\dracula-theme.theme-dracula-2.24.0\\theme\\dracula-soft.json";
+    // theme_path =
+    // "C:\\Users\\iceman\\.editor\\extensions\\dracula-theme.theme-dracula-2.24.0\\theme\\dracula-soft.json";
 
-  for (auto &ext : extensions) {
-    if (!ext.hasThemes)
-      continue;
-    Json::Value contribs = ext.package["contributes"];
-    // if (!contribs.isMember("themes")) {
-    //     continue;
-    // }
+    for (auto& ext : extensions) {
+        if (!ext.hasThemes)
+            continue;
+        Json::Value contribs = ext.package["contributes"];
+        // if (!contribs.isMember("themes")) {
+        //     continue;
+        // }
 
-    Json::Value themes = contribs["themes"];
-    for (int i = 0; i < themes.size(); i++) {
-      Json::Value theme = themes[i];
+        Json::Value themes = contribs["themes"];
+        for (int i = 0; i < themes.size(); i++) {
+            Json::Value theme = themes[i];
 
-      std::string theme_ui;
-      if (theme.isMember("uiTheme")) {
-        theme_ui = theme["uiTheme"].asString();
-      }
+            std::string theme_ui;
+            if (theme.isMember("uiTheme")) {
+                theme_ui = theme["uiTheme"].asString();
+            }
 
-      // log("theme compare %s %s\n", theme_ui.c_str(),
-      // theme["label"].asString().c_str());
+            // log("theme compare %s %s\n", theme_ui.c_str(),
+            // theme["label"].asString().c_str());
 
-      if (theme["id"].asString() == theme_path ||
-          theme["label"].asString() == theme_path) {
-        theme_path = ext.path + "/" + theme["path"].asString();
-        // std::cout << ext.path << "..." << std::endl;
-        // std::cout << theme_path << std::endl;
+            if (theme["id"].asString() == theme_path || theme["label"].asString() == theme_path) {
+                theme_path = ext.path + "/" + theme["path"].asString();
+                // std::cout << ext.path << "..." << std::endl;
+                // std::cout << theme_path << std::endl;
 
-        if (theme.isMember("uiTheme") && uiTheme != "" &&
-            theme["uiTheme"].asString() != uiTheme) {
-          continue;
+                if (theme.isMember("uiTheme") && uiTheme != "" && theme["uiTheme"].asString() != uiTheme) {
+                    continue;
+                }
+
+                // printf("theme: %s [%s]\n", ext.path.c_str(), theme_path.c_str());
+                ext_path = ext.path;
+                found = true;
+                break;
+            }
         }
 
-        // printf("theme: %s [%s]\n", ext.path.c_str(), theme_path.c_str());
-        ext_path = ext.path;
-        found = true;
-        break;
-      }
+        if (found) {
+            // ext.addToHistory = true;
+            break;
+        }
     }
 
-    if (found) {
-      // ext.addToHistory = true;
-      break;
+    Json::Value themeItem = parse::loadJson(theme_path);
+
+    if (!themeItem.isMember("contributes") && !!themeItem["contributes"].isMember("themes")) {
+        Json::Reader reader;
+        reader.parse(defaultTheme, themeItem);
     }
-  }
 
-  Json::Value themeItem = parse::loadJson(theme_path);
+    // std::cout << themeItem << std::endl;
 
-  if (!themeItem.isMember("contributes") &&
-      !!themeItem["contributes"].isMember("themes")) {
-    Json::Reader reader;
-    reader.parse(defaultTheme, themeItem);
-  }
+    themeItem["uuid"] = theme_path;
 
-  // std::cout << themeItem << std::endl;
-
-  themeItem["uuid"] = theme_path;
-
-  // include
-  if (themeItem.isMember("include")) {
-    std::vector<std::string> ff = split(theme_path, '/');
-    if (ff.size())
-      ff.pop_back();
-    std::string filename = join(ff, '/');
-    filename += "/" + themeItem["include"].asString();
+    // include
+    if (themeItem.isMember("include")) {
+        std::vector<std::string> ff = split(theme_path, '/');
+        if (ff.size())
+            ff.pop_back();
+        std::string filename = join(ff, '/');
+        filename += "/" + themeItem["include"].asString();
 #if 1
-    Json::Value inc = parse::loadJson(filename);
-    std::cout << inc << std::endl;
-    if (inc.isMember("colors")) {
-      if (!themeItem.isMember("colors")) {
-        themeItem["colors"] = inc["colors"];
-      } else {
-        std::vector<std::string> keys = inc["colors"].getMemberNames();
-        for (auto k : keys) {
-          themeItem["colors"][k] = inc["colors"][k];
+        Json::Value inc = parse::loadJson(filename);
+        std::cout << inc << std::endl;
+        if (inc.isMember("colors")) {
+            if (!themeItem.isMember("colors")) {
+                themeItem["colors"] = inc["colors"];
+            } else {
+                std::vector<std::string> keys = inc["colors"].getMemberNames();
+                for (auto k : keys) {
+                    themeItem["colors"][k] = inc["colors"][k];
+                }
+            }
         }
-      }
-    }
-    if (inc.isMember("tokenColors")) {
-      if (!themeItem.isMember("tokenColors")) {
-        themeItem["tokenColors"] = inc["tokenColors"];
-      } else {
-        for (auto k : inc["tokenColors"]) {
-          themeItem["tokenColors"].append(k);
+        if (inc.isMember("tokenColors")) {
+            if (!themeItem.isMember("tokenColors")) {
+                themeItem["tokenColors"] = inc["tokenColors"];
+            } else {
+                for (auto k : inc["tokenColors"]) {
+                    themeItem["tokenColors"].append(k);
+                }
+            }
         }
-      }
-    }
 #endif
-  }
-
-  theme_ptr theme = parse_theme(themeItem);
-  return theme;
-}
-
-std::string to_utf8(uint32_t cp) {
-  // https://stackoverflow.com/questions/28534221/c-convert-asii-escaped-unicode-string-into-utf8-string/47734595.
-
-  std::string result;
-
-  int count;
-  if (cp <= 0x007F)
-    count = 1;
-  else if (cp <= 0x07FF)
-    count = 2;
-  else if (cp <= 0xFFFF)
-    count = 3;
-  else if (cp <= 0x10FFFF)
-    count = 4;
-  else
-    return result; // or throw an exception
-
-  result.resize(count);
-
-  if (count > 1) {
-    for (int i = count - 1; i > 0; --i) {
-      result[i] = (char)(0x80 | (cp & 0x3F));
-      cp >>= 6;
     }
 
-    for (int i = 0; i < count; ++i)
-      cp |= (1 << (7 - i));
-  }
-
-  result[0] = (char)cp;
-
-  return result;
+    theme_ptr theme = parse_theme(themeItem);
+    return theme;
 }
 
-std::string wstring_convert(std::string str) {
-  std::string::size_type startIdx = 0;
-  do {
-    startIdx = str.find("x\\", startIdx);
-    if (startIdx == std::string::npos)
-      break;
-    std::string::size_type endIdx = str.length();
-    // str.find_first_not_of("0123456789abcdefABCDEF", startIdx+2);
-    if (endIdx == std::string::npos)
-      break;
-    std::string tmpStr = str.substr(startIdx + 2, endIdx - (startIdx + 2));
-    std::istringstream iss(tmpStr);
+std::string to_utf8(uint32_t cp)
+{
+    // https://stackoverflow.com/questions/28534221/c-convert-asii-escaped-unicode-string-into-utf8-string/47734595.
 
-    uint32_t cp;
-    if (iss >> std::hex >> cp) {
-      std::string utf8 = to_utf8(cp);
-      str.replace(startIdx, 2 + tmpStr.length(), utf8);
-      startIdx += utf8.length();
-    } else
-      startIdx += 2;
-  } while (true);
+    std::string result;
 
-  return str;
+    int count;
+    if (cp <= 0x007F)
+        count = 1;
+    else if (cp <= 0x07FF)
+        count = 2;
+    else if (cp <= 0xFFFF)
+        count = 3;
+    else if (cp <= 0x10FFFF)
+        count = 4;
+    else
+        return result; // or throw an exception
+
+    result.resize(count);
+
+    if (count > 1) {
+        for (int i = count - 1; i > 0; --i) {
+            result[i] = (char)(0x80 | (cp & 0x3F));
+            cp >>= 6;
+        }
+
+        for (int i = 0; i < count; ++i)
+            cp |= (1 << (7 - i));
+    }
+
+    result[0] = (char)cp;
+
+    return result;
+}
+
+std::string wstring_convert(std::string str)
+{
+    std::string::size_type startIdx = 0;
+    do {
+        startIdx = str.find("x\\", startIdx);
+        if (startIdx == std::string::npos)
+            break;
+        std::string::size_type endIdx = str.length();
+        // str.find_first_not_of("0123456789abcdefABCDEF", startIdx+2);
+        if (endIdx == std::string::npos)
+            break;
+        std::string tmpStr = str.substr(startIdx + 2, endIdx - (startIdx + 2));
+        std::istringstream iss(tmpStr);
+
+        uint32_t cp;
+        if (iss >> std::hex >> cp) {
+            std::string utf8 = to_utf8(cp);
+            str.replace(startIdx, 2 + tmpStr.length(), utf8);
+            startIdx += utf8.length();
+        } else
+            startIdx += 2;
+    } while (true);
+
+    return str;
 }
 
 icon_t icon_for_file(icon_theme_ptr icons, std::string filename,
-                     std::vector<struct extension_t> &_extensions) {
-  icon_t res;
-  res.path = "";
-  if (!icons) {
-    return res;
-  }
-
-  std::set<char> delims = {'.'};
-  std::vector<std::string> spath = split_path(filename, delims);
-
-  std::string _suffix = spath.back();
-  std::string cacheId = _suffix;
-
-  static std::map<std::string, icon_t> cache;
-
-  Json::Value definitions = icons->definition["iconDefinitions"];
-  Json::Value fileExtensions = icons->definition["fileExtensions"];
-  Json::Value fonts = icons->definition["fonts"];
-
-  std::string file;
-  std::string folder;
-
-  if (icons->definition.isMember("file")) {
-    file = icons->definition["file"].asString();
-  }
-  if (icons->definition.isMember("folder")) {
-    folder = icons->definition["folder"].asString();
-  }
-
-  if (definitions.isMember(_suffix)) {
-    Json::Value iconDef = definitions[_suffix];
-    if (iconDef.isMember("iconPath")) {
-      res.path = icons->icons_path + "/" + iconDef["iconPath"].asString();
-      res.svg = true;
-      cache.emplace(_suffix, res);
-      return res;
+    std::vector<struct extension_t>& _extensions)
+{
+    icon_t res;
+    res.path = "";
+    if (!icons) {
+        return res;
     }
-  }
 
-  std::string iconName;
+    std::set<char> delims = { '.' };
+    std::vector<std::string> spath = split_path(filename, delims);
 
-  // printf("finding icon %s\n", _suffix.c_str());
+    std::string _suffix = spath.back();
+    std::string cacheId = _suffix;
 
-  auto it = cache.find(filename);
-  if (it != cache.end()) {
-    // return it->second;
-  }
+    static std::map<std::string, icon_t> cache;
 
-  Json::Value fileNames = icons->definition["fileNames"];
-  std::string fn = filename;
-  std::transform(fn.begin(), fn.end(), fn.begin(),
-                 [](unsigned char c) { return std::tolower(c); });
-  // printf(">[%s] [%s]\n", iconName.c_str(), fn.c_str());
-  if (!iconName.length() && fileNames.isMember(fn)) {
-    iconName = fileNames[fn].asString();
-    cacheId = filename;
-    // printf("fileNames %s\n", iconName.c_str());
-  }
+    Json::Value definitions = icons->definition["iconDefinitions"];
+    Json::Value fileExtensions = icons->definition["fileExtensions"];
+    Json::Value fonts = icons->definition["fonts"];
 
-  if (!iconName.length()) {
-    it = cache.find(_suffix);
+    std::string file;
+    std::string folder;
+
+    if (icons->definition.isMember("file")) {
+        file = icons->definition["file"].asString();
+    }
+    if (icons->definition.isMember("folder")) {
+        folder = icons->definition["folder"].asString();
+    }
+
+    if (definitions.isMember(_suffix)) {
+        Json::Value iconDef = definitions[_suffix];
+        if (iconDef.isMember("iconPath")) {
+            res.path = icons->icons_path + "/" + iconDef["iconPath"].asString();
+            res.svg = true;
+            cache.emplace(_suffix, res);
+            return res;
+        }
+    }
+
+    std::string iconName;
+
+    // printf("finding icon %s\n", _suffix.c_str());
+
+    auto it = cache.find(filename);
     if (it != cache.end()) {
-      return it->second;
+        // return it->second;
     }
-  }
 
-  Json::Value extensions = icons->definition["fileExtensions"];
-  if (!iconName.length() && extensions.isMember(_suffix)) {
-    iconName = extensions[_suffix].asString();
-    cacheId = _suffix;
-    // printf("extensions %s\n", iconName.c_str());
-  }
-
-  if (!iconName.length()) {
-    Json::Value languageIds = icons->definition["languageIds"];
-    std::string _fileName = "file." + _suffix;
-    language_info_ptr lang = language_from_file(_fileName.c_str(), _extensions);
-    if (lang) {
-      if (languageIds.isMember(lang->id)) {
-        iconName = languageIds[lang->id].asString();
-      }
+    Json::Value fileNames = icons->definition["fileNames"];
+    std::string fn = filename;
+    std::transform(fn.begin(), fn.end(), fn.begin(),
+        [](unsigned char c) { return std::tolower(c); });
+    // printf(">[%s] [%s]\n", iconName.c_str(), fn.c_str());
+    if (!iconName.length() && fileNames.isMember(fn)) {
+        iconName = fileNames[fn].asString();
+        cacheId = filename;
+        // printf("fileNames %s\n", iconName.c_str());
     }
 
     if (!iconName.length()) {
-      if (languageIds.isMember(_suffix)) {
-        iconName = languageIds[_suffix].asString();
-      }
-    }
-  }
-
-  if (!definitions.isMember(iconName)) {
-    iconName = file;
-  }
-
-  // if (!iconName.length()) {
-  //     iconName = file;
-  // }
-
-  if (definitions.isMember(iconName)) {
-    Json::Value iconDef = definitions[iconName];
-
-    if (iconDef.isMember("iconPath")) {
-      res.path = icons->icons_path + "/" + iconDef["iconPath"].asString();
-      if (file_exists(res.path.c_str())) {
-        res.svg = true;
-        cache.emplace(cacheId, res);
-        return res;
-      }
-    }
-
-    if (iconDef.isMember("fontCharacter")) {
-      res.character = iconDef["fontCharacter"].asString();
-      std::string fontId = iconDef["fontId"].asString();
-
-      for (int i = 0; i < fonts.size(); i++) {
-        Json::Value font = fonts[i];
-        if (!font.isMember("id"))
-          continue;
-
-        std::string id = font["id"].asString();
-        if (id == fontId && font.isMember("src") && font["src"].size()) {
-          Json::Value src = font["src"][0]["path"];
-          res.path = icons->icons_path + "/" + src.asString();
-          res.path += ";";
-
-          std::string fontCharacter = "x";
-          fontCharacter += res.character;
-          fontCharacter += "x";
-          fontCharacter = wstring_convert(fontCharacter);
-          res.path += fontCharacter;
-
-          res.svg = false;
-          break;
+        it = cache.find(_suffix);
+        if (it != cache.end()) {
+            return it->second;
         }
-      }
     }
 
-    return res;
-  }
+    Json::Value extensions = icons->definition["fileExtensions"];
+    if (!iconName.length() && extensions.isMember(_suffix)) {
+        iconName = extensions[_suffix].asString();
+        cacheId = _suffix;
+        // printf("extensions %s\n", iconName.c_str());
+    }
 
-  printf("not found %s\n", filename.c_str());
-  return res;
+    if (!iconName.length()) {
+        Json::Value languageIds = icons->definition["languageIds"];
+        std::string _fileName = "file." + _suffix;
+        language_info_ptr lang = language_from_file(_fileName.c_str(), _extensions);
+        if (lang) {
+            if (languageIds.isMember(lang->id)) {
+                iconName = languageIds[lang->id].asString();
+            }
+        }
+
+        if (!iconName.length()) {
+            if (languageIds.isMember(_suffix)) {
+                iconName = languageIds[_suffix].asString();
+            }
+        }
+    }
+
+    if (!definitions.isMember(iconName)) {
+        iconName = file;
+    }
+
+    // if (!iconName.length()) {
+    //     iconName = file;
+    // }
+
+    if (definitions.isMember(iconName)) {
+        Json::Value iconDef = definitions[iconName];
+
+        if (iconDef.isMember("iconPath")) {
+            res.path = icons->icons_path + "/" + iconDef["iconPath"].asString();
+            if (file_exists(res.path.c_str())) {
+                res.svg = true;
+                cache.emplace(cacheId, res);
+                return res;
+            }
+        }
+
+        if (iconDef.isMember("fontCharacter")) {
+            res.character = iconDef["fontCharacter"].asString();
+            std::string fontId = iconDef["fontId"].asString();
+
+            for (int i = 0; i < fonts.size(); i++) {
+                Json::Value font = fonts[i];
+                if (!font.isMember("id"))
+                    continue;
+
+                std::string id = font["id"].asString();
+                if (id == fontId && font.isMember("src") && font["src"].size()) {
+                    Json::Value src = font["src"][0]["path"];
+                    res.path = icons->icons_path + "/" + src.asString();
+                    res.path += ";";
+
+                    std::string fontCharacter = "x";
+                    fontCharacter += res.character;
+                    fontCharacter += "x";
+                    fontCharacter = wstring_convert(fontCharacter);
+                    res.path += fontCharacter;
+
+                    res.svg = false;
+                    break;
+                }
+            }
+        }
+
+        return res;
+    }
+
+    printf("not found %s\n", filename.c_str());
+    return res;
 }
 
 icon_t icon_for_folder(icon_theme_ptr icons, std::string folder,
-                       std::vector<struct extension_t> &_extensions) {
-  icon_t res;
-  return res;
+    std::vector<struct extension_t>& _extensions)
+{
+    icon_t res;
+    return res;
 }
 
-bool theme_is_dark(theme_ptr theme) {
-  color_info_t clr;
-  theme->theme_color("editor.background", clr);
-  return color_is_dark(clr);
+bool theme_is_dark(theme_ptr theme)
+{
+    color_info_t clr;
+    theme->theme_color("editor.background", clr);
+    return color_is_dark(clr);
 }
 
-bool color_is_dark(color_info_t &color) {
-  return 0.30 * color.red + 0.59 * color.green + 0.11 * color.blue < 0.5;
+bool color_is_dark(color_info_t& color)
+{
+    return 0.30 * color.red + 0.59 * color.green + 0.11 * color.blue < 0.5;
 }
 
-std::string package_string(struct extension_t &extension, std::string str) {
-  if (!extension.nlsLoaded) {
-    extension.nls = parse::loadJson(extension.nlsPath);
-  }
-
-  if (str.length() > 2 && str[0] == '%') {
-    std::string _str = std::string(str.c_str() + 1, str.length() - 2);
-    // printf(">%s\n", _str.c_str());
-    if (extension.nls.isMember(_str)) {
-      return extension.nls[_str].asString();
+std::string package_string(struct extension_t& extension, std::string str)
+{
+    if (!extension.nlsLoaded) {
+        extension.nls = parse::loadJson(extension.nlsPath);
     }
-  }
 
-  return str;
+    if (str.length() > 2 && str[0] == '%') {
+        std::string _str = std::string(str.c_str() + 1, str.length() - 2);
+        // printf(">%s\n", _str.c_str());
+        if (extension.nls.isMember(_str)) {
+            return extension.nls[_str].asString();
+        }
+    }
+
+    return str;
 }

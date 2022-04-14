@@ -257,7 +257,6 @@ class ExplorerTree extends StatelessWidget {
         double height = 0,
         double opacity = 0,
         bool animate = true}) {
-          
       if (!animate) {
         return Container(height: height, child: child);
       }

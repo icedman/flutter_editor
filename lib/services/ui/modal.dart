@@ -77,7 +77,9 @@ class _UIModal extends State<UIModal> {
     double padding = 8;
 
     List<Widget> items = [
-      if (widget.title != null) ...[Text('${widget.title}', style: style.copyWith(color: theme.function))],
+      if (widget.title != null) ...[
+        Text('${widget.title}', style: style.copyWith(color: theme.function))
+      ],
       if (widget.message != null) ...[
         Center(child: Text('${widget.message}', style: style))
       ],
@@ -86,35 +88,37 @@ class _UIModal extends State<UIModal> {
     return Positioned.fill(
         // top: position.dy,
         // left: position.dx,
-        child: Padding(padding: EdgeInsets.only(bottom: 
-          app.screenHeight > 200 ? 80 : 0
-        ), child: Align(alignment: Alignment.center,
-        child: Material(
-            color: bg,
-            // borderRadius: BorderRadius.all(Radius.circular(12)),
-            child: Container(
-                width: maxWidth,
-                decoration: BoxDecoration(
-                    // color: bg,
-                    border: Border.all(
-                        color: darken(theme.background, 0), width: 1.5)),
-                child: Padding(
-                    padding: EdgeInsets.all(padding),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment
-                            .start, //Center Row contents vertically,,
-                        children: [
-                          ...items,
-                          if (widget.buttons.isNotEmpty) ...[
-                            Row(
-                                children: widget.buttons,
-                                mainAxisAlignment: MainAxisAlignment
-                                    .center, //Center Row contents horizontally,
+        child: Padding(
+            padding: EdgeInsets.only(bottom: app.screenHeight > 200 ? 80 : 0),
+            child: Align(
+                alignment: Alignment.center,
+                child: Material(
+                    color: bg,
+                    // borderRadius: BorderRadius.all(Radius.circular(12)),
+                    child: Container(
+                        width: maxWidth,
+                        decoration: BoxDecoration(
+                            // color: bg,
+                            border: Border.all(
+                                color: darken(theme.background, 0),
+                                width: 1.5)),
+                        child: Padding(
+                            padding: EdgeInsets.all(padding),
+                            child: Column(
+                                mainAxisSize: MainAxisSize.min,
                                 crossAxisAlignment: CrossAxisAlignment
-                                    .center //Center Row contents vertically,
-                                )
-                          ],
-                        ])))))));
+                                    .start, //Center Row contents vertically,,
+                                children: [
+                                  ...items,
+                                  if (widget.buttons.isNotEmpty) ...[
+                                    Row(
+                                        children: widget.buttons,
+                                        mainAxisAlignment: MainAxisAlignment
+                                            .center, //Center Row contents horizontally,
+                                        crossAxisAlignment: CrossAxisAlignment
+                                            .center //Center Row contents vertically,
+                                        )
+                                  ],
+                                ])))))));
   }
 }

@@ -438,7 +438,8 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
   const char *last = first + l;
 
   parse::stack_ptr parser_state;
-  if (documents[document]->blocks[previous_block] != NULL && !documents[document]->blocks[previous_block]->commentLine) {
+  if (documents[document]->blocks[previous_block] != NULL &&
+      !documents[document]->blocks[previous_block]->commentLine) {
     parser_state = documents[document]->blocks[previous_block]->parser_state;
   }
 
@@ -450,21 +451,11 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
 
   // TIMER_BEGIN
   parser_state = parse::parse(first, last, parser_state, scopes, firstLine);
-
-  // support multi-grammars
-  if (scopes.size() == 1 && lang->grammars.size() > 1) {
-    for (auto g : lang->grammars) {
-      scopes.clear();
-      parser_state = parse::parse(first, last, g->seed(), scopes, true);
-      if (scopes.size() > 1)
-        break;
-    }
-  }
-
   // TIMER_END
 
   // if ((cpu_time_used > 0.01)) {
   // printf(">>%f %s", cpu_time_used, text);
+  // printf("%s\n", text);
   // dump_tokens(scopes);
   // }
 
@@ -589,7 +580,8 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
   textstyle_buffer[idx].length = 0;
 
   if (idx > 0) {
-    documents[document]->blocks[block]->commentLine = (textstyle_buffer[idx-1].flags & SCOPE_COMMENT);
+    documents[document]->blocks[block]->commentLine =
+        (textstyle_buffer[idx - 1].flags & SCOPE_COMMENT);
   }
 
   return textstyle_buffer;

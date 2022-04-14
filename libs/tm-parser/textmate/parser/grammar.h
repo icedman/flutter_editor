@@ -46,8 +46,6 @@ struct grammar_t {
     stack_serialized_t serialize_state(stack_ptr stack);
     stack_ptr unserialize_state(stack_serialized_t stack);
 
-    std::vector<std::string> includes;
-
 private:
     struct rule_stack_t {
         rule_stack_t(rule_t const* rule, rule_stack_t const* parent = nullptr)
@@ -63,15 +61,13 @@ private:
     void setup_includes(rule_ptr const& rule, rule_ptr const& base,
         rule_ptr const& self, rule_stack_t const& stack);
     rule_ptr find_grammar(std::string const& scope, rule_ptr const& base);
-
-    std::vector<std::pair<scope::selector_t, rule_ptr>> injection_grammars();
-
     rule_ptr add_grammar(std::string const& scope, Json::Value const& json,
         rule_ptr const& base = rule_ptr());
-    rule_ptr _rule;
-    std::map<std::string, rule_ptr> _grammars;
-    std::mutex _mutex;
+    std::vector<std::pair<scope::selector_t, rule_ptr>> injection_grammars();
 
+    rule_ptr _rule;
+    std::mutex _mutex;
+    std::map<std::string, rule_ptr> _grammars;
     Json::Value doc;
 
     rule_ptr find_rule(grammar_t* grammar, int id);

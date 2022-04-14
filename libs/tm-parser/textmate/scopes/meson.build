@@ -5,19 +5,15 @@ scopes_files = [
     'match.cpp'
 ]
 
-scopes_lib = static_library(
-    'scopes',
-    scopes_files,
-    dependencies: [ jsoncpp_dep, onigmo_dep ]
-    )
+    scopes_lib
+    = static_library('scopes', scopes_files, dependencies
+                     : [ jsoncpp_dep, onigmo_dep ])
 
-scopes = executable(
-    'scopes',
-    scopes_files,
-    'main.cpp',
-    dependencies: [ jsoncpp_dep, onigmo_dep ]
-    )
+        scopes
+    = executable('scopes', scopes_files, 'main.cpp', dependencies
+                 : [ jsoncpp_dep, onigmo_dep ])
 
-scopes_dep = declare_dependency(
-  include_directories : [ scopes_inc ],
-  link_with : scopes_lib)
+        scopes_dep
+    = declare_dependency(include_directories
+                         : [scopes_inc], link_with
+                         : scopes_lib)

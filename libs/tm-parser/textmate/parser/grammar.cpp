@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 
+#include "extension.h"
 #include "grammar.h"
 #include "onigmognu.h"
 #include "parse.h"
@@ -10,6 +11,13 @@
 #include "reader.h"
 
 namespace parse {
+
+extension_list* extensions = nullptr;
+
+void set_extensions(extension_list* exts)
+{
+    extensions = exts;
+}
 
 grammar_t::grammar_t(Json::Value const& json)
 {
@@ -19,10 +27,6 @@ grammar_t::grammar_t(Json::Value const& json)
     // Json::Value parsed = rule_to_json(_rule);
     // std::cout << parsed << std::endl;
     // doc = parsed;
-
-    // for(auto s : includes) {
-    //     printf(">%s\n", s.c_str());
-    // }
 
     doc = json;
 }
@@ -138,12 +142,12 @@ void grammar_t::setup_includes(rule_ptr const& rule, rule_ptr const& base,
         }
 
         if (!rule->include) {
-            // if (base != self)
-            //   printf("%s → %s: include not found ‘%s’\n", base->scope_string.c_str(),
-            //                self->scope_string.c_str(), include.c_str());
-            // else
-            //   printf("%s: include not found ‘%s’\n",
-            //                self->scope_string.c_str(), include.c_str());
+            if (base != self)
+                printf("%s → %s: include not found ‘%s’\n", base->scope_string.c_str(),
+                    self->scope_string.c_str(), include.c_str());
+            else
+                printf("%s: include not found ‘%s’\n",
+                    self->scope_string.c_str(), include.c_str());
         }
     } else {
         for (rule_ptr child : rule->children)
@@ -188,7 +192,6 @@ grammar_t::injection_grammars()
     return res;
 }
 
-// todo !!
 rule_ptr grammar_t::find_grammar(std::string const& scope,
     rule_ptr const& base)
 {
@@ -196,10 +199,28 @@ rule_ptr grammar_t::find_grammar(std::string const& scope,
     if (it != _grammars.end())
         return it->second;
 
-    // for(auto item : bundles::query(bundles::kFieldGrammarScope, scope,
-    // scope::wildcard, bundles::kItemTypeGrammar))
-    //   return add_grammar(scope, item->plist(), base);
-    // return rule_ptr();
+    if (extensions != nullptr) {
+        bool found = false;
+        std::string path;
+        for (auto ext : *extensions) {
+            if (found)
+                break;
+            if (!ext.hasGrammars)
+                continue;
+            for (auto gm : ext.grammars) {
+                if (gm.scopeName == scope) {
+                    path = gm.path;
+                    found = true;
+                    break;
+                }
+            }
+        }
+
+        if (found) {
+            // printf(">>%s %s\n", scope.c_str(), path.c_str());
+            return add_grammar(scope, load_plist_or_json(path), base);
+        }
+    }
 
     return nullptr;
 }
@@ -207,8 +228,7 @@ rule_ptr grammar_t::find_grammar(std::string const& scope,
 rule_ptr grammar_t::add_grammar(std::string const& scope,
     Json::Value const& json, rule_ptr const& base)
 {
-    rule_ptr grammar = convert_json(json, &includes);
-
+    rule_ptr grammar = convert_json(json);
     if (grammar) {
         _grammars.emplace(scope, grammar);
         setup_includes(grammar, base ? base : grammar, grammar,
@@ -322,7 +342,7 @@ rule_ptr rule_find_rule(rule_ptr rule, int rule_id)
 
 rule_ptr grammar_t::find_rule(grammar_t* grammar, int rule_id)
 {
-    for (auto r : grammar->_grammars) {
+    for (auto r : _grammars) {
         rule_ptr res = rule_find_rule(r.second, rule_id);
         if (res)
             return res;

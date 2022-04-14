@@ -1,5 +1,5 @@
-#include "scopes_parse.h"
 #include "scope.h"
+#include "scopes_parse.h"
 #include "types.h"
 
 #include <algorithm>

@@ -193,20 +193,25 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     switch (keys) {
       case 'ctrl+q':
         {
-          ui.setPopup(UIModal(
-            title: 'Delete',
-            message: 'Delete?',
-            buttons: [
-              UIButton(text: 'ok', onTap: () {
-                print('ok');
-              }),
-              UIButton(text: 'cancel', onTap: () {
-                print('cancel');
-              }),
-            ],
-          ),
-          blur: true,
-          shield: true);
+          ui.setPopup(
+              UIModal(
+                title: 'Delete',
+                message: 'Delete?',
+                buttons: [
+                  UIButton(
+                      text: 'ok',
+                      onTap: () {
+                        print('ok');
+                      }),
+                  UIButton(
+                      text: 'cancel',
+                      onTap: () {
+                        print('cancel');
+                      }),
+                ],
+              ),
+              blur: true,
+              shield: true);
           return;
         }
 
