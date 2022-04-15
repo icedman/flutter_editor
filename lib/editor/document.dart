@@ -686,7 +686,10 @@ class Document {
   }
 
   Cursor? find(Cursor cur, String s,
-      {int direction = 1, bool regex = false, bool caseSensitive = false}) {
+      {int direction = 1,
+      bool regex = false,
+      bool caseSensitive = false,
+      bool repeat = false}) {
     RegExp _wordRegExp = RegExp(
       s,
       caseSensitive: caseSensitive,
@@ -707,14 +710,13 @@ class Document {
       Cursor _cur = cur.normalized();
       int col = (direction == 1) ? _cur.column : _cur.anchorColumn;
       int l = s.length;
-      String left = t.substring(0, col);
-      String right = t.substring(col);
+      String left = safeSubstring(t, 0, col);
+      String right = safeSubstring(t, col);
       String source = (direction == 1 ? right : left);
 
       int idx = -1;
       if (regex) {
         final matches = _wordRegExp.allMatches(source);
-        print(regex);
         for (final m in matches) {
           var g = m.groups([0]);
           // var t = g[0] ?? '';
@@ -751,6 +753,20 @@ class Document {
 
       block = cur.block;
     }
+
+    if (repeat) {
+      if (direction == 1) {
+        cur.moveCursorToStartOfDocument();
+      } else {
+        cur.moveCursorToEndOfDocument();
+      }
+      return find(cur, s,
+          direction: direction,
+          regex: regex,
+          caseSensitive: caseSensitive,
+          repeat: false);
+    }
+
     return null;
   }
 
@@ -785,6 +801,7 @@ class DocumentProvider extends ChangeNotifier {
   bool showGutters = true;
   bool showMinimap = true;
   bool ready = false;
+  bool pinned = false;
 
   Offset offsetForCaret = Offset.zero;
   Size scrollAreaSize = Size.zero;
@@ -829,8 +846,7 @@ class DocumentProvider extends ChangeNotifier {
   }
 
   void command(String cmd,
-      {List<String> params = const <String>[],
-      List<Block>? modifiedBlocks}) async {
+      {dynamic params, List<Block>? modifiedBlocks}) async {
     DocumentProvider doc = this;
     Document d = doc.doc;
     Cursor cursor = d.cursor().copy();
@@ -851,7 +867,7 @@ class DocumentProvider extends ChangeNotifier {
         break;
 
       case 'insert':
-        d.insertText(params[0]);
+        d.insertText(params);
         doScroll = true;
         didInputText = true;
         break;
@@ -881,27 +897,27 @@ class DocumentProvider extends ChangeNotifier {
 
       case 'cursor':
         {
-          String x = params[1];
-          String y = params[0];
-          d.moveCursor(int.parse(y), int.parse(x));
+          int x = params[1];
+          int y = params[0];
+          d.moveCursor(y, x);
           doScroll = true;
           break;
         }
       case 'shift+cursor':
         {
-          String x = params[1];
-          String y = params[0];
-          d.moveCursor(int.parse(y), int.parse(x), keepAnchor: true);
+          int x = params[1];
+          int y = params[0];
+          d.moveCursor(y, x, keepAnchor: true);
           doScroll = true;
           _makeDirty();
           break;
         }
 
-      case 'fold':
+      case 'toggle_fold':
         d.toggleFold();
         doScroll = true;
         break;
-      case 'unfold':
+      case 'unfold_all':
         d.unfoldAll();
         doScroll = true;
         break;
@@ -1129,6 +1145,10 @@ class DocumentProvider extends ChangeNotifier {
             ..anchorColumn = cur.column;
         }
         doScroll = true;
+        break;
+
+      default:
+        print('unhandled command: $cmd');
         break;
     }
 

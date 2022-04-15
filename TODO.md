@@ -13,7 +13,7 @@ redo
 # popups
 auto complete (done)
 search (partial) 
-  add wrap to start of document
+add wrap to start of document (done)
 
 # statusbar
 
@@ -22,13 +22,15 @@ directory (done)
 file watcher
 fileicons (done)
 
-ui
+# ui
 new folder
 new file
 delete folder
 delete file
 
-# ui
+cancel popups (done)
+global key listeners
+
 registry
 element
 builder
@@ -46,6 +48,8 @@ decorations
 console
 
 # bug
-
+minimap - proportionate scroll
+select all - visual update
+search last .. result to found (fixed)
 nowrap -> scoll to right -> tap => {vertical autoscroll gets lost} (fixed)
 

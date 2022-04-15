@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 
 import 'package:editor/services/app.dart';
 import 'package:editor/services/util.dart';
+import 'package:editor/services/input.dart';
 import 'package:editor/services/ui/ui.dart';
 import 'package:editor/services/highlight/theme.dart';
 
@@ -27,7 +28,7 @@ class SearchPopup extends StatefulWidget {
 }
 
 class _SearchPopup extends State<SearchPopup> {
-  late FocusNode focusNode;
+  late FocusNode focusNode1;
   late FocusNode focusNode2;
   late TextEditingController inputEditController;
   late TextEditingController inputEditController2;
@@ -36,11 +37,12 @@ class _SearchPopup extends State<SearchPopup> {
   bool replace = false;
   bool ignoreCase = false;
   int searchDirection = 0;
+  bool repeat = true;
 
   @override
   void initState() {
     super.initState();
-    focusNode = FocusNode();
+    focusNode1 = FocusNode();
     inputEditController = TextEditingController();
     focusNode2 = FocusNode();
     inputEditController2 = TextEditingController();
@@ -51,13 +53,13 @@ class _SearchPopup extends State<SearchPopup> {
     searchDirection = widget.searchDirection;
 
     WidgetsBinding.instance?.addPostFrameCallback((_) {
-      focusNode.requestFocus();
+      focusNode1.requestFocus();
     });
   }
 
   @override
   void dispose() {
-    focusNode.dispose();
+    focusNode1.dispose();
     inputEditController.dispose();
     focusNode2.dispose();
     inputEditController2.dispose();
@@ -71,7 +73,8 @@ class _SearchPopup extends State<SearchPopup> {
         regex: regex,
         replace: inputEditController2.text.isNotEmpty
             ? inputEditController2.text
-            : null);
+            : null,
+        repeat: repeat);
   }
 
   @override
@@ -85,7 +88,7 @@ class _SearchPopup extends State<SearchPopup> {
         child: TextField(
             onSubmitted: (value) {
               _search();
-              focusNode.requestFocus();
+              focusNode1.requestFocus();
             },
             textInputAction: TextInputAction.done,
             style: TextStyle(
@@ -101,7 +104,7 @@ class _SearchPopup extends State<SearchPopup> {
                     fontSize: theme.uiFontSize,
                     fontStyle: FontStyle.italic,
                     color: theme.comment)),
-            focusNode: focusNode,
+            focusNode: focusNode1,
             autofocus: true));
 
     Widget inputText2 = Padding(
@@ -148,7 +151,7 @@ class _SearchPopup extends State<SearchPopup> {
                         color: theme.comment,
                         onPressed: () {
                           ui.clearPopups();
-                          focusNode.requestFocus();
+                          focusNode1.requestFocus();
                         }),
                   ]),
 
@@ -165,6 +168,7 @@ class _SearchPopup extends State<SearchPopup> {
                             searchDirection = 1;
                           });
                           _search();
+                          focusNode1.requestFocus();
                         }),
                     IconButton(
                         icon: Icon(Icons.south, size: theme.uiFontSize),
@@ -176,6 +180,7 @@ class _SearchPopup extends State<SearchPopup> {
                             searchDirection = 0;
                           });
                           _search();
+                          focusNode1.requestFocus();
                         }),
                     IconButton(
                         icon: Text('Aa',
@@ -189,6 +194,7 @@ class _SearchPopup extends State<SearchPopup> {
                           setState(() {
                             ignoreCase = !ignoreCase;
                           });
+                          focusNode1.requestFocus();
                         }),
                     IconButton(
                         icon: Text('.*',
@@ -201,6 +207,7 @@ class _SearchPopup extends State<SearchPopup> {
                           setState(() {
                             regex = !regex;
                           });
+                          focusNode1.requestFocus();
                         }),
                     IconButton(
                         icon: Icon(Icons.find_replace,
@@ -210,6 +217,16 @@ class _SearchPopup extends State<SearchPopup> {
                           setState(() {
                             replace = !replace;
                           });
+                        }),
+                    IconButton(
+                        icon: Icon(Icons.repeat,
+                            size: theme.uiFontSize,
+                            color: repeat ? theme.function : theme.comment),
+                        onPressed: () {
+                          setState(() {
+                            repeat = !repeat;
+                          });
+                          focusNode1.requestFocus();
                         }),
                     Expanded(child: Container()),
                   ]),

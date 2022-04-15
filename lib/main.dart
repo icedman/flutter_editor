@@ -8,6 +8,7 @@ import 'package:editor/explorer/explorer.dart';
 import 'package:editor/services/ffi/bridge.dart';
 import 'package:editor/services/app.dart';
 import 'package:editor/services/util.dart';
+import 'package:editor/services/input.dart';
 import 'package:editor/services/ui/ui.dart';
 import 'package:editor/services/ui/status.dart';
 import 'package:editor/services/highlight/theme.dart';
@@ -46,8 +47,13 @@ void main(List<String> args) async {
   StatusProvider status = StatusProvider();
 
   app.initialize();
-  app.open(path);
+
+  if (!(await FileSystemEntity.isDirectory(path))) {
+    app.open(path);
+  }
   // app.open('./tests/sqlite3.c');
+
+  FocusNode focusNode = FocusNode();
 
   ExplorerProvider explorer = ExplorerProvider();
   explorer.explorer.setRootPath(_path.dirname(path)).then((files) {
@@ -74,8 +80,12 @@ void main(List<String> args) async {
 }
 
 class App extends StatelessWidget {
+  App({FocusNode? this.focusNode});
+  FocusNode? focusNode;
+
   @override
   Widget build(BuildContext context) {
+    UIProvider ui = Provider.of<UIProvider>(context, listen: false);
     HLTheme theme = Provider.of<HLTheme>(context);
 
     ThemeData themeData = ThemeData(
@@ -111,6 +121,24 @@ class App extends StatelessWidget {
     );
 
     return MaterialApp(
-        debugShowCheckedModeBanner: false, theme: themeData, home: AppLayout());
+        debugShowCheckedModeBanner: false,
+        theme: themeData,
+        home: Focus(
+          focusNode: focusNode ?? FocusNode(),
+          child: AppLayout(),
+          autofocus: true,
+          onKey: (FocusNode node, RawKeyEvent event) {
+            if (event.runtimeType.toString() == 'RawKeyDownEvent') {
+              String keys = buildKeys(event.logicalKey.keyLabel);
+              switch (keys) {
+                case 'cancel':
+                  ui.clearPopups();
+                  break;
+              }
+            }
+            if (event.runtimeType.toString() == 'RawKeyUpEvent') {}
+            return KeyEventResult.ignored;
+          },
+        ));
   }
 }

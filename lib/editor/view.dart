@@ -17,6 +17,7 @@ Offset screenToCursor(RenderObject? obj, Offset pos) {
   List<RenderParagraph> pars = <RenderParagraph>[];
   findRenderParagraphs(obj, pars);
 
+  pos = Offset(pos.dx + 4, pos.dy);
   RenderParagraph? lastPar;
   RenderParagraph? targetPar;
   int line = -1;
@@ -342,6 +343,7 @@ class _View extends State<View> {
         Offset scroll = Offset(0, scroller.position.pixels);
         DecorInfo decor = Provider.of<DecorInfo>(context, listen: false);
         decor.onScroll(scroll);
+        decor.setVisibleRange(visibleStart, visibleEnd);
 
         UIProvider ui = Provider.of<UIProvider>(context, listen: false);
         ui.clearMenus();

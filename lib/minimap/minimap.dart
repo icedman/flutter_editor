@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:editor/editor/document.dart';
 import 'package:editor/editor/decorations.dart';
+import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 
 int minimapLineSpacing = 3;
@@ -120,10 +121,19 @@ class Minimap extends StatefulWidget {
 class _Minimap extends State<Minimap> {
   late ScrollController scroller;
   Offset scrollPosition = Offset.zero;
+  double target = 0;
+  bool showIndicator = true;
 
   @override
   void initState() {
     scroller = ScrollController();
+
+    scroller.addListener(() {
+      setState(() {
+        showIndicator = false;
+      });
+    });
+
     super.initState();
   }
 
@@ -136,7 +146,9 @@ class _Minimap extends State<Minimap> {
   @override
   Widget build(BuildContext context) {
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
+    HLTheme theme = Provider.of<HLTheme>(context);
     DecorInfo decor = Provider.of<DecorInfo>(context);
+    int viewPortHeight = (decor.visibleEnd - decor.visibleStart);
 
     if (!doc.showMinimap || !doc.ready) {
       return Container();
@@ -149,31 +161,50 @@ class _Minimap extends State<Minimap> {
     if (decor.scrollPosition != scrollPosition) {
       scrollPosition = decor.scrollPosition;
       if (!scroller.positions.isEmpty) {
-        double target = scrollPosition.dy / minimapLineSpacing;
-        if (target > scroller.position.maxScrollExtent) {
-          target = scroller.position.maxScrollExtent;
+        double p =
+            (decor.visibleStart + viewPortHeight / 2) / doc.doc.blocks.length;
+        if (p >= 0) {
+          target = p * scroller.position.maxScrollExtent;
+          if (target > scroller.position.maxScrollExtent) {
+            target = scroller.position.maxScrollExtent;
+          }
+          scroller.jumpTo(target);
+          showIndicator = true;
         }
-        scroller.jumpTo(target);
       }
     }
 
+    double mapWidth = Platform.isAndroid ? 60 : 80;
     return Container(
-        width: Platform.isAndroid ? 60 : 80,
-        child: ListView.builder(
-            controller: scroller,
-            itemCount: pages,
-            itemExtent: (perPage * minimapLineSpacing).toDouble(),
-            itemBuilder: (context, index) {
-              int hash = 0;
-              Block? block =
-                  doc.doc.blockAtLine((index * perPage)) ?? Block('');
-              for (int i = 0; i < perPage; i++) {
-                hash += ((block?.text ?? '').length); // improve
-                hash += ((block?.spans ?? []).length) << 4;
-                block = block?.next;
-                if (block == null) break;
-              }
-              return MinimapPage(start: index, perPage: perPage, hash: hash);
-            }));
+        width: mapWidth,
+        child: Stack(children: [
+          Positioned(
+              top: ((decor.visibleStart + viewPortHeight / 4) *
+                          minimapLineSpacing)
+                      .toDouble() -
+                  target,
+              child: !showIndicator
+                  ? Container()
+                  : Container(
+                      width: mapWidth,
+                      height: (viewPortHeight * minimapLineSpacing).toDouble(),
+                      color: theme.selection.withOpacity(0.5))),
+          ListView.builder(
+              controller: scroller,
+              itemCount: pages,
+              itemExtent: (perPage * minimapLineSpacing).toDouble(),
+              itemBuilder: (context, index) {
+                int hash = 0;
+                Block? block =
+                    doc.doc.blockAtLine((index * perPage)) ?? Block('');
+                for (int i = 0; i < perPage; i++) {
+                  hash += ((block?.text ?? '').length); // improve
+                  hash += ((block?.spans ?? []).length) << 4;
+                  block = block?.next;
+                  if (block == null) break;
+                }
+                return MinimapPage(start: index, perPage: perPage, hash: hash);
+              }),
+        ]));
   }
 }

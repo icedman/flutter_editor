@@ -3,6 +3,19 @@ import 'package:editor/editor/document.dart';
 import 'package:editor/editor/history.dart';
 import 'package:flutter/material.dart';
 
+String safeSubstring(String text, int start, [int? end]) {
+  if ((end != null && start >= end) || start < 0 || text == '') {
+    return '';
+  }
+  if (start > text.length) {
+    start = text.length;
+  }
+  if (end != null && end > text.length) {
+    end = text.length;
+  }
+  return text.substring(start, end);
+}
+
 class Cursor {
   Cursor(
       {Block? this.block,
@@ -46,7 +59,7 @@ class Cursor {
   bool get isNull {
     return document == null;
   }
-  
+
   Cursor copy() {
     return Cursor(
         document: document,
@@ -350,21 +363,16 @@ class Cursor {
     if (blockLine == anchorLine) {
       return (block?.text ?? '').substring(cur.column, cur.anchorColumn);
     }
-    
-    // todo add safe substring
-    String curText = (cur.block?.text ?? '');
-    int col = cur.column;
-    if (col > curText.length) {
-      col = curText.length;
-    }
-    res.add(curText.substring(col));
-    
+
+    res.add(safeSubstring(cur.block?.text ?? '', cur.column));
+
     Block? b = cur.block?.next;
     for (int i = blockLine + 1; b != null && i < anchorLine; i++) {
       res.add(b.text);
       b = b.next;
     }
-    res.add((cur.anchorBlock?.text ?? '').substring(0, cur.anchorColumn));
+
+    res.add(safeSubstring(cur.anchorBlock?.text ?? '', 0, cur.anchorColumn));
     return res.join('\n');
   }
 

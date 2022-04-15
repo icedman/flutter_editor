@@ -47,12 +47,21 @@ class DecorInfo extends ChangeNotifier {
   Offset caretPosition = Offset.zero;
   Cursor caret = Cursor();
 
+  int visibleStart = -1;
+  int visibleEnd = -1;
+
   void notifyLater() {
     Future.delayed(const Duration(milliseconds: 0), () => notifyListeners());
   }
 
   void onScroll(scroll) {
     scrollPosition = scroll;
+    notifyListeners();
+  }
+
+  void setVisibleRange(start, end) {
+    visibleStart = start;
+    visibleEnd = end;
     notifyListeners();
   }
 

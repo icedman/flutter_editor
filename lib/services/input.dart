@@ -5,10 +5,44 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
-
-import 'package:editor/editor/document.dart';
-import 'package:editor/editor/view.dart';
 import 'package:editor/services/util.dart';
+
+String buildKeys(String keys,
+    {bool control: false, bool shift: false, bool alt: false}) {
+  String res = '';
+
+  keys = keys.toLowerCase();
+
+  // morph
+  if (keys == 'escape') {
+    keys = 'cancel';
+  }
+  if (keys == '\n') {
+    keys = 'enter';
+  }
+  if (keys.startsWith('arrow')) {
+    keys = keys.substring(6);
+  }
+  if (keys == 'space') {
+    keys = ' ';
+  }
+
+  if (control) {
+    res = 'ctrl';
+  }
+  if (shift) {
+    if (res != '') res += '+';
+    res += 'shift';
+  }
+  if (alt) {
+    if (res != '') res += '+';
+    res += 'alt';
+  }
+  if (res != '') res += '+';
+  res += keys;
+
+  return res;
+}
 
 class CustomEditingController extends TextEditingController {
   @override
@@ -85,8 +119,6 @@ class _InputListener extends State<InputListener> {
 
   @override
   Widget build(BuildContext context) {
-    DocumentProvider doc = Provider.of<DocumentProvider>(context);
-    Document d = doc.doc;
     return Focus(
         onFocusChange: (focused) {
           if (focused && !widget.textFocusNode.hasFocus) {
@@ -151,9 +183,6 @@ class _InputListener extends State<InputListener> {
         focusNode: widget.focusNode,
         autofocus: true,
         onKey: (FocusNode node, RawKeyEvent event) {
-          // if (textFocusNode.hasFocus) {
-          //   return KeyEventResult.ignored;
-          // }
           if (event.runtimeType.toString() == 'RawKeyDownEvent') {
             widget.onKeyDown?.call(event.logicalKey.keyLabel,
                 keyId: event.logicalKey.keyId,

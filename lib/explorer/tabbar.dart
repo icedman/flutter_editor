@@ -9,6 +9,7 @@ import 'package:editor/services/app.dart';
 import 'package:editor/services/util.dart';
 import 'package:editor/services/ui/ui.dart';
 import 'package:editor/services/ui/menu.dart';
+import 'package:editor/services/ui/status.dart';
 import 'package:editor/services/ffi/bridge.dart';
 import 'package:editor/services/highlight/theme.dart';
 
@@ -112,6 +113,9 @@ class _EditorTabBar extends State<EditorTabBar> {
     if (DefaultTabController.of(context)?.index != idx) {
       Future.delayed(const Duration(milliseconds: 100), () {
         DefaultTabController.of(context)?.index = idx;
+        StatusProvider status =
+            Provider.of<StatusProvider>(context, listen: false);
+        status.setIndexedStatus(0, '');
       });
     }
 
@@ -162,6 +166,9 @@ class _EditorTabBar extends State<EditorTabBar> {
                         DefaultTabController.of(context)?.index = idx;
                         app.document = app.documents[idx];
                         app.notifyListeners();
+                        StatusProvider status =
+                            Provider.of<StatusProvider>(context, listen: false);
+                        status.setIndexedStatus(0, '');
                       }))),
           ...actions
         ]));
@@ -184,6 +191,6 @@ class EditorTabs extends StatelessWidget {
       return Container();
     }
 
-    return Column(children: views);
+    return Row(children: views);
   }
 }

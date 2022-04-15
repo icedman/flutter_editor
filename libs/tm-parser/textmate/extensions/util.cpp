@@ -22,7 +22,7 @@
 
 #include "util.h"
 
-#define ENABLE_LOG
+// #define ENABLE_LOG
 #define LOG_FILE "./ashlar.log"
 static bool log_initialized = false;
 

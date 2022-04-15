@@ -10,7 +10,8 @@ import 'package:editor/services/keybindings.dart';
 class AppProvider extends ChangeNotifier {
   List<Document> documents = [];
   Document? document;
-  
+  dynamic settings;
+
   late Keybindings keybindings;
 
   double bottomInset = 0;
@@ -27,7 +28,7 @@ class AppProvider extends ChangeNotifier {
 
   bool showKeyboard = false;
   bool isKeyboardVisible = false;
-  
+
   void initialize() async {
     keybindings = Keybindings();
   }
@@ -57,7 +58,13 @@ class AppProvider extends ChangeNotifier {
     document = null;
     for (final d in documents) {
       if (d.docPath == p) {
-        documents.removeWhere((d) => d.docPath == p);
+        documents.removeWhere((d) {
+          if (d.docPath == p) {
+            d.dispose();
+            return true;
+          }
+          return false;
+        });
         notifyListeners();
         break;
       }

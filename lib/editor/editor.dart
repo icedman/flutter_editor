@@ -81,6 +81,9 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     });
     d.addListener('onDestroy', (documentId) {
       FFIBridge.run(() => FFIBridge.destroy_document(documentId));
+      StatusProvider status =
+          Provider.of<StatusProvider>(context, listen: false);
+      status.setIndexedStatus(0, '');
     });
     d.addListener('onAddBlock', (documentId, blockId) {
       FFIBridge.run(() => FFIBridge.add_block(documentId, blockId));
@@ -158,49 +161,10 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     }
   }
 
-  String _buildKeys(String keys,
-      {bool control: false, bool shift: false, bool alt: false}) {
-    String res = '';
-
-    keys = keys.toLowerCase();
-
-    // morph
-    if (keys == 'escape') {
-      keys = 'cancel';
-    }
-    if (keys == '\n') {
-      keys = 'enter';
-    }
-    if (keys.startsWith('arrow')) {
-      keys = keys.substring(6);
-    }
-    if (keys == 'space') {
-      keys = ' ';
-    }
-
-    if (control) {
-      res = 'ctrl';
-    }
-    if (shift) {
-      if (res != '') res += '+';
-      res += 'shift';
-    }
-    if (alt) {
-      if (res != '') res += '+';
-      res += 'alt';
-    }
-    if (res != '') res += '+';
-    res += keys;
-
-    return res;
-  }
-
   void onShortcut(String keys) {
     AppProvider app = Provider.of<AppProvider>(context, listen: false);
-    UIProvider ui = Provider.of<UIProvider>(context, listen: false);
-
     Command? cmd = app.keybindings.resolve(keys);
-    command(cmd?.command ?? '');
+    command(cmd?.command ?? '', params: cmd?.params);
   }
 
   void _makeDirty() {
@@ -227,10 +191,11 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     });
   }
 
-  void command(String cmd, {List<String> params = const <String>[]}) async {
+  void command(String cmd, {dynamic params}) async {
     Document d = doc.doc;
     Cursor cursor = d.cursor().copy();
 
+    AppProvider app = Provider.of<AppProvider>(context, listen: false);
     UIProvider ui = Provider.of<UIProvider>(context, listen: false);
     if (ui.popups.isNotEmpty) {
       UIMenuData? menu = ui.menu('search::${d.documentId}');
@@ -262,21 +227,41 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     }
 
     switch (cmd) {
+      case 'switch_tab':
+        {
+          int idx = params;
+          if (idx >= 0 && idx < app.documents.length) {
+            app.open(app.documents[idx].docPath, focus: true);
+          }
+          return;
+        }
+
+      case 'toggle_pinned':
+        {
+          doc.pinned = !doc.pinned;
+          doc.touch();
+          return;
+        }
+
       case 'search':
         {
           ui.setPopup(SearchPopup(onSubmit: (text,
               {int direction = 1,
               bool caseSensitive = false,
               bool regex = false,
+              bool repeat = false,
               String? replace}) {
             Document d = doc.doc;
             Cursor? cur = d.find(d.cursor().copy(), text,
                 direction: direction,
                 regex: regex,
-                caseSensitive: caseSensitive);
+                caseSensitive: caseSensitive,
+                repeat: repeat);
             if (cur != null) {
               if (replace != null && d.hasSelection()) {
+                d.begin();
                 d.insertText(replace);
+                d.commit();
               }
               d.clearCursors();
               d.cursor().copyFrom(cur, keepAnchor: true);
@@ -290,10 +275,14 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       case 'jump_to_line':
         {
           ui.setPopup(GotoPopup(onSubmit: (line) {
-            command('cursor', params: [line.toString(), '0']);
+            command('cursor', params: [line, 0]);
             return;
           }), blur: false, shield: false, onClearPopups: _regainFocus);
         }
+        return;
+
+      case 'close':
+        app.close(doc.doc.docPath);
         return;
     }
 
@@ -343,8 +332,8 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     }
 
     StatusProvider status = Provider.of<StatusProvider>(context, listen: false);
-    status.setIndexedStatus(
-        0, 'Ln ${d.cursor().block?.line}, Col ${d.cursor().column}');
+    status.setIndexedStatus(0,
+        'Ln ${((d.cursor().block?.line ?? 0) + 1)}, Col ${(d.cursor().column + 1)}');
   }
 
   void onKeyDown(String key,
@@ -376,8 +365,8 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       case 'End':
       case 'Enter':
       case '\n':
-        command(_buildKeys(key,
-            control: controlling, shift: shifting, alt: alting));
+        command(
+            buildKeys(key, control: controlling, shift: shifting, alt: alting));
         break;
       default:
         {
@@ -389,20 +378,20 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
             String ch =
                 String.fromCharCode(97 + k - LogicalKeyboardKey.keyA.keyId);
             if (control || alt) {
-              onShortcut(_buildKeys(ch,
+              onShortcut(buildKeys(ch,
                   control: controlling, shift: shifting, alt: alting));
               break;
             }
-            command('insert', params: [ch]);
+            command('insert', params: ch);
             break;
           }
         }
         if (key.length == 1 || softKeyboard) {
           if (controlling || alting) {
-            onShortcut(_buildKeys(key,
+            onShortcut(buildKeys(key,
                 control: controlling, shift: shifting, alt: alting));
           } else {
-            command('insert', params: [key]);
+            command('insert', params: key);
           }
         }
         break;
@@ -422,20 +411,16 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
   void onTapDown(RenderObject? obj, Offset globalPosition) {
     Offset o = screenToCursor(obj, globalPosition);
     if (shifting) {
-      command('shift+cursor',
-          params: [o.dy.toInt().toString(), o.dx.toInt().toString()]);
+      command('shift+cursor', params: [o.dy.toInt(), o.dx.toInt()]);
     } else {
-      command('cursor',
-          params: [o.dy.toInt().toString(), o.dx.toInt().toString()]);
+      command('cursor', params: [o.dy.toInt(), o.dx.toInt()]);
     }
   }
 
   void onDoubleTapDown(RenderObject? obj, Offset globalPosition) {
     Document d = doc.doc;
     Offset o = screenToCursor(obj, globalPosition);
-    d.moveCursor(o.dy.toInt(), o.dx.toInt(), keepAnchor: shifting);
-    command('cursor',
-        params: [o.dy.toInt().toString(), o.dx.toInt().toString()]);
+    command('cursor', params: [o.dy.toInt(), o.dx.toInt()]);
     command('select_word');
   }
 
@@ -443,17 +428,16 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     Document d = doc.doc;
     Offset o = screenToCursor(obj, globalPosition);
     if (o.dx == -1 || o.dy == -1) return;
-    command('shift+cursor',
-        params: [o.dy.toInt().toString(), o.dx.toInt().toString()]);
+    command('shift+cursor', params: [o.dy.toInt(), o.dx.toInt()]);
   }
 
   @override
   Widget build(BuildContext context) {
     bool hide = false;
 
-    // todo remove
+    // todo refactor.. so editor can live outside of app
     AppProvider app = Provider.of<AppProvider>(context);
-    if (widget.document != null) {
+    if (!doc.pinned && widget.document != null) {
       if (app.document != doc.doc) {
         hide = true;
       }
@@ -494,25 +478,25 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
             IconButton(
                 icon: Icon(Icons.west, size: buttonSize, color: clr),
                 onPressed: () {
-                  command(_buildKeys('left',
-                      control: controlling, shift: shifting));
+                  command(
+                      buildKeys('left', control: controlling, shift: shifting));
                 }),
             IconButton(
                 icon: Icon(Icons.north, size: buttonSize, color: clr),
                 onPressed: () {
                   command(
-                      _buildKeys('up', control: controlling, shift: shifting));
+                      buildKeys('up', control: controlling, shift: shifting));
                 }),
             IconButton(
                 icon: Icon(Icons.south, size: buttonSize, color: clr),
                 onPressed: () {
-                  command(_buildKeys('down',
-                      control: controlling, shift: shifting));
+                  command(
+                      buildKeys('down', control: controlling, shift: shifting));
                 }),
             IconButton(
                 icon: Icon(Icons.east, size: buttonSize, color: clr),
                 onPressed: () {
-                  command(_buildKeys('right',
+                  command(buildKeys('right',
                       control: controlling, shift: shifting));
                 }),
             IconButton(
