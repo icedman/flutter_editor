@@ -29,7 +29,7 @@ delete folder
 delete file
 
 cancel popups (done)
-global key listeners
+global key listeners (done)
 
 registry
 element
@@ -48,6 +48,7 @@ decorations
 console
 
 # bug
+view scroll on tab change
 minimap - proportionate scroll
 select all - visual update
 search last .. result to found (fixed)

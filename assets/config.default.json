@@ -1,0 +1,18 @@
+{
+    "theme": "Monokai",
+    "icon_theme": "material-icon-theme",
+    "sidebar": true,
+    "tabbar": true,
+    "statusbar": true,
+    "gutter": true,
+    "minimap": true,
+    "tab_size": 4,
+    "tab_to_spaces": true,
+    "word_wrap": true,
+    "folder_exclude_patterns": [".svn", ".git", ".hg", "CVS", "node_modules"],
+    "file_exclude_patterns": ["*.pyc", "*.pyo", "*.exe", "*.dll", "*.obj","*.o", "*.a", "*.lib", "*.so", "*.dylib", "*.ncb", "*.sdf", "*.suo", "*.pdb", "*.idb", ".DS_Store", "*.class", "*.psd", "*.db"],
+    "binary_file_patterns": ["*.jpg", "*.jpeg", "*.png", "*.gif", "*.ttf", "*.tga", "*.dds", "*.ico", "*.eot", "*.pdf", "*.swf", "*.jar", "*.zip", "*.mid", "*.mp3", "*.mp4"],
+    "git_author_name": "me",
+    "git_author_email": "me@localhost.local",
+    "version": "1.1"
+}

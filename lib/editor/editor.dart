@@ -351,6 +351,18 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     // print('$softKeyboard $key ${key.length} ${controlling}');
 
     Document d = doc.doc;
+    
+    if (doc.softWrap) {
+      switch(key) {
+        case 'Arrow Up':
+        case 'Arrow Down': {
+          RenderObject? obj = context.findRenderObject();
+          double move = decor.fontHeight/2 + ((key == 'Arrow Up' ? -decor.fontHeight : decor.fontHeight));
+          onTapDown(obj, Offset(decor.caretPosition.dx, decor.caretPosition.dy + move));
+          return;
+        }
+      }
+    }
 
     switch (key) {
       case 'Escape':

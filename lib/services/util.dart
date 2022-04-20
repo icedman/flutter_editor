@@ -1,4 +1,11 @@
+import 'dart:async';
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:archive/archive.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+
+const String assetPath = 'assets';
 
 const double sidebarDarken = 0.0425;
 const double tabbarDarken = 0.025;
@@ -62,4 +69,30 @@ Size getTextExtents(String text, TextStyle style,
       textDirection: TextDirection.ltr)
     ..layout(minWidth: minWidth, maxWidth: maxWidth);
   return textPainter.size;
+}
+
+Future<String> getTextFileFromAsset(String path) async {
+  return await rootBundle.loadString('$assetPath/$path');
+}
+
+Future<ByteData> getBinaryFileFromAsset(String path) async {
+  return await rootBundle.load('$assetPath/$path');
+}
+
+Future<bool> extractArchive(String zip, String dir, {bool asset = true}) async {
+  final bytes =
+      asset ? await getBinaryFileFromAsset(zip) : await File(zip).readAsBytes();
+  final buffer = bytes.buffer;
+  var archive = ZipDecoder().decodeBytes(
+      buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes));
+  for (var file in archive) {
+    var fileName = '$dir/${file.name}';
+    if (file.isFile) {
+      var outFile = File(fileName);
+      print('File:: ' + outFile.path);
+      outFile = await outFile.create(recursive: true);
+      await outFile.writeAsBytes(file.content);
+    }
+  }
+  return true;
 }

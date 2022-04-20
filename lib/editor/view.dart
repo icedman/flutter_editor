@@ -247,7 +247,8 @@ class ViewLine extends StatelessWidget {
               box?.localToGlobal(Offset(left, top)) ?? Offset.zero;
           decor.setCaret(cursorOffset, doc.doc.cursor());
 
-          doc.offsetForCaret = offsetForCaret;
+          // doc.offsetForCaret = offsetForCaret.dy;
+          doc.offsetForCaret = Offset(left, top);
           doc.scrollAreaSize = scrollAreaSize;
         }
       }
@@ -342,8 +343,8 @@ class _View extends State<View> {
 
         Offset scroll = Offset(0, scroller.position.pixels);
         DecorInfo decor = Provider.of<DecorInfo>(context, listen: false);
-        decor.onScroll(scroll);
         decor.setVisibleRange(visibleStart, visibleEnd);
+        decor.onScroll(scroll);
 
         UIProvider ui = Provider.of<UIProvider>(context, listen: false);
         ui.clearMenus();
@@ -551,6 +552,9 @@ class _View extends State<View> {
           TextStyle(fontFamily: theme.fontFamily, fontSize: theme.fontSize));
       fontWidth = sz.width * 0.9;
       fontHeight = sz.height;
+      
+      DecorInfo decor = Provider.of<DecorInfo>(context, listen: false);
+      decor.fontHeight = fontHeight;
     }
 
     bool softWrap = doc.softWrap;

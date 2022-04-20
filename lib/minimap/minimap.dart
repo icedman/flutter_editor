@@ -99,17 +99,25 @@ class MinimapPage extends StatelessWidget {
                 perPage: perPage,
                 hash: hash),
             child: Container()),
+        onPanUpdate: (details) {
+          onTap(context, details.globalPosition);
+        },
         onTapDown: (TapDownDetails details) {
-          RenderObject? obj = context.findRenderObject();
-          RenderBox box = obj as RenderBox;
-          Offset pos = box.localToGlobal(Offset.zero);
-          double dy = details.globalPosition.dy - pos.dy;
-          double p = dy * 100 / (box.size.height + 0.001);
-          int lead = p > 50 ? 8 : -8;
-          int l = p.toInt() + (start * perPage);
-          doc.scrollTo = l + lead;
-          doc.touch();
+          onTap(context, details.globalPosition);
         });
+  }
+
+  void onTap(context, tapPos) {
+    RenderObject? obj = context.findRenderObject();
+    RenderBox box = obj as RenderBox;
+    Offset pos = box.localToGlobal(Offset.zero);
+    double dy = tapPos.dy - pos.dy;
+    double p = dy * 100 / (box.size.height + 0.001);
+    int lead = p > 50 ? 8 : -8;
+    int l = p.toInt() + (start * perPage);
+    DocumentProvider doc = Provider.of<DocumentProvider>(context, listen: false);
+    doc.scrollTo = l + lead;
+    doc.touch();
   }
 }
 
@@ -161,8 +169,10 @@ class _Minimap extends State<Minimap> {
     if (decor.scrollPosition != scrollPosition) {
       scrollPosition = decor.scrollPosition;
       if (!scroller.positions.isEmpty) {
-        double p =
-            (decor.visibleStart + viewPortHeight / 2) / doc.doc.blocks.length;
+        double p = 0;
+        if (doc.doc.blocks.length > viewPortHeight) {
+          p = decor.visibleStart / (doc.doc.blocks.length - viewPortHeight);
+        }
         if (p >= 0) {
           target = p * scroller.position.maxScrollExtent;
           if (target > scroller.position.maxScrollExtent) {
@@ -174,15 +184,15 @@ class _Minimap extends State<Minimap> {
       }
     }
 
+    double currentScroll = scroller.positions.isEmpty ? 0 : scroller.position.pixels;
+
     double mapWidth = Platform.isAndroid ? 60 : 80;
     return Container(
         width: mapWidth,
         child: Stack(children: [
           Positioned(
-              top: ((decor.visibleStart + viewPortHeight / 4) *
-                          minimapLineSpacing)
-                      .toDouble() -
-                  target,
+              top: ((decor.visibleStart - viewPortHeight/4) * minimapLineSpacing).toDouble() -
+                  currentScroll,
               child: !showIndicator
                   ? Container()
                   : Container(

@@ -43,10 +43,10 @@ class DecorInfo extends ChangeNotifier {
   Offset thumbAnchorPosition = Offset.zero;
   Cursor thumbCursor = Cursor();
 
-  Offset caretScrollStart = Offset.zero;
   Offset caretPosition = Offset.zero;
   Cursor caret = Cursor();
 
+  double fontHeight = 0;
   int visibleStart = -1;
   int visibleEnd = -1;
 
@@ -66,7 +66,6 @@ class DecorInfo extends ChangeNotifier {
   }
 
   void setCaret(Offset pos, Cursor cursor) {
-    caretScrollStart = scrollPosition;
     caretPosition = pos;
     caret = cursor.copy();
     notifyLater();

@@ -1102,6 +1102,11 @@ class DocumentProvider extends ChangeNotifier {
       case 'select_all':
         d.moveCursorToStartOfDocument();
         d.moveCursorToEndOfDocument(keepAnchor: true);
+        
+        for(final b in d.blocks) {
+          b.makeDirty();
+        }
+        
         doc.touch();
         break;
 
