@@ -35,7 +35,7 @@ class Cursor {
   Block? anchorBlock;
   int anchorColumn = 0;
   Color color = Colors.white;
-  
+
   Offset screenOffset = Offset.zero;
 
   @override

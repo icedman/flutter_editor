@@ -17,11 +17,14 @@ import 'package:editor/services/highlight/tmparser.dart';
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  AppProvider app = AppProvider();
+  await app.initialize();
+  await app.loadSettings();
+
   FFIBridge.load();
 
   String extPath = '/home/iceman/.editor/extensions/';
-  String path = './tests/tinywl.c';
-  // path = './tests/sqlite3.c';
+  String path = './';
 
   if (Platform.isAndroid) {
     extPath = '/sdcard/.editor/extensions/';
@@ -42,16 +45,13 @@ void main(List<String> args) async {
     ..loadIcons('material-icon-theme');
 
   HLTheme theme = HLTheme.instance();
-  AppProvider app = AppProvider();
   UIProvider ui = UIProvider();
   StatusProvider status = StatusProvider();
 
-  app.initialize();
-
   if (!(await FileSystemEntity.isDirectory(path))) {
     app.open(path);
+    app.openSidebar = false;
   }
-  // app.open('./tests/sqlite3.c');
 
   FocusNode focusNode = FocusNode();
 

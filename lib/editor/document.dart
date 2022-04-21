@@ -798,7 +798,7 @@ class DocumentProvider extends ChangeNotifier {
 
   int scrollTo = -1;
   bool softWrap = true;
-  bool showGutters = true;
+  bool showGutter = true;
   bool showMinimap = true;
   bool ready = false;
   bool pinned = false;
@@ -1022,23 +1022,6 @@ class DocumentProvider extends ChangeNotifier {
         doScroll = true;
         break;
 
-      case 'settings-toggle-wrap':
-        doc.softWrap = !doc.softWrap;
-        // doScroll = true;
-        doc.touch();
-        break;
-
-      case 'settings-toggle-gutter':
-        doc.showGutters = !doc.showGutters;
-        // doScroll = true;
-        doc.touch();
-        break;
-      case 'settings-toggle-minimap':
-        doc.showMinimap = !doc.showMinimap;
-        // doScroll = true;
-        doc.touch();
-        break;
-
       case 'toggle_comment':
         d.toggleComment();
         doc.touch();
@@ -1102,11 +1085,11 @@ class DocumentProvider extends ChangeNotifier {
       case 'select_all':
         d.moveCursorToStartOfDocument();
         d.moveCursorToEndOfDocument(keepAnchor: true);
-        
-        for(final b in d.blocks) {
+
+        for (final b in d.blocks) {
           b.makeDirty();
         }
-        
+
         doc.touch();
         break;
 

@@ -351,16 +351,20 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     // print('$softKeyboard $key ${key.length} ${controlling}');
 
     Document d = doc.doc;
-    
-    if (doc.softWrap) {
-      switch(key) {
+
+    UIProvider ui = Provider.of<UIProvider>(context, listen: false);
+    if (doc.softWrap && ui.popups.isEmpty) {
+      switch (key) {
         case 'Arrow Up':
-        case 'Arrow Down': {
-          RenderObject? obj = context.findRenderObject();
-          double move = decor.fontHeight/2 + ((key == 'Arrow Up' ? -decor.fontHeight : decor.fontHeight));
-          onTapDown(obj, Offset(decor.caretPosition.dx, decor.caretPosition.dy + move));
-          return;
-        }
+        case 'Arrow Down':
+          {
+            RenderObject? obj = context.findRenderObject();
+            double move = decor.fontHeight / 2 +
+                ((key == 'Arrow Up' ? -decor.fontHeight : decor.fontHeight));
+            onTapDown(obj,
+                Offset(decor.caretPosition.dx, decor.caretPosition.dy + move));
+            return;
+          }
       }
     }
 
@@ -537,6 +541,10 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
                   command('paste');
                 }),
           ];
+
+    doc.showMinimap = app.showMinimap;
+    doc.showGutter = app.showGutter;
+    doc.softWrap = app.softWrap;
 
     return MultiProvider(
         providers: [

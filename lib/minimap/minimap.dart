@@ -115,7 +115,8 @@ class MinimapPage extends StatelessWidget {
     double p = dy * 100 / (box.size.height + 0.001);
     int lead = p > 50 ? 8 : -8;
     int l = p.toInt() + (start * perPage);
-    DocumentProvider doc = Provider.of<DocumentProvider>(context, listen: false);
+    DocumentProvider doc =
+        Provider.of<DocumentProvider>(context, listen: false);
     doc.scrollTo = l + lead;
     doc.touch();
   }
@@ -184,14 +185,17 @@ class _Minimap extends State<Minimap> {
       }
     }
 
-    double currentScroll = scroller.positions.isEmpty ? 0 : scroller.position.pixels;
+    double currentScroll =
+        scroller.positions.isEmpty ? 0 : scroller.position.pixels;
 
     double mapWidth = Platform.isAndroid ? 60 : 80;
     return Container(
         width: mapWidth,
         child: Stack(children: [
           Positioned(
-              top: ((decor.visibleStart - viewPortHeight/4) * minimapLineSpacing).toDouble() -
+              top: ((decor.visibleStart - viewPortHeight / 4) *
+                          minimapLineSpacing)
+                      .toDouble() -
                   currentScroll,
               child: !showIndicator
                   ? Container()

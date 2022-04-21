@@ -542,7 +542,7 @@ class _View extends State<View> {
         color: theme.comment);
 
     gutterWidth = 0;
-    if (doc.showGutters) {
+    if (doc.showGutter) {
       gutterWidth =
           getTextExtents(' ${doc.doc.blocks.length} ', gutterStyle).width;
     }
@@ -552,7 +552,7 @@ class _View extends State<View> {
           TextStyle(fontFamily: theme.fontFamily, fontSize: theme.fontSize));
       fontWidth = sz.width * 0.9;
       fontHeight = sz.height;
-      
+
       DecorInfo decor = Provider.of<DecorInfo>(context, listen: false);
       decor.fontHeight = fontHeight;
     }

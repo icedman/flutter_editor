@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:convert';
 import 'package:archive/archive.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
@@ -11,22 +12,18 @@ import 'package:editor/services/util.dart';
 import 'package:editor/services/keybindings.dart';
 
 const bool LIGHT_MODE = false;
-const String ashlarCodeURL =
-    'https://play.google.com/store/apps/details?id=com.munchyapps.ashlar';
 
 const String appResourceRoot = '~/.editor';
 const double configVersion = 1.1;
 late Directory root;
 String expandPath(String path) {
   String res = path.replaceAll('~', root.parent.absolute.path);
-  print(res);
   return res;
 }
 
 Future<ByteData> loadFontFile(String path) async {
   try {
-    File file =
-        await File(expandPath('$appResourceRoot/fonts/$path'));
+    File file = await File(expandPath('$appResourceRoot/fonts/$path'));
     Uint8List bytes = await file.readAsBytes();
     return ByteData.view(bytes.buffer);
   } catch (err, msg) {
@@ -51,26 +48,29 @@ Future<void> loadFont(String family, String path) async {
   }
 }
 
-
 class AppProvider extends ChangeNotifier {
   List<Document> documents = [];
   Document? document;
-  dynamic settings;
-
   late Keybindings keybindings;
 
-  double bottomInset = 0;
-  double screenWidth = 0;
-  double screenHeight = 0;
+  // settings
+  dynamic settings;
   double sidebarWidth = 240;
   double tabbarHeight = 32;
   double statusbarHeight = 32;
-
   bool showStatusbar = true;
   bool showTabbar = true;
+  bool showMinimap = true;
+  bool showGutter = true;
+  bool softWrap = true;
+  String themePath = '';
+
+  // state
+  double bottomInset = 0;
+  double screenWidth = 0;
+  double screenHeight = 0;
   bool fixedSidebar = true;
   bool openSidebar = true;
-
   bool showKeyboard = false;
   bool isKeyboardVisible = false;
 
@@ -78,10 +78,9 @@ class AppProvider extends ChangeNotifier {
   String extractingWhat = '';
   bool resourcesReady = false;
 
-  void initialize() async {
+  Future<void> initialize() async {
     root = await getApplicationDocumentsDirectory();
     keybindings = Keybindings();
-    configure();
   }
 
   Document? open(String path, {bool focus = false}) {
@@ -145,8 +144,7 @@ class AppProvider extends ChangeNotifier {
       }
 
       print('extracing archive...');
-      await extractArchive(
-          'extensions.zip', expandPath('$appResourceRoot/'));
+      await extractArchive('extensions.zip', expandPath('$appResourceRoot/'));
 
       print('writing default config');
 
@@ -168,8 +166,7 @@ class AppProvider extends ChangeNotifier {
 
       if (!upgrade || !exists) {
         String config_text = await getTextFileFromAsset('config.json');
-        final config =
-            await File(expandPath('$appResourceRoot/config.json'));
+        final config = await File(expandPath('$appResourceRoot/config.json'));
         await config.writeAsString(config_text);
       }
 
@@ -184,23 +181,23 @@ class AppProvider extends ChangeNotifier {
   }
 
   Future<void> updateResources({bool force = false}) async {
-    List<String> files = <String>['themes.json'];
-
-    for (final f in files) {
-      String contents = await getTextFileFromAsset(f);
-      final target = await File(expandPath('$appResourceRoot/$f'));
-      if (force || !target.existsSync()) {
-        await target.writeAsString(contents);
-      }
-    }
+    // List<String> files = <String>['themes.json'];
+    // for (final f in files) {
+    //   String contents = await getTextFileFromAsset(f);
+    //   final target = await File(expandPath('$appResourceRoot/$f'));
+    //   if (force || !target.existsSync()) {
+    //     await target.writeAsString(contents);
+    //   }
+    // }
   }
 
   bool isReady() {
     return resourcesReady; // && permissionStatus == PermissionStatus.granted;
   }
 
-  void configure() async {
-    bool configFound = await File('$appResourceRoot/config.json').exists();
+  Future<void> loadSettings() async {
+    bool configFound =
+        await File(expandPath('$appResourceRoot/config.json')).exists();
     if (!configFound) {
       await setupResources();
       extracting = false;
@@ -210,5 +207,38 @@ class AppProvider extends ChangeNotifier {
       resourcesReady = true;
       extracting = false;
     }
+
+    File configDefaulFile =
+        File(expandPath('$appResourceRoot/config.default.json'));
+    String configDefaultRaw = await configDefaulFile.readAsString();
+    settings = jsonDecode(configDefaultRaw);
+
+    File configFile = File(expandPath('$appResourceRoot/config.json'));
+    String configRaw = await configFile.readAsString();
+    dynamic _settings = jsonDecode(configRaw);
+
+    if (_settings != null) {
+      _settings.keys.forEach((k) {
+        settings[k] = _settings[k];
+      });
+    }
+
+    showStatusbar = settings['statusbar'] == true;
+    showTabbar = settings['tabbar'] == true;
+    showMinimap = settings['minimap'] == true;
+    showGutter = settings['gutter'] == true;
+    sidebarWidth = settings['sidebar_width'] ?? sidebarWidth;
+  }
+
+  void saveSettings() async {
+    settings['statusbar'] = showStatusbar;
+    settings['tabbar'] = showTabbar;
+    settings['minimap'] = showMinimap;
+    settings['gutter'] = showGutter;
+    settings['sidebar_width'] = sidebarWidth;
+    String configRaw = jsonEncode(settings);
+
+    File configFile = File(expandPath('$appResourceRoot/config.json'));
+    configFile.writeAsString(configRaw);
   }
 }
