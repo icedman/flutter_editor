@@ -4,6 +4,7 @@ import 'package:editor/editor/document.dart';
 class Action {
   String type = '';
   String text = '';
+  String redoText = '';
   String inserted = '';
   Block? block;
 }
@@ -11,10 +12,12 @@ class Action {
 class HistoryEntry {
   List<Cursor> cursors = [];
   List<Action> actions = [];
+  List<Cursor> redoCursors = [];
 }
 
 class History {
   List<HistoryEntry> entries = [];
+  List<HistoryEntry> redoEntries = [];
   List<Cursor> cursors = [];
   List<Action> actions = [];
 
@@ -40,7 +43,12 @@ class History {
         }
       }
 
+      for (final a in entry.actions) {
+        a.redoText = a.block?.text ?? '';
+      }
+
       entries.add(entry);
+      redoEntries.clear();
     }
   }
 
@@ -88,12 +96,44 @@ class History {
     block?.document?.updateLineNumbers(index);
   }
 
+  void redo(Document doc) {
+    if (redoEntries.length == 0) {
+      return;
+    }
+    HistoryEntry last = redoEntries.removeLast();
+    entries.add(last);
+    for (final a in last.actions.reversed) {
+      switch (a.type) {
+        case 'insert':
+        case 'update':
+          a.block?.text = a.redoText;
+          a.block?.makeDirty(highlight: true);
+          break;
+
+        case 'add':
+          _reinsert(a.block);
+          a.block?.text = a.redoText;
+          break;
+
+        case 'remove':
+          _remove(a.block);
+          break;
+      }
+    }
+
+    doc.cursors = [];
+    for (final c in last.redoCursors) {
+      doc.cursors.add(c.copy());
+    }
+  }
+
   void undo(Document doc) {
     if (entries.length == 0) {
       return;
     }
 
     HistoryEntry last = entries.removeLast();
+    redoEntries.add(last);
     for (final a in last.actions.reversed) {
       switch (a.type) {
         case 'insert':
@@ -111,6 +151,7 @@ class History {
           break;
       }
     }
+    last.redoCursors = doc.cursors.map((c) => c.copy()).toList();
 
     doc.cursors = [];
     for (final c in last.cursors) {

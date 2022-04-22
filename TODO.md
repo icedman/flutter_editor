@@ -1,6 +1,6 @@
 # editor
-auto close
-auto indent (done)
+auto close (partial - add support for notIn - string, comment)
+auto indent (partial - add check for bracket)
 auto scroll - horizontal (done)
 indent (done)
 unindent (done)
@@ -12,7 +12,7 @@ redo
 
 # popups
 auto complete (done)
-search (partial) 
+search (working) 
 add wrap to start of document (done)
 
 # statusbar
@@ -21,6 +21,8 @@ add wrap to start of document (done)
 directory (done)
 file watcher
 fileicons (done)
+text search
+file search
 
 # ui
 new folder

@@ -166,33 +166,22 @@ class TMParser extends HLEngine {
         }
         if (comments['blockComment'] != null) {
           l.blockComment = [];
-          for(final c in comments['blockComment']) {
+          for (final c in comments['blockComment']) {
             l.blockComment.add('$c');
           }
         }
       }
       l.autoClose = {};
       final pairs = j['autoClosingPairs'] ?? [];
-      for(final p in pairs) {
+      for (final p in pairs) {
         l.autoClose[p['open']] = p['close'];
       }
-    } catch (err) {
-    }
-
-    /*
-    if (j['brackets'] is List) {
-      List? brackets = j['brackets'];
-      if (brackets != null && brackets.length > 0 && brackets[0] is List) {
-        for (final p in brackets) {
-          List<String> pp = [];
-          for (final i in p) {
-            pp.add(i as String);
-          }
-          l.brackets.add(pp);
-        }
+      l.brackets = {};
+      final brackets = j['brackets'] ?? [];
+      for (final p in brackets) {
+        l.brackets[p[0]] = p[1];
       }
-    }
-    */
+    } catch (err) {}
 
     languages[langId] = l;
     return l;

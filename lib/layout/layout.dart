@@ -218,7 +218,9 @@ class _AppLayout extends State<AppLayout> with WidgetsBindingObserver {
                         app.sidebarWidth = w;
                         app.notifyListeners();
                       },
-                      onEnd: () {})),
+                      onEnd: () {
+                        app.saveSettings();
+                      })),
 
           // statusbar
           if (app.showStatusbar) ...[

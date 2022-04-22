@@ -114,7 +114,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
         d.clearCursors();
         d.moveCursorLeft();
         d.selectWord();
-        d.insertText(item.title); // todo.. command!
+        d.insertText(item.title);
         d.commit();
         doc.notifyListeners();
       });

@@ -39,9 +39,9 @@ void main(List<String> args) async {
 
   // todo... move theme out of the parser
   TMParser()
-    ..loadTheme(Platform.isAndroid
-        ? '/sdcard/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json'
-        : '/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json')
+    ..loadTheme(
+        '/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json')
+    // ..loadTheme('/home/iceman/.editor//extensions/theme-monokai/themes/monokai-color-theme.json')
     ..loadIcons('material-icon-theme');
 
   HLTheme theme = HLTheme.instance();

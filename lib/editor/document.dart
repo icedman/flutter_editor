@@ -312,6 +312,10 @@ class Document {
     history.undo(this);
   }
 
+  void redo() {
+    history.redo(this);
+  }
+
   void addCursor() {
     cursors.add(cursor().copy());
   }
@@ -875,7 +879,13 @@ class DocumentProvider extends ChangeNotifier {
       case 'undo':
         d.undo();
         doScroll = true;
-        d.begin(); // erase pending history writes
+        d.begin();
+        break;
+
+      case 'redo':
+        d.redo();
+        doScroll = true;
+        d.begin();
         break;
 
       case 'insert':
