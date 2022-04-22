@@ -15,7 +15,8 @@ import 'package:editor/services/highlight/tmparser.dart';
 
 abstract class HLEngine {
   List<LineDecoration> run(Block? block, int line, Document document);
-  // int loadTheme(String filename);
+  
+  void loadTheme(String path);
   HLLanguage loadLanguage(String filename);
   HLLanguage? language(int id);
 }
@@ -25,7 +26,7 @@ abstract class HLLanguage {
   List<String> blockComment = [];
   String lineComment = '';
   List<List<String>> brackets = []; // todo
-  List<List<String>> autoClose = []; // todo
+  Map<String, String> autoClose = {};
 }
 
 class LineDecoration {

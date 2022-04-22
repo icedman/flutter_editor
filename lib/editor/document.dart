@@ -109,6 +109,7 @@ class Document {
   String tabString = '    ';
   int detectedTabSpaces = 0;
   bool enableAutoIndent = true;
+  bool enableAutoClose = true;
 
   String lineComment = '';
   List<String> blockComment = [];
@@ -669,6 +670,13 @@ class Document {
         folds.add(start);
       }
     }
+  }
+
+  void autoClose(Map<String, String> map) {
+    if (!enableAutoClose) return;
+    cursors.forEach((c) {
+      c.autoClose(map);
+    });
   }
 
   void autoIndent() {

@@ -20,6 +20,10 @@ class FlutterHighlight extends HLEngine {
     highlight.registerLanguage('json', json);
   }
 
+  void loadTheme(String path) {
+    //
+  }
+
   List<LineDecoration> run(Block? block, int line, Document document) {
     HLTheme theme = HLTheme.instance();
 

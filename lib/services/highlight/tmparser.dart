@@ -157,17 +157,26 @@ class TMParser extends HLEngine {
     try {
       String res = FFIBridge.languageDefinition(langId);
       dynamic j = jsonDecode(res);
+
       // comments
       if (j['comments'] != null) {
-        if (j['comments']['lineComment'] != null) {
-          l.lineComment = j['comments']['lineComment'];
+        final comments = j['comments'] ?? {};
+        if (comments['lineComment'] != null) {
+          l.lineComment = comments['lineComment'];
         }
-        if (j['comments']['blockComment'] != null) {
-          l.blockComment = j['comments']['blockComment'];
+        if (comments['blockComment'] != null) {
+          l.blockComment = [];
+          for(final c in comments['blockComment']) {
+            l.blockComment.add('$c');
+          }
         }
       }
+      l.autoClose = {};
+      final pairs = j['autoClosingPairs'] ?? [];
+      for(final p in pairs) {
+        l.autoClose[p['open']] = p['close'];
+      }
     } catch (err) {
-      //
     }
 
     /*
@@ -184,12 +193,6 @@ class TMParser extends HLEngine {
       }
     }
     */
-
-    // if (j['autoClosingPairs'] is List) {
-    //   for(final p in j['autoClosingPairs'] ?? []) {
-    //     print(p);
-    //   }
-    // }
 
     languages[langId] = l;
     return l;

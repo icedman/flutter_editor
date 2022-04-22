@@ -48,9 +48,10 @@ decorations
 console
 
 # bug
+auto scroll make smoother
 view scroll on tab change
 minimap - proportionate scroll
-select all - visual update
+select all - visual update (fixed)
 search last .. result to found (fixed)
 nowrap -> scoll to right -> tap => {vertical autoscroll gets lost} (fixed)
 

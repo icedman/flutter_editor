@@ -92,7 +92,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       FFIBridge.run(() => FFIBridge.remove_block(documentId, blockId));
     });
     d.addListener('onInsertText', (text) {
-      // print('auto close');
+      d.autoClose(lang?.autoClose ?? {});
     });
     d.addListener('onInsertNewLine', () {
       d.autoIndent();

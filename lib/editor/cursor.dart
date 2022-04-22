@@ -615,6 +615,22 @@ class Cursor {
     });
   }
 
+  void autoClose(Map<String, String> map) {
+    if (hasSelection()) return;
+    String l = block?.text ?? '';
+    String left = l;
+    if (l.length > column) {
+      left = l.substring(0, column);
+    }
+    for(final o in map.keys) {
+      if (left.endsWith(o)) {
+        Cursor cur = copy();
+        cur.insertText(map[o] ?? '');
+        return;
+      } 
+    }
+  }
+
   void autoIndent() {
     Cursor cur = copy();
     cur.moveCursorUp();
