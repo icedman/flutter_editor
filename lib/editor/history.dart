@@ -102,7 +102,7 @@ class History {
     if (redoEntries.length == 0) {
       return;
     }
-    
+
     bool update = false;
 
     HistoryEntry last = redoEntries.removeLast();
@@ -132,7 +132,7 @@ class History {
     for (final c in last.redoCursors) {
       doc.cursors.add(c.copy());
     }
-    
+
     if (update) {
       doc.updateLineNumbers(0);
     }
@@ -142,7 +142,7 @@ class History {
     if (entries.length == 0) {
       return;
     }
-    
+
     bool update = false;
 
     HistoryEntry last = entries.removeLast();
@@ -173,7 +173,7 @@ class History {
     for (final c in last.cursors) {
       doc.cursors.add(c.copy());
     }
-    
+
     if (update) {
       doc.updateLineNumbers(0);
     }

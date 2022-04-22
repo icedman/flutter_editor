@@ -96,8 +96,13 @@ class Document {
   String docPath = '';
   String tempPath = '';
   String fileName = '';
+  String title = '';
   int documentId = 0;
   int langId = 0;
+
+  // todo.. both these are all over the place
+  bool hideGutter = false;
+  bool hideMinimap = false;
 
   List<Block> blocks = [];
   List<Cursor> cursors = [];
@@ -683,7 +688,7 @@ class Document {
       c.autoClose(map);
     });
   }
-  
+
   void eraseDuplicateClose(String close) {
     if (!enableAutoClose) return;
     cursors.forEach((c) {

@@ -59,7 +59,7 @@ class _SearchPopup extends State<SearchPopup> {
     ignoreCase = widget.ignoreCase;
     searchDirection = widget.searchDirection;
     searchFiles = widget.searchFiles;
-    
+
     WidgetsBinding.instance?.addPostFrameCallback((_) {
       focusNode1.requestFocus();
     });
@@ -140,7 +140,7 @@ class _SearchPopup extends State<SearchPopup> {
                     color: theme.comment)),
             focusNode: focusNode2,
             autofocus: true));
-            
+
     Widget inputText3 = Padding(
         padding: const EdgeInsets.only(left: 8, right: 8),
         child: TextField(
@@ -164,7 +164,7 @@ class _SearchPopup extends State<SearchPopup> {
                     color: theme.comment)),
             focusNode: focusNode3,
             autofocus: true));
-            
+
     return Positioned(
         right: 0,
         top: app.tabbarHeight,
@@ -190,35 +190,35 @@ class _SearchPopup extends State<SearchPopup> {
                   ]),
 
                   if (replace && !searchFiles) ...[inputText2],
-                  
+
                   if (searchFiles) ...[inputText3],
 
                   Row(children: [
                     if (!searchFiles) ...[
-                    IconButton(
-                        icon: Icon(Icons.north, size: theme.uiFontSize),
-                        color: searchDirection == 1
-                            ? theme.function
-                            : theme.comment,
-                        onPressed: () {
-                          setState(() {
-                            searchDirection = 1;
-                          });
-                          _search();
-                          focusNode1.requestFocus();
-                        }),
-                    IconButton(
-                        icon: Icon(Icons.south, size: theme.uiFontSize),
-                        color: searchDirection == 0
-                            ? theme.function
-                            : theme.comment,
-                        onPressed: () {
-                          setState(() {
-                            searchDirection = 0;
-                          });
-                          _search();
-                          focusNode1.requestFocus();
-                        }),
+                      IconButton(
+                          icon: Icon(Icons.north, size: theme.uiFontSize),
+                          color: searchDirection == 1
+                              ? theme.function
+                              : theme.comment,
+                          onPressed: () {
+                            setState(() {
+                              searchDirection = 1;
+                            });
+                            _search();
+                            focusNode1.requestFocus();
+                          }),
+                      IconButton(
+                          icon: Icon(Icons.south, size: theme.uiFontSize),
+                          color: searchDirection == 0
+                              ? theme.function
+                              : theme.comment,
+                          onPressed: () {
+                            setState(() {
+                              searchDirection = 0;
+                            });
+                            _search();
+                            focusNode1.requestFocus();
+                          }),
                     ],
                     IconButton(
                         icon: Text('Aa',
@@ -248,31 +248,32 @@ class _SearchPopup extends State<SearchPopup> {
                           focusNode1.requestFocus();
                         }),
                     if (!searchFiles) ...[
-                    IconButton(
-                        icon: Icon(Icons.find_replace,
-                            size: theme.uiFontSize,
-                            color: replace ? theme.function : theme.comment),
-                        onPressed: () {
-                          if (searchFiles) return;
-                          setState(() {
-                            replace = !replace;
-                          });
-                        }),
-                    IconButton(
-                        icon: Icon(Icons.repeat,
-                            size: theme.uiFontSize,
-                            color: repeat ? theme.function : theme.comment),
-                        onPressed: () {
-                          setState(() {
-                            repeat = !repeat;
-                          });
-                          focusNode1.requestFocus();
-                        }),
+                      IconButton(
+                          icon: Icon(Icons.find_replace,
+                              size: theme.uiFontSize,
+                              color: replace ? theme.function : theme.comment),
+                          onPressed: () {
+                            if (searchFiles) return;
+                            setState(() {
+                              replace = !replace;
+                            });
+                          }),
+                      IconButton(
+                          icon: Icon(Icons.repeat,
+                              size: theme.uiFontSize,
+                              color: repeat ? theme.function : theme.comment),
+                          onPressed: () {
+                            setState(() {
+                              repeat = !repeat;
+                            });
+                            focusNode1.requestFocus();
+                          }),
                     ],
                     IconButton(
                         icon: Icon(Icons.folder,
                             size: theme.uiFontSize,
-                            color: searchFiles ? theme.function : theme.comment),
+                            color:
+                                searchFiles ? theme.function : theme.comment),
                         onPressed: () {
                           setState(() {
                             searchFiles = !searchFiles;

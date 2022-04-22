@@ -3,17 +3,75 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 import 'package:editor/services/indexer/levenshtein.dart';
+import 'package:path/path.dart' as _path;
 
 class FileSearch {
+  Future<dynamic> findInFile(String path, String text) async {
+    File f = File(path);
+    List<dynamic> result = [];
+    List<String> lines = [];
+    int lineNumber = 0;
+    try {
+      await f
+          .openRead()
+          .map(utf8.decode)
+          .transform(const LineSplitter())
+          .forEach((l) {
+        lines.add(l);
+        int idx = l.indexOf(text, 0);
+        if (idx != -1) {
+          result.add({'text': l, 'lineNumber': (lineNumber + 1)});
+        }
 
-  void find(String text, {List<String>? result}) {
-    Directory dir = Directory('./');
+        lineNumber++;
+      });
+    } catch (err, msg) {
+      //
+    }
+
+    if (result.length == 0) return '';
+
+    // for(final r in result) {
+    // r['previousLine'] = '';
+    // r['nextLine'] = '';
+    // int idx = r['lineNumber'] ?? 0;
+    // if (idx > 0) {
+    // r['previousLine'] = lines[idx-1];
+    // }
+    // if (idx < lines.length-1) {
+    // r['nextLine'] = lines[idx+1];
+    // }
+    // }
+
+    dynamic res = {};
+    res['file'] = path;
+    res['search'] = text;
+    res['matches'] = result;
+
+    return res;
+  }
+
+  Future<List<dynamic>> find(String text) async {
+    Directory dir = Directory(_path.normalize('./'));
+    Completer<List<dynamic>> completer = Completer<List<dynamic>>();
+
+    List<dynamic> result = [];
     var lister = dir.list(recursive: true);
-        lister.listen((file) {
-        }, onError: (err) {
+    lister.listen((file) async {
+      String ext = _path.extension(file.path);
+      if (ext == '.dart') {
+        dynamic res = await findInFile(file.path, text);
+        if (res != '') {
+          result.add(res);
+        }
+      }
+    }, onError: (err) {
+      completer.complete(result);
     }, onDone: () {
-        //
+      completer.complete(result);
     });
+
+    return completer.future;
   }
 }
 
@@ -36,7 +94,7 @@ class FileSearchIsolate {
     _isolateSendPort?.send('find::$text');
     return [];
   }
-  
+
   static void remoteIsolate(SendPort sendPort) {
     FileSearch isolateFileSearch = FileSearch();
     ReceivePort _isolateReceivePort = ReceivePort();
@@ -44,7 +102,9 @@ class FileSearchIsolate {
     _isolateReceivePort.listen((message) async {
       if (message.startsWith('find::')) {
         String text = message.substring(6);
-        isolateFileSearch.find(text);
+        isolateFileSearch.find(text).then((res) {
+          sendPort.send(jsonEncode(res));
+        });
       }
     });
   }
@@ -63,6 +123,4 @@ class FileSearchIsolate {
   }
 }
 
-class FileSearchProvider extends FileSearchIsolate 
-{}
-
+class FileSearchProvider extends FileSearchIsolate {}

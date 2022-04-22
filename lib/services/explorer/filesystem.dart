@@ -224,6 +224,8 @@ class Explorer implements ExplorerListener {
   }
 
   void onError(dynamic error) {}
+
+  void search(String fileName) {}
 }
 
 abstract class ExplorerListener {
@@ -244,4 +246,5 @@ abstract class ExplorerBackend {
   void deleteFile(String path);
   void renameDirectory(String path, String newPath);
   void renameFile(String path, String newPath);
+  void search(String fileName);
 }

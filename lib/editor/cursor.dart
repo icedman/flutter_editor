@@ -629,7 +629,7 @@ class Cursor {
       }
     }
   }
-  
+
   void eraseDuplicateClose(String close) {
     String l = block?.text ?? '';
     String right = l.substring(column);

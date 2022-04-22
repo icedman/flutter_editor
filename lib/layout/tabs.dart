@@ -83,13 +83,14 @@ class _EditorTabBar extends State<EditorTabBar> {
       String iconPath = FFIBridge.iconForFileName(doc.fileName);
       Widget fileIcon = FileIcon(path: iconPath, size: theme.uiFontSize + 2);
 
+      String title = doc.title.length > 0 ? doc.title : doc.fileName;
       tabs.add(Tab(
           key: ValueKey(doc.documentId),
           child: Padding(
               padding: EdgeInsets.only(left: 10, right: 0),
               child: Row(children: [
                 fileIcon,
-                Text(' ${doc.fileName}',
+                Text(' $title',
                     style: TextStyle(
                         fontFamily: theme.uiFontFamily,
                         fontSize: theme.uiFontSize,

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:convert';
 import 'package:editor/services/ui/status.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -69,6 +70,13 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     doc.openFile(widget.path);
     // }
 
+    if (doc.doc.hideGutter) {
+      doc.showGutter = false;
+    }
+    if (doc.doc.hideMinimap) {
+      doc.showMinimap = false;
+    }
+
     doc.doc.langId = highlighter.engine.loadLanguage(widget.path).langId;
 
     Document d = doc.doc;
@@ -93,7 +101,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     });
     d.addListener('onInsertText', (text) {
       // if (text.length == 1) {
-        // d.autoClose(lang?.autoClose ?? {});
+      // d.autoClose(lang?.autoClose ?? {});
       // }
     });
     d.addListener('onInsertNewLine', () {
@@ -273,19 +281,43 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
           }), blur: false, shield: false, onClearPopups: _regainFocus);
           return;
         }
+      // todo ... move to global popups
       case 'search_in_files':
         {
-          ui.setPopup(SearchPopup(searchFiles: (cmd =='search_in_files'), onSubmit: (text,
-              {int direction = 1,
-              bool caseSensitive = false,
-              bool regex = false,
-              bool repeat = false,
-              String? replace}) {
-              
-            FileSearchProvider search = Provider.of<FileSearchProvider>(context, listen: false);
-            search.find(text);
-
-          }), blur: false, shield: false, onClearPopups: _regainFocus);
+          ui.setPopup(
+              SearchPopup(
+                  searchFiles: (cmd == 'search_in_files'),
+                  onSubmit: (text,
+                      {int direction = 1,
+                      bool caseSensitive = false,
+                      bool regex = false,
+                      bool repeat = false,
+                      String? replace}) {
+                    Document? resultDoc = app.open(':search', focus: true);
+                    resultDoc?.title = 'Search Results';
+                    resultDoc?.hideGutter = true;
+                    resultDoc?.clear();
+                    FileSearchProvider search =
+                        Provider.of<FileSearchProvider>(context, listen: false);
+                    search.onResult = (res) {
+                      search.onResult = null;
+                      for (final r in res) {
+                        resultDoc?.insertText(r['file']);
+                        for (final m in r['matches'] ?? []) {
+                          resultDoc?.insertNewLine();
+                          resultDoc?.insertText(m['text']);
+                          resultDoc?.insertText(' [Ln ${m['lineNumber']}]');
+                        }
+                        resultDoc?.insertNewLine();
+                        resultDoc?.insertNewLine();
+                      }
+                      ui.clearPopups();
+                    };
+                    search.find(text);
+                  }),
+              blur: false,
+              shield: false,
+              onClearPopups: _regainFocus);
           return;
         }
       case 'jump_to_line':
@@ -429,7 +461,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
         break;
     }
   }
- 
+
   void _commandInsert(String text) {
     Document d = doc.doc;
     command('insert', params: text);
@@ -569,9 +601,9 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
                 }),
           ];
 
-    doc.showMinimap = app.showMinimap;
-    doc.showGutter = app.showGutter;
-    doc.softWrap = app.softWrap;
+    doc.showMinimap = doc.showMinimap && app.showMinimap;
+    doc.showGutter = doc.showGutter && app.showGutter;
+    doc.softWrap = doc.softWrap && app.softWrap;
 
     return MultiProvider(
         providers: [

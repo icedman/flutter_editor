@@ -17,7 +17,7 @@ class LocalFs extends ExplorerBackend {
     rootPath = _path.normalize(path);
   }
 
-  void loadPath(String path, { bool recursive: false }) {
+  void loadPath(String path, {bool recursive: false}) {
     files = <FileSystemEntity>[];
     Directory dir = Directory(path);
     var lister = dir.list(recursive: recursive);
@@ -111,8 +111,6 @@ class LocalFs extends ExplorerBackend {
       });
     });
   }
-  
-  void search(String text, { String basePath = '', bool regex = false })
-  {
-  }
+
+  void search(String fileName) {}
 }
