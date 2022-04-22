@@ -6,6 +6,7 @@ import 'package:editor/services/explorer/filesystem.dart';
 
 class LocalFs extends ExplorerBackend {
   List<ExplorerListener> listeners = [];
+  List<FileSystemEntity> files = [];
   String rootPath = '';
 
   void addListener(ExplorerListener listener) {
@@ -16,10 +17,10 @@ class LocalFs extends ExplorerBackend {
     rootPath = _path.normalize(path);
   }
 
-  void loadPath(String path) {
-    var files = <FileSystemEntity>[];
+  void loadPath(String path, { bool recursive: false }) {
+    files = <FileSystemEntity>[];
     Directory dir = Directory(path);
-    var lister = dir.list(recursive: false);
+    var lister = dir.list(recursive: recursive);
     lister.listen((file) => files.add(file), onError: (err) {
       listeners.forEach((l) {
         l.onError(jsonEncode({'path': path, 'operation': 'load'}));
@@ -109,5 +110,9 @@ class LocalFs extends ExplorerBackend {
         l.onError(jsonEncode({'path': path, 'operation': 'rename'}));
       });
     });
+  }
+  
+  void search(String text, { String basePath = '', bool regex = false })
+  {
   }
 }

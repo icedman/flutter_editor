@@ -217,7 +217,6 @@ rule_ptr grammar_t::find_grammar(std::string const& scope,
         }
 
         if (found) {
-            // printf(">>%s %s\n", scope.c_str(), path.c_str());
             return add_grammar(scope, load_plist_or_json(path), base);
         }
     }

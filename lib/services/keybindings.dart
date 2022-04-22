@@ -10,6 +10,7 @@ class Keybindings {
   Map<String, Command> commands = {
     'ctrl+q': Command('quit'),
     'ctrl+f': Command('search'),
+    'ctrl+shift+f': Command('search_in_files'),
     'ctrl+g': Command('jump_to_line'),
     'ctrl+z': Command('undo'),
     'ctrl+shift+z': Command('redo'),

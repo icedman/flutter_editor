@@ -12,8 +12,8 @@ import 'package:editor/editor/view.dart';
 import 'package:editor/editor/search.dart';
 import 'package:editor/editor/minimap.dart';
 import 'package:editor/services/app.dart';
-import 'package:editor/services/ffi/bridge.dart';
 import 'package:editor/services/input.dart';
+import 'package:editor/services/ffi/bridge.dart';
 import 'package:editor/services/ui/ui.dart';
 import 'package:editor/services/ui/menu.dart';
 import 'package:editor/services/ui/status.dart';
@@ -21,6 +21,7 @@ import 'package:editor/services/ui/modal.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 import 'package:editor/services/indexer/indexer.dart';
+import 'package:editor/services/indexer/filesearch.dart';
 import 'package:editor/services/keybindings.dart';
 
 class Editor extends StatefulWidget {
@@ -51,6 +52,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
   bool alting = false;
 
   List<Block> indexingQueue = [];
+  HLLanguage? lang;
 
   @override
   void initState() {
@@ -70,11 +72,9 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     doc.doc.langId = highlighter.engine.loadLanguage(widget.path).langId;
 
     Document d = doc.doc;
-    HLLanguage? lang = highlighter.engine.language(d.langId);
-    if (lang != null) {
-      d.lineComment = lang.lineComment;
-      d.blockComment = lang.blockComment;
-    }
+    lang = highlighter.engine.language(d.langId);
+    d.lineComment = lang?.lineComment ?? '';
+    d.blockComment = lang?.blockComment ?? [];
 
     d.addListener('onCreate', (documentId) {
       FFIBridge.run(() => FFIBridge.create_document(documentId));
@@ -92,7 +92,9 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       FFIBridge.run(() => FFIBridge.remove_block(documentId, blockId));
     });
     d.addListener('onInsertText', (text) {
-      d.autoClose(lang?.autoClose ?? {});
+      // if (text.length == 1) {
+        // d.autoClose(lang?.autoClose ?? {});
+      // }
     });
     d.addListener('onInsertNewLine', () {
       d.autoIndent();
@@ -269,7 +271,21 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
               doc.touch();
             }
           }), blur: false, shield: false, onClearPopups: _regainFocus);
+          return;
+        }
+      case 'search_in_files':
+        {
+          ui.setPopup(SearchPopup(searchFiles: (cmd =='search_in_files'), onSubmit: (text,
+              {int direction = 1,
+              bool caseSensitive = false,
+              bool regex = false,
+              bool repeat = false,
+              String? replace}) {
+              
+            FileSearchProvider search = Provider.of<FileSearchProvider>(context, listen: false);
+            search.find(text);
 
+          }), blur: false, shield: false, onClearPopups: _regainFocus);
           return;
         }
       case 'jump_to_line':
@@ -398,7 +414,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
                   control: controlling, shift: shifting, alt: alting));
               break;
             }
-            command('insert', params: ch);
+            _commandInsert(ch);
             break;
           }
         }
@@ -407,10 +423,21 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
             onShortcut(buildKeys(key,
                 control: controlling, shift: shifting, alt: alting));
           } else {
-            command('insert', params: key);
+            _commandInsert(key);
           }
         }
         break;
+    }
+  }
+ 
+  void _commandInsert(String text) {
+    Document d = doc.doc;
+    command('insert', params: text);
+    if (text.length == 1) {
+      d.autoClose(lang?.autoClose ?? {});
+    }
+    if ((lang?.closingBrackets ?? []).indexOf(text) != -1) {
+      d.eraseDuplicateClose(text);
     }
   }
 

@@ -38,6 +38,8 @@ class History {
           if (entry.actions[0].inserted != ' ' &&
               prev.actions[0].type == entry.actions[0].type &&
               prev.actions[0].block == entry.actions[0].block) {
+            // prev.actions[0].text = actions[0].text;
+            // prev.cursors = cursors;
             return;
           }
         }
@@ -100,6 +102,9 @@ class History {
     if (redoEntries.length == 0) {
       return;
     }
+    
+    bool update = false;
+
     HistoryEntry last = redoEntries.removeLast();
     entries.add(last);
     for (final a in last.actions.reversed) {
@@ -112,10 +117,12 @@ class History {
 
         case 'add':
           _reinsert(a.block);
+          update = true;
           a.block?.text = a.redoText;
           break;
 
         case 'remove':
+          update = true;
           _remove(a.block);
           break;
       }
@@ -125,12 +132,18 @@ class History {
     for (final c in last.redoCursors) {
       doc.cursors.add(c.copy());
     }
+    
+    if (update) {
+      doc.updateLineNumbers(0);
+    }
   }
 
   void undo(Document doc) {
     if (entries.length == 0) {
       return;
     }
+    
+    bool update = false;
 
     HistoryEntry last = entries.removeLast();
     redoEntries.add(last);
@@ -138,15 +151,18 @@ class History {
       switch (a.type) {
         case 'insert':
         case 'update':
+          a.redoText = a.block?.text ?? a.text;
           a.block?.text = a.text;
           a.block?.makeDirty(highlight: true);
           break;
 
         case 'remove':
+          update = true;
           _reinsert(a.block);
           break;
 
         case 'add':
+          update = true;
           _remove(a.block);
           break;
       }
@@ -156,6 +172,10 @@ class History {
     doc.cursors = [];
     for (final c in last.cursors) {
       doc.cursors.add(c.copy());
+    }
+    
+    if (update) {
+      doc.updateLineNumbers(0);
     }
   }
 }

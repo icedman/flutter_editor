@@ -94,6 +94,7 @@ class Block {
 
 class Document {
   String docPath = '';
+  String tempPath = '';
   String fileName = '';
   int documentId = 0;
   int langId = 0;
@@ -680,6 +681,13 @@ class Document {
     if (!enableAutoClose) return;
     cursors.forEach((c) {
       c.autoClose(map);
+    });
+  }
+  
+  void eraseDuplicateClose(String close) {
+    if (!enableAutoClose) return;
+    cursors.forEach((c) {
+      c.eraseDuplicateClose(close);
     });
   }
 

@@ -8,7 +8,8 @@ indexer (done)
 comment (done)
 uncomment (done)
 comment block
-redo
+redo (done)
+unicode support
 
 # popups
 auto complete (done)
@@ -56,4 +57,6 @@ minimap - proportionate scroll
 select all - visual update (fixed)
 search last .. result to found (fixed)
 nowrap -> scoll to right -> tap => {vertical autoscroll gets lost} (fixed)
+auto close - activate only when typing
+closing bracket - no duplicate }}
 

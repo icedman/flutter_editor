@@ -172,9 +172,11 @@ class TMParser extends HLEngine {
         }
       }
       l.autoClose = {};
+      l.closingBrackets = [];
       final pairs = j['autoClosingPairs'] ?? [];
       for (final p in pairs) {
         l.autoClose[p['open']] = p['close'];
+        l.closingBrackets.add(p['close']);
       }
       l.brackets = {};
       final brackets = j['brackets'] ?? [];

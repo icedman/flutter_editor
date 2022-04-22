@@ -629,6 +629,15 @@ class Cursor {
       }
     }
   }
+  
+  void eraseDuplicateClose(String close) {
+    String l = block?.text ?? '';
+    String right = l.substring(column);
+    if (right.startsWith(close)) {
+      Cursor cur = copy();
+      cur.deleteText(numberOfCharacters: close.length);
+    }
+  }
 
   void autoIndent() {
     Cursor cur = copy();

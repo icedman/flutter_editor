@@ -27,6 +27,7 @@ abstract class HLLanguage {
   String lineComment = '';
   Map<String, String> brackets = {};
   Map<String, String> autoClose = {};
+  List<String> closingBrackets = [];
 }
 
 class LineDecoration {
@@ -129,7 +130,11 @@ class Highlighter {
         if (i >= d.start && i <= d.end) {
           if (d.tab) {
             if (ch != ' ') continue;
-            ch = '|';
+            // ch = '|'
+            ch = '│';
+            // ch = '︳';
+            // ch = '︴';
+            // ch = '🭰';
             isTabStop = true;
           }
 
@@ -183,18 +188,10 @@ class Highlighter {
             break;
           }
         }
-        // if (line == (c.anchorBlock?.line ?? 0)) {
-        //   int l = (c.anchorBlock?.text ?? '').length;
-        //   if (i == c.anchorColumn || (i == l && c.anchorColumn > l)) {
-        //     block?.carets
-        //     .add(BlockCaret(position: i, color: Colors.red));
-        //     break;
-        //   }
-        // }
       }
 
       if (ch == '\t') {
-        ch = ' '; // todo!
+        ch = ' '; // todo! -- properly handle \t ... make files use \t
       }
 
       if (res.length != 0 && !(res[res.length - 1] is WidgetSpan)) {
@@ -231,28 +228,12 @@ class Highlighter {
             }));
     }
 
-    // res.add(TextSpan(text: '-- ${block?.previous?.line} [${block?.line}] ${block?.next?.line}', style: defaultStyle));
-
     res.add(CustomWidgetSpan(
         child: Container(height: 1, width: 1), line: line, block: block));
 
     if (cache) {
       block?.spans = res;
     }
-
-    // move to commit ...
-    // for (final s in res) {
-    //   if (s is TextSpan) {
-    //     if (s.style?.color != theme.comment) {
-    //       if (s.text != null) {
-    //         String txt = s.text ?? '';
-    //         if (block?.document != null) {
-    //           block?.document?.indexer.indexWords(txt);
-    //         }
-    //       }
-    //     }
-    //   }
-    // }
 
     return res;
   }

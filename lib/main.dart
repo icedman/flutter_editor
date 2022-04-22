@@ -9,6 +9,7 @@ import 'package:editor/services/ffi/bridge.dart';
 import 'package:editor/services/app.dart';
 import 'package:editor/services/util.dart';
 import 'package:editor/services/input.dart';
+import 'package:editor/services/indexer/filesearch.dart';
 import 'package:editor/services/ui/ui.dart';
 import 'package:editor/services/ui/status.dart';
 import 'package:editor/services/highlight/theme.dart';
@@ -47,6 +48,7 @@ void main(List<String> args) async {
   HLTheme theme = HLTheme.instance();
   UIProvider ui = UIProvider();
   StatusProvider status = StatusProvider();
+  FileSearchProvider fileSearch = FileSearchProvider();
 
   String dirPath = path;
   if (!(await FileSystemEntity.isDirectory(path))) {
@@ -78,6 +80,7 @@ void main(List<String> args) async {
     ChangeNotifierProvider(create: (context) => theme),
     ChangeNotifierProvider(create: (context) => explorer),
     ChangeNotifierProvider(create: (context) => status),
+    Provider(create: (context) => fileSearch)
   ], child: App()));
 }
 
