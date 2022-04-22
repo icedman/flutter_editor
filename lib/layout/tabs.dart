@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:editor/editor/editor.dart';
-import 'package:editor/explorer/explorer.dart';
+import 'package:editor/layout/explorer.dart';
 import 'package:editor/services/app.dart';
 import 'package:editor/services/util.dart';
 import 'package:editor/services/ui/ui.dart';

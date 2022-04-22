@@ -10,10 +10,10 @@ import 'package:editor/editor/cursor.dart';
 import 'package:editor/editor/document.dart';
 import 'package:editor/editor/view.dart';
 import 'package:editor/editor/search.dart';
+import 'package:editor/editor/minimap.dart';
 import 'package:editor/services/app.dart';
 import 'package:editor/services/ffi/bridge.dart';
 import 'package:editor/services/input.dart';
-import 'package:editor/minimap/minimap.dart';
 import 'package:editor/services/ui/ui.dart';
 import 'package:editor/services/ui/menu.dart';
 import 'package:editor/services/ui/status.dart';
@@ -108,7 +108,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
 
     indexer.onResult = (res) {
       UIProvider ui = Provider.of<UIProvider>(context, listen: false);
-      UIMenuData? menu = ui.menu('search::${d.documentId}', onSelect: (item) {
+      UIMenuData? menu = ui.menu('indexer::${d.documentId}', onSelect: (item) {
         Document d = doc.doc;
         d.begin();
         d.clearCursors();
@@ -198,7 +198,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     AppProvider app = Provider.of<AppProvider>(context, listen: false);
     UIProvider ui = Provider.of<UIProvider>(context, listen: false);
     if (ui.popups.isNotEmpty) {
-      UIMenuData? menu = ui.menu('search::${d.documentId}');
+      UIMenuData? menu = ui.menu('indexer::${d.documentId}');
       int idx = menu?.menuIndex ?? 0;
       int size = menu?.items.length ?? 0;
       switch (cmd) {
@@ -310,7 +310,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
 
     if (modifiedBlocks.isNotEmpty) {
       // onInputText..
-      UIMenuData? menu = ui.menu('search::${d.documentId}');
+      UIMenuData? menu = ui.menu('indexer::${d.documentId}');
       ui.setPopup(
           UIMenuPopup(position: decor.caretPosition, alignY: 1, menu: menu),
           blur: false,

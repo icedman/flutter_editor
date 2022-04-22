@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:path/path.dart' as _path;
 
-import 'package:editor/explorer/layout.dart';
-import 'package:editor/explorer/explorer.dart';
+import 'package:editor/layout/layout.dart';
+import 'package:editor/layout/explorer.dart';
 import 'package:editor/services/ffi/bridge.dart';
 import 'package:editor/services/app.dart';
 import 'package:editor/services/util.dart';
@@ -48,15 +48,17 @@ void main(List<String> args) async {
   UIProvider ui = UIProvider();
   StatusProvider status = StatusProvider();
 
+  String dirPath = path;
   if (!(await FileSystemEntity.isDirectory(path))) {
     app.open(path);
     app.openSidebar = false;
+    dirPath = _path.dirname(path);
   }
 
   FocusNode focusNode = FocusNode();
 
   ExplorerProvider explorer = ExplorerProvider();
-  explorer.explorer.setRootPath(_path.dirname(path)).then((files) {
+  explorer.explorer.setRootPath(dirPath).then((files) {
     explorer.explorer.root?.isExpanded = true;
     explorer.rebuild();
   });

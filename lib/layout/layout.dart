@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import 'package:editor/explorer/tabbar.dart';
-import 'package:editor/explorer/statusbar.dart';
-import 'package:editor/explorer/explorer.dart';
+import 'package:editor/layout/tabs.dart';
+import 'package:editor/layout/statusbar.dart';
+import 'package:editor/layout/explorer.dart';
 import 'package:editor/services/app.dart';
 import 'package:editor/services/util.dart';
 import 'package:editor/services/ui/ui.dart';

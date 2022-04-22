@@ -274,6 +274,9 @@ class Document {
   }
 
   void clearCursors() {
+    for (final cur in cursors) {
+      cur.block?.makeDirty();
+    }
     cursors = <Cursor>[cursor()];
     cursor().clearSelection();
   }
@@ -713,13 +716,13 @@ class Document {
       String left = safeSubstring(t, 0, col);
       String right = safeSubstring(t, col);
       String source = (direction == 1 ? right : left);
+      int start = (direction == 1 ? left : right).length;
 
       int idx = -1;
       if (regex) {
         final matches = _wordRegExp.allMatches(source);
         for (final m in matches) {
           var g = m.groups([0]);
-          // var t = g[0] ?? '';
           l = m.end - m.start;
           idx = m.start;
           break;
@@ -730,6 +733,7 @@ class Document {
 
       // found
       if (idx != -1) {
+        idx += start;
         Cursor res = cur.copy();
         res.anchorColumn = idx;
         res.anchorBlock = block;
