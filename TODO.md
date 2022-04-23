@@ -57,6 +57,10 @@ minimap - proportionate scroll
 select all - visual update (fixed)
 search last .. result to found (fixed)
 nowrap -> scoll to right -> tap => {vertical autoscroll gets lost} (fixed)
-auto close - activate only when typing
+auto close - activate only when typing (fixed)
 closing bracket - no duplicate }}
+focus on open
+theme path from settings
+scroll position on tab change
+vscode keybindings
 

@@ -166,13 +166,18 @@ class _SearchPopup extends State<SearchPopup> {
             focusNode: focusNode3,
             autofocus: true));
 
+    double popupWidth = 400;
+    if (app.screenWidth < 500) {
+      popupWidth = app.screenWidth;
+    }
+
     return Positioned(
         right: 0,
         top: app.tabbarHeight,
         child: Material(
             color: darken(theme.background, sidebarDarken),
             child: Container(
-                width: 400,
+                width: popupWidth,
                 // decoration: BoxDecoration(
                 //   color: darken(theme.background, sidebarDarken),
                 //   // borderRadius:
@@ -325,12 +330,17 @@ class _GotoPopup extends State<GotoPopup> {
     UIProvider ui = Provider.of<UIProvider>(context);
     HLTheme theme = Provider.of<HLTheme>(context);
 
+    double popupWidth = 400;
+    if (app.screenWidth < 500) {
+      popupWidth = app.screenWidth;
+    }
+
     double sz = 20;
     return Positioned(
         right: 0,
         top: app.tabbarHeight,
         child: Container(
-            width: 400,
+            width: popupWidth,
             decoration: BoxDecoration(
               color: darken(theme.background, sidebarDarken),
               // borderRadius:

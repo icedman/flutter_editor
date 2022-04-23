@@ -185,7 +185,9 @@ class EditorTabs extends StatelessWidget {
     for (final doc in app.documents) {
       String path = doc.docPath;
       views.add(Editor(
-          key: PageStorageKey(doc.documentId), path: path, document: doc));
+          // key: PageStorageKey(doc.documentId),
+          path: path,
+          document: doc));
     }
 
     if (views.length == 0) {

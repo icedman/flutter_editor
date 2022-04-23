@@ -106,15 +106,19 @@ class _AppLayout extends State<AppLayout> with WidgetsBindingObserver {
 
     app.bottomInset = bottomInset;
 
+    double prevScreenWidth = app.screenWidth;
+
     app.isKeyboardVisible = _isKeyboardVisible;
     app.screenWidth = MediaQuery.of(context).size.width;
     app.screenHeight = MediaQuery.of(context).size.height;
     app.notifyListeners();
 
-    if (app.sidebarWidth > app.screenWidth / 3) {
-      app.openSidebar = false;
-    } else {
-      app.openSidebar = true;
+    if (prevScreenWidth != app.screenWidth) {
+      if (app.sidebarWidth > app.screenWidth / 3) {
+        app.openSidebar = false;
+      } else {
+        app.openSidebar = true;
+      }
     }
 
     ui.clearPopups();

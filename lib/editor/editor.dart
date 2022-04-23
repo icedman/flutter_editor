@@ -662,7 +662,8 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
                   Row(children: [
                     Expanded(
                         child: InputListener(
-                            child: View(),
+                            child:
+                                View(key: PageStorageKey(doc.doc.documentId)),
                             focusNode: focusNode,
                             textFocusNode: textFocusNode,
                             onKeyDown: onKeyDown,

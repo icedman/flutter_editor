@@ -58,7 +58,6 @@ void main(List<String> args) async {
   }
 
   FocusNode focusNode = FocusNode();
-
   ExplorerProvider explorer = ExplorerProvider();
   explorer.explorer.setRootPath(dirPath).then((files) {
     explorer.explorer.root?.isExpanded = true;
@@ -138,6 +137,9 @@ class App extends StatelessWidget {
               switch (keys) {
                 case 'cancel':
                   ui.clearPopups();
+                  break;
+                case 'search_in_files':
+                  print('!!!');
                   break;
               }
             }

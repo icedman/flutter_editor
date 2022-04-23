@@ -838,6 +838,7 @@ class DocumentProvider extends ChangeNotifier {
   bool ready = false;
   bool pinned = false;
 
+  Offset scrollOffset = Offset.zero;
   Offset offsetForCaret = Offset.zero;
   Size scrollAreaSize = Size.zero;
 
