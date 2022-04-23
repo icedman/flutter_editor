@@ -112,7 +112,7 @@ class Document {
   List<Cursor> extraCursors = [];
   List<Cursor> sectionCursors = [];
   Map<String, List<Function?>> listeners = {};
-  Map<String, Function> decorators = {};
+  Map<String, LineDecorator> decorators = {};
 
   String tabString = '    ';
   int detectedTabSpaces = 0;

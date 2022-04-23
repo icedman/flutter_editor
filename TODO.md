@@ -22,8 +22,8 @@ add wrap to start of document (done)
 directory (done)
 file watcher
 fileicons (done)
-text search
-file search
+text search (done)
+file search (done)
 
 # ui
 new folder

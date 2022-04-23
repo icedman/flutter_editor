@@ -168,3 +168,77 @@ class SelectionThumb extends StatelessWidget {
                 borderRadius: BorderRadius.all(Radius.circular(radius / 2)))));
   }
 }
+
+class SearchResultDecorator extends LineDecorator {
+  String text = '';
+  bool regex = false;
+  bool caseSensitive = false;
+
+  List<LineDecoration> run(Block? block) {
+    List<LineDecoration> res = [];
+    String t = block?.text ?? '';
+    String f = text;
+
+    HLTheme theme = HLTheme.instance();
+    int lnIdx = t.indexOf('[Ln');
+    if (lnIdx == -1) {
+      return [
+        LineDecoration()
+          ..start = 0
+          ..end = t.length
+          ..color = theme.comment
+      ];
+    }
+
+    res.add(LineDecoration()
+      ..start = lnIdx
+      ..end = t.length
+      ..color = theme.function
+      ..tap = 'open_search_result');
+
+    if (!caseSensitive && !regex) {
+      f = f.toLowerCase();
+    }
+
+    RegExp _wordRegExp = RegExp(
+      text,
+      caseSensitive: caseSensitive,
+      multiLine: false,
+    );
+
+    List<List<int>> _res = [];
+    if (regex) {
+      final matches = _wordRegExp.allMatches(t);
+      for (final m in matches) {
+        var g = m.groups([0]);
+        _res.add([m.start, m.end]);
+      }
+    } else {
+      int start = 0;
+      if (!caseSensitive && !regex) {
+        t = t.toLowerCase();
+      }
+      while (true) {
+        int idx = t.indexOf(f, start);
+        if (idx != -1) {
+          _res.add([idx, idx + f.length - 1]);
+          start = idx + f.length;
+          continue;
+        }
+        break;
+      }
+    }
+
+    for (final r in _res) {
+      res.add(LineDecoration()
+        ..start = r[0]
+        ..end = r[1]
+        ..italic = true
+        ..underline = true
+        ..color = theme.string
+        ..tap = 'open_search_result');
+    }
+
+    return res;
+  }
+}

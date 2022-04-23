@@ -273,47 +273,10 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
         String? replace}) {
       Document? resultDoc = app.open(':search.txt', focus: true);
 
-      resultDoc?.decorators['search_result'] = (Block block) {
-        List<LineDecoration> res = [];
-        String t = block.text;
-        String f = text;
-
-        HLTheme theme = HLTheme.instance();
-        int lnIdx = t.indexOf('[Ln');
-        if (lnIdx == -1) {
-          return [
-            LineDecoration()
-              ..start = 0
-              ..end = t.length
-              ..color = theme.comment
-          ];
-        }
-
-        res.add(LineDecoration()
-          ..start = lnIdx
-          ..end = t.length
-          ..color = theme.function
-          ..tap = 'open_search_result');
-
-        int start = 0;
-        while (true) {
-          int idx = t.indexOf(f, start);
-          if (idx != -1) {
-            res.add(LineDecoration()
-              ..start = idx
-              ..end = (idx + f.length - 1)
-              ..italic = true
-              ..underline = true
-              ..color = theme.string
-              ..tap = 'open_search_result');
-            start = idx + f.length;
-            continue;
-          }
-          break;
-        }
-
-        return res;
-      };
+      resultDoc?.decorators['search_result'] = SearchResultDecorator()
+        ..text = text
+        ..regex = regex
+        ..caseSensitive = caseSensitive;
 
       resultDoc?.title = 'Search Results';
       resultDoc?.hideGutter = true;
@@ -338,7 +301,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
         }
         ui.clearPopups();
       };
-      search.find(text);
+      search.find(text, caseSensitive: caseSensitive, regex: regex);
     };
 
     switch (cmd) {
@@ -503,7 +466,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       case 'Enter':
       case '\n':
         _commandNewLine();
-        break;
+        return;
       default:
         {
           int k = keyId;

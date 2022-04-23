@@ -220,34 +220,35 @@ class _SearchPopup extends State<SearchPopup> {
                             _search();
                             focusNode1.requestFocus();
                           }),
-                      IconButton(
-                          icon: Text('Aa',
-                              style: TextStyle(
-                                  fontSize: theme.uiFontSize,
-                                  color: ignoreCase
-                                      ? theme.comment
-                                      : theme.function,
-                                  fontWeight: FontWeight.bold)),
-                          color: ignoreCase ? theme.comment : theme.function,
-                          onPressed: () {
-                            setState(() {
-                              ignoreCase = !ignoreCase;
-                            });
-                            focusNode1.requestFocus();
-                          }),
-                      IconButton(
-                          icon: Text('.*',
-                              style: TextStyle(
-                                  fontSize: theme.uiFontSize,
-                                  color: regex ? theme.function : theme.comment,
-                                  fontWeight: FontWeight.bold)),
-                          color: regex ? theme.function : theme.comment,
-                          onPressed: () {
-                            setState(() {
-                              regex = !regex;
-                            });
-                            focusNode1.requestFocus();
-                          }),
+                    ],
+                    IconButton(
+                        icon: Text('Aa',
+                            style: TextStyle(
+                                fontSize: theme.uiFontSize,
+                                color:
+                                    ignoreCase ? theme.comment : theme.function,
+                                fontWeight: FontWeight.bold)),
+                        color: ignoreCase ? theme.comment : theme.function,
+                        onPressed: () {
+                          setState(() {
+                            ignoreCase = !ignoreCase;
+                          });
+                          focusNode1.requestFocus();
+                        }),
+                    IconButton(
+                        icon: Text('.*',
+                            style: TextStyle(
+                                fontSize: theme.uiFontSize,
+                                color: regex ? theme.function : theme.comment,
+                                fontWeight: FontWeight.bold)),
+                        color: regex ? theme.function : theme.comment,
+                        onPressed: () {
+                          setState(() {
+                            regex = !regex;
+                          });
+                          focusNode1.requestFocus();
+                        }),
+                    if (!searchFiles) ...[
                       IconButton(
                           icon: Icon(Icons.find_replace,
                               size: theme.uiFontSize,
@@ -269,7 +270,6 @@ class _SearchPopup extends State<SearchPopup> {
                             focusNode1.requestFocus();
                           }),
                     ],
-                    /*
                     IconButton(
                         icon: Icon(Icons.folder,
                             size: theme.uiFontSize,
@@ -281,7 +281,6 @@ class _SearchPopup extends State<SearchPopup> {
                           });
                           focusNode1.requestFocus();
                         }),
-                        */
                     Expanded(child: Container()),
                   ]),
                   // Expanded(child: Container())

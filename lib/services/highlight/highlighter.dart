@@ -58,6 +58,12 @@ class LineDecoration {
   }
 }
 
+class LineDecorator {
+  List<LineDecoration> run(Block? block) {
+    return [];
+  }
+}
+
 class CustomWidgetSpan extends WidgetSpan {
   int line = 0;
   Block? block;
@@ -115,9 +121,9 @@ class Highlighter {
     }
     List<LineDecoration> decors = block?.decors ?? [];
 
-    Map<String, Function> decorators = block?.document?.decorators ?? {};
+    Map<String, LineDecorator> decorators = block?.document?.decorators ?? {};
     for (final h in decorators.keys) {
-      for (final d in (decorators[h]?.call(block) ?? [])) {
+      for (final d in (decorators[h]?.run(block) ?? [])) {
         decors.add(d);
       }
     }
