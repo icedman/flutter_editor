@@ -13,6 +13,9 @@ This project is the more advanced version of editor_from_scratch (https://github
 * auto complete (document indexing)
 * minimap
 * unlimited undo
+* unlimited redo
+* search and replace
+* text search over files
 * support for very large files
 * support for wrapped & overflowed text
 * support for virtual keyboard for mobile
