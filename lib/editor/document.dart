@@ -103,6 +103,7 @@ class Document {
   // todo.. both these are all over the place
   bool hideGutter = false;
   bool hideMinimap = false;
+  int scrollTo = -1;
 
   List<Block> blocks = [];
   List<Cursor> cursors = [];
@@ -111,6 +112,7 @@ class Document {
   List<Cursor> extraCursors = [];
   List<Cursor> sectionCursors = [];
   Map<String, List<Function?>> listeners = {};
+  Map<String, Function> decorators = {};
 
   String tabString = '    ';
   int detectedTabSpaces = 0;
@@ -141,8 +143,6 @@ class Document {
     listeners['onDestroy']?.forEach((l) {
       l?.call(documentId);
     });
-
-    // indexer.dispose();
   }
 
   void addListener(String event, Function? func) {
@@ -797,6 +797,12 @@ class Document {
     }
 
     return null;
+  }
+
+  void makeDirty({bool highlight = false}) {
+    for (final b in blocks) {
+      b.makeDirty(highlight: highlight);
+    }
   }
 
   int computedLine(int line) {

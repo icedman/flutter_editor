@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:editor/editor/decorations.dart';
 import 'package:editor/editor/cursor.dart';
 import 'package:editor/editor/document.dart';
+import 'package:editor/services/app.dart';
 import 'package:editor/services/util.dart';
 import 'package:editor/services/timer.dart';
 import 'package:editor/services/input.dart';
@@ -178,11 +179,32 @@ class ViewLine extends StatelessWidget {
     Block b = block ?? Block('', document: doc.doc);
     if (b.spans == null) {
       Highlighter hl = Provider.of<Highlighter>(context, listen: false);
-      hl.run(b, b.line, b.document ?? Document(), onTap: (text) {
-        if (text == ':unfold') {
-          doc.doc.unfold(b);
-          b.makeDirty();
-          doc.touch();
+      hl.run(b, b.line, b.document ?? Document(), onTap: (command) {
+        switch (command) {
+          case ':unfold':
+            doc.doc.unfold(b);
+            b.makeDirty();
+            doc.touch();
+            break;
+          case ':open_search_result':
+            {
+              Cursor cur = doc.doc.cursor();
+              cur.block = b;
+              cur.moveCursorToStartOfLine();
+              String t = (cur.block?.text ?? '');
+              int idx = t.indexOf('[Ln');
+              String lns = t.substring(idx + 4);
+              lns = lns.substring(0, lns.length - 1);
+              int ln = int.parse(lns);
+              while ((cur.block?.text ?? '').indexOf('[Ln') != -1) {
+                cur.moveCursorUp();
+              }
+              AppProvider.instance()
+                  .open(cur.block?.text ?? '', focus: true, scrollTo: ln);
+              break;
+            }
+          default:
+            break;
         }
       });
     }
@@ -570,8 +592,11 @@ class _View extends State<View> {
     }
 
     if (doc.scrollTo != -1) {
-      scrollToLine(doc.scrollTo);
-      Future.delayed(const Duration(milliseconds: 50), scrollToCursor);
+      int jumpTo = doc.scrollTo;
+      Future.delayed(const Duration(milliseconds: 50), () {
+        scrollToLine(jumpTo);
+      });
+      Future.delayed(const Duration(milliseconds: 100), scrollToCursor);
       doc.scrollTo = -1;
     }
 

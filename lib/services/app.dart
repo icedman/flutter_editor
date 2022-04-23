@@ -11,6 +11,8 @@ import 'package:editor/editor/document.dart';
 import 'package:editor/services/util.dart';
 import 'package:editor/services/keybindings.dart';
 
+final AppProvider _app = AppProvider();
+
 const bool LIGHT_MODE = false;
 
 const String appResourceRoot = '~/.editor';
@@ -53,6 +55,10 @@ class AppProvider extends ChangeNotifier {
   Document? document;
   late Keybindings keybindings;
 
+  static AppProvider instance() {
+    return _app;
+  }
+
   // settings
   dynamic settings;
   double sidebarWidth = 240;
@@ -83,7 +89,7 @@ class AppProvider extends ChangeNotifier {
     keybindings = Keybindings();
   }
 
-  Document? open(String path, {bool focus = false}) {
+  Document? open(String path, {bool focus = false, int scrollTo = -1}) {
     String p = _path.normalize(Directory(path).absolute.path);
     for (final d in documents) {
       if (d.docPath == p) {
@@ -95,6 +101,7 @@ class AppProvider extends ChangeNotifier {
       }
     }
     Document doc = Document(path: path);
+    doc.scrollTo = scrollTo;
     documents.add(doc);
     if (focus || documents.length == 1) {
       document = doc;

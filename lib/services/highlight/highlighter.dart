@@ -40,6 +40,7 @@ class LineDecoration {
   bool bracket = false;
   bool open = false;
   bool tab = false;
+  String tap = '';
 
   Object toObject() {
     return {
@@ -67,6 +68,24 @@ class CustomWidgetSpan extends WidgetSpan {
 class Highlighter {
   HLEngine engine = TMParser();
   // HLEngine engine = FlutterHighlight();
+
+  TextSpan _textSpan(String text, TextStyle style,
+      {Function? onTap, Block? block}) {
+    return TextSpan(
+        text: text,
+        style: style,
+        recognizer: style.fontFamilyFallback == null
+            ? null
+            : (TapGestureRecognizer()
+              ..onTap = () {
+                for (final t in (style.fontFamilyFallback ?? [])) {
+                  onTap?.call(':$t');
+                }
+              }),
+        mouseCursor: style.fontFamilyFallback != null
+            ? MaterialStateMouseCursor.clickable
+            : MaterialStateMouseCursor.textable);
+  }
 
   List<InlineSpan> run(Block? block, int line, Document document,
       {Function? onTap, Function? onHover}) {
@@ -96,15 +115,19 @@ class Highlighter {
     }
     List<LineDecoration> decors = block?.decors ?? [];
 
-    // tabs
+    Map<String, Function> decorators = block?.document?.decorators ?? {};
+    for (final h in decorators.keys) {
+      for (final d in (decorators[h]?.call(block) ?? [])) {
+        decors.add(d);
+      }
+    }
+
+    // tabs << convert to decorator
     int indentSize = Document.countIndentSize(text);
     int tabSpaces = (block?.document?.detectedTabSpaces ?? 1);
     if (tabSpaces == 0) tabSpaces = 2;
     int tabStops = indentSize ~/ tabSpaces;
     Color tabStopColor = colorCombine(theme.comment, theme.background, bw: 3);
-
-    // print('$tabStops $indentSize');
-
     for (int i = 0; i <= tabStops; i++) {
       int start = i * tabSpaces;
       int end = start;
@@ -130,12 +153,16 @@ class Highlighter {
         if (i >= d.start && i <= d.end) {
           if (d.tab) {
             if (ch != ' ') continue;
-            // ch = '|'
             ch = '│';
+            // ch = '|'
             // ch = '︳';
             // ch = '︴';
             // ch = '🭰';
             isTabStop = true;
+          }
+
+          if (d.tap != '') {
+            style = style.copyWith(fontFamilyFallback: [d.tap]);
           }
 
           style = style.copyWith(color: d.color);
@@ -153,7 +180,9 @@ class Highlighter {
             block?.brackets.add(BlockBracket(
                 block: block, position: d.start, open: d.open, bracket: ch));
           }
-          break;
+          if (decorators.length == 0 || isTabStop) {
+            break;
+          }
         }
       }
 
@@ -198,19 +227,12 @@ class Highlighter {
         TextSpan prev = res[res.length - 1] as TextSpan;
         if (prev.style == style) {
           prevText += ch;
-          res[res.length - 1] = TextSpan(
-              text: prevText,
-              style: style,
-              mouseCursor: MaterialStateMouseCursor.textable);
+          res[res.length - 1] = _textSpan(prevText, style, onTap: onTap);
           continue;
         }
       }
 
-      res.add(TextSpan(
-          text: ch,
-          style: style,
-          mouseCursor: MaterialStateMouseCursor.textable));
-
+      res.add(_textSpan(ch, style, onTap: onTap));
       prevText = ch;
     }
 

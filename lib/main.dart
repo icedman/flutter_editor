@@ -18,7 +18,7 @@ import 'package:editor/services/highlight/tmparser.dart';
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  AppProvider app = AppProvider();
+  AppProvider app = AppProvider.instance();
   await app.initialize();
   await app.loadSettings();
 

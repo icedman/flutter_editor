@@ -78,6 +78,8 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     }
 
     doc.doc.langId = highlighter.engine.loadLanguage(widget.path).langId;
+    doc.scrollTo = doc.doc.scrollTo;
+    doc.doc.scrollTo = -1;
 
     Document d = doc.doc;
     lang = highlighter.engine.language(d.langId);
@@ -105,7 +107,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       // }
     });
     d.addListener('onInsertNewLine', () {
-      d.autoIndent();
+      //
     });
     d.addListener('onReady', () {
       Future.delayed(const Duration(seconds: 3), () {
@@ -236,6 +238,109 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       }
     }
 
+    final onSearchInFile = (text,
+        {int direction = 1,
+        bool caseSensitive = false,
+        bool regex = false,
+        bool repeat = false,
+        bool searchInFiles = false,
+        String? replace}) {
+      Document d = doc.doc;
+      Cursor? cur = d.find(d.cursor().copy(), text,
+          direction: direction,
+          regex: regex,
+          caseSensitive: caseSensitive,
+          repeat: repeat);
+      if (cur != null) {
+        if (replace != null && d.hasSelection()) {
+          d.begin();
+          d.insertText(replace);
+          d.commit();
+        }
+        d.clearCursors();
+        d.cursor().copyFrom(cur, keepAnchor: true);
+        doc.scrollTo = cur.block?.line ?? 0;
+        doc.touch();
+      }
+    };
+
+    final onSearchInFiles = (text,
+        {int direction = 1,
+        bool caseSensitive = false,
+        bool regex = false,
+        bool repeat = false,
+        bool searchInFiles = false,
+        String? replace}) {
+      Document? resultDoc = app.open(':search.txt', focus: true);
+
+      resultDoc?.decorators['search_result'] = (Block block) {
+        List<LineDecoration> res = [];
+        String t = block.text;
+        String f = text;
+
+        HLTheme theme = HLTheme.instance();
+        int lnIdx = t.indexOf('[Ln');
+        if (lnIdx == -1) {
+          return [
+            LineDecoration()
+              ..start = 0
+              ..end = t.length
+              ..color = theme.comment
+          ];
+        }
+
+        res.add(LineDecoration()
+          ..start = lnIdx
+          ..end = t.length
+          ..color = theme.function
+          ..tap = 'open_search_result');
+
+        int start = 0;
+        while (true) {
+          int idx = t.indexOf(f, start);
+          if (idx != -1) {
+            res.add(LineDecoration()
+              ..start = idx
+              ..end = (idx + f.length - 1)
+              ..italic = true
+              ..underline = true
+              ..color = theme.string
+              ..tap = 'open_search_result');
+            start = idx + f.length;
+            continue;
+          }
+          break;
+        }
+
+        return res;
+      };
+
+      resultDoc?.title = 'Search Results';
+      resultDoc?.hideGutter = true;
+      resultDoc?.clear();
+      FileSearchProvider search =
+          Provider.of<FileSearchProvider>(context, listen: false);
+      search.onResult = (res) {
+        search.onResult = null;
+        for (final r in res) {
+          resultDoc?.insertText(r['file']);
+          for (final m in r['matches'] ?? []) {
+            resultDoc?.insertNewLine();
+            // resultDoc?.insertText('```js');
+            // resultDoc?.insertNewLine();
+            resultDoc?.insertText(m['text']);
+            resultDoc?.insertText(' [Ln ${m['lineNumber']}]');
+            // resultDoc?.insertNewLine();
+            // resultDoc?.insertText('```');
+          }
+          resultDoc?.insertNewLine();
+          resultDoc?.insertNewLine();
+        }
+        ui.clearPopups();
+      };
+      search.find(text);
+    };
+
     switch (cmd) {
       case 'switch_tab':
         {
@@ -254,34 +359,6 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
         }
 
       case 'search':
-        {
-          ui.setPopup(SearchPopup(onSubmit: (text,
-              {int direction = 1,
-              bool caseSensitive = false,
-              bool regex = false,
-              bool repeat = false,
-              String? replace}) {
-            Document d = doc.doc;
-            Cursor? cur = d.find(d.cursor().copy(), text,
-                direction: direction,
-                regex: regex,
-                caseSensitive: caseSensitive,
-                repeat: repeat);
-            if (cur != null) {
-              if (replace != null && d.hasSelection()) {
-                d.begin();
-                d.insertText(replace);
-                d.commit();
-              }
-              d.clearCursors();
-              d.cursor().copyFrom(cur, keepAnchor: true);
-              doc.scrollTo = cur.block?.line ?? 0;
-              doc.touch();
-            }
-          }), blur: false, shield: false, onClearPopups: _regainFocus);
-          return;
-        }
-      // todo ... move to global popups
       case 'search_in_files':
         {
           ui.setPopup(
@@ -292,28 +369,21 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
                       bool caseSensitive = false,
                       bool regex = false,
                       bool repeat = false,
+                      bool searchInFiles = false,
                       String? replace}) {
-                    Document? resultDoc = app.open(':search', focus: true);
-                    resultDoc?.title = 'Search Results';
-                    resultDoc?.hideGutter = true;
-                    resultDoc?.clear();
-                    FileSearchProvider search =
-                        Provider.of<FileSearchProvider>(context, listen: false);
-                    search.onResult = (res) {
-                      search.onResult = null;
-                      for (final r in res) {
-                        resultDoc?.insertText(r['file']);
-                        for (final m in r['matches'] ?? []) {
-                          resultDoc?.insertNewLine();
-                          resultDoc?.insertText(m['text']);
-                          resultDoc?.insertText(' [Ln ${m['lineNumber']}]');
-                        }
-                        resultDoc?.insertNewLine();
-                        resultDoc?.insertNewLine();
-                      }
-                      ui.clearPopups();
-                    };
-                    search.find(text);
+                    if (searchInFiles) {
+                      onSearchInFiles.call(text,
+                          direction: direction,
+                          caseSensitive: caseSensitive,
+                          regex: regex,
+                          repeat: repeat);
+                    } else {
+                      onSearchInFile.call(text,
+                          direction: direction,
+                          caseSensitive: caseSensitive,
+                          regex: regex,
+                          repeat: repeat);
+                    }
                   }),
               blur: false,
               shield: false,
@@ -427,10 +497,12 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       case 'Tab':
       case 'Home':
       case 'End':
-      case 'Enter':
-      case '\n':
         command(
             buildKeys(key, control: controlling, shift: shifting, alt: alting));
+        break;
+      case 'Enter':
+      case '\n':
+        _commandNewLine();
         break;
       default:
         {
@@ -471,6 +543,12 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     if ((lang?.closingBrackets ?? []).indexOf(text) != -1) {
       d.eraseDuplicateClose(text);
     }
+  }
+
+  void _commandNewLine() {
+    Document d = doc.doc;
+    command('enter');
+    d.autoIndent();
   }
 
   void onKeyUp() {
