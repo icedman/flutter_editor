@@ -740,4 +740,32 @@ class Cursor {
     }
     _unindent();
   }
+
+  void selectionToLowerCase() {
+    if (!hasSelection()) return;
+    String t = selectedText().toLowerCase();
+    int line = block?.line ?? 0;
+    int col = column;
+    int anchorLine = anchorBlock?.line ?? 0;
+    int anchorCol = anchorColumn;
+    insertText(t);
+    block = block?.document?.blockAtLine(line);
+    column = col;
+    anchorBlock = block?.document?.blockAtLine(anchorLine);
+    anchorColumn = anchorCol;
+  }
+
+  void selectionToUpperCase() {
+    if (!hasSelection()) return;
+    String t = selectedText().toUpperCase();
+    int line = block?.line ?? 0;
+    int col = column;
+    int anchorLine = anchorBlock?.line ?? 0;
+    int anchorCol = anchorColumn;
+    insertText(t);
+    block = block?.document?.blockAtLine(line);
+    column = col;
+    anchorBlock = block?.document?.blockAtLine(anchorLine);
+    anchorColumn = anchorCol;
+  }
 }

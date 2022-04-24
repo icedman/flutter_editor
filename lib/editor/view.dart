@@ -593,10 +593,10 @@ class _View extends State<View> {
 
     if (doc.scrollTo != -1) {
       int jumpTo = doc.scrollTo;
-      Future.delayed(const Duration(milliseconds: 50), () {
+      Future.delayed(const Duration(milliseconds: 0), () {
         scrollToLine(jumpTo);
       });
-      Future.delayed(const Duration(milliseconds: 100), scrollToCursor);
+      Future.delayed(const Duration(milliseconds: 0), scrollToCursor);
       doc.scrollTo = -1;
     }
 

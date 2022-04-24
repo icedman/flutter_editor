@@ -51,6 +51,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
   bool shifting = false;
   bool controlling = false;
   bool alting = false;
+  int lastHashCode = 0;
 
   List<Block> indexingQueue = [];
   HLLanguage? lang;
@@ -175,7 +176,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
 
   void onShortcut(String keys) {
     AppProvider app = Provider.of<AppProvider>(context, listen: false);
-    Command? cmd = app.keybindings.resolve(keys);
+    Command? cmd = app.keybindings.resolve(keys, code: lastHashCode);
     command(cmd?.command ?? '', params: cmd?.params);
   }
 
@@ -422,16 +423,16 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       bool shift = false,
       bool control = false,
       bool alt = false,
-      bool softKeyboard = false}) {
+      bool softKeyboard = false,
+      int code = 0}) {
     if (!softKeyboard) {
       shifting = shift;
       controlling = control;
       alting = alt;
     }
 
-    // print('$softKeyboard $key ${key.length} ${controlling}');
-
     Document d = doc.doc;
+    lastHashCode = code;
 
     UIProvider ui = Provider.of<UIProvider>(context, listen: false);
     if (doc.softWrap && ui.popups.isEmpty) {

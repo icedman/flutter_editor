@@ -25,11 +25,18 @@ fileicons (done)
 text search (done)
 file search (done)
 
+filesystem - exclude
+file - external
+
 # ui
+animate explorer
 new folder
 new file
 delete folder
 delete file
+
+popup
+file search
 
 cancel popups (done)
 global key listeners (done)
@@ -52,15 +59,16 @@ console
 
 # bug
 auto scroll make smoother
-view scroll on tab change
 minimap - proportionate scroll
 select all - visual update (fixed)
 search last .. result to found (fixed)
 nowrap -> scoll to right -> tap => {vertical autoscroll gets lost} (fixed)
 auto close - activate only when typing (fixed)
-closing bracket - no duplicate }}
+closing bracket - no duplicate }} (fixed)
 focus on open
 theme path from settings
-scroll position on tab change
+scroll position on tab change (fixed)
 vscode keybindings
+menu too low (fixed)
+tab close causes disposed error - at scrollToCursor, editor, document
 

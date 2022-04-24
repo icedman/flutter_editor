@@ -5,25 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:editor/services/app.dart';
 import 'package:editor/services/util.dart';
 import 'package:editor/services/ui/ui.dart';
+import 'package:editor/services/ui/menu.dart';
 import 'package:editor/services/highlight/theme.dart';
 
-class UIMenuData {
-  int menuIndex = 0;
-  String title = '';
-  String subtitle = '';
-  List<UIMenuData> items = [];
-
-  Function? onSelect;
-
-  void select(int index) {
-    if (index >= 0 && index < items.length && items[index] != null) {
-      onSelect?.call(items[index]);
-    }
-  }
-}
-
-class UIMenuPopup extends StatefulWidget {
-  UIMenuPopup(
+class UIPalettePopup extends StatefulWidget {
+  UIPalettePopup(
       {Key? key,
       Offset this.position = Offset.zero,
       double this.width = 220,
@@ -41,10 +27,10 @@ class UIMenuPopup extends StatefulWidget {
   UIMenuData? menu;
 
   @override
-  _UIMenuPopup createState() => _UIMenuPopup();
+  _UIPalettePopup createState() => _UIPalettePopup();
 }
 
-class _UIMenuPopup extends State<UIMenuPopup> {
+class _UIPalettePopup extends State<UIPalettePopup> {
   late ScrollController scroller;
 
   @override

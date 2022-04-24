@@ -14,6 +14,7 @@ import 'package:editor/services/ui/ui.dart';
 import 'package:editor/services/ui/status.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/tmparser.dart';
+import 'package:editor/services/keybindings.dart';
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -89,17 +90,19 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppProvider app = Provider.of<AppProvider>(context, listen: false);
     UIProvider ui = Provider.of<UIProvider>(context, listen: false);
     HLTheme theme = Provider.of<HLTheme>(context);
 
+    Brightness scheme = Brightness.light; // isDark(theme.background) ? Brightness.dark : Brightness.light;
+    
     ThemeData themeData = ThemeData(
       focusColor: Color.fromRGBO(0, 0, 0, 0.1),
-      brightness: isDark(theme.background) ? Brightness.dark : Brightness.light,
+      brightness: scheme,
       colorScheme: ColorScheme.fromSwatch(
         primarySwatch: toMaterialColor(theme.background),
         accentColor: toMaterialColor(theme.background),
-        brightness:
-            isDark(theme.background) ? Brightness.dark : Brightness.light,
+        brightness: scheme,
       ),
       errorColor: Colors.red,
       primarySwatch: toMaterialColor(darken(theme.background, sidebarDarken)),
@@ -133,18 +136,22 @@ class App extends StatelessWidget {
           autofocus: true,
           onKey: (FocusNode node, RawKeyEvent event) {
             if (event.runtimeType.toString() == 'RawKeyDownEvent') {
-              String keys = buildKeys(event.logicalKey.keyLabel);
+              String keys = buildKeys(event.logicalKey.keyLabel, 
+                  control: event.isControlPressed,
+                  shift: event.isShiftPressed,
+                  alt: event.isAltPressed);
+              
               switch (keys) {
                 case 'cancel':
                   ui.clearPopups();
                   break;
-                case 'search_in_files':
-                  print('!!!');
-                  break;
               }
+
+              // Command? cmd = app.keybindings.resolve(keys, code: event.hashCode);
+              // print(cmd?.command);
             }
             if (event.runtimeType.toString() == 'RawKeyUpEvent') {}
-            return KeyEventResult.ignored;
+            return KeyEventResult.handled;
           },
         ));
   }

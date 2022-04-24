@@ -497,6 +497,18 @@ class Document {
     });
   }
 
+  void selectionToLowerCase() {
+    cursors.forEach((c) {
+      c.selectionToLowerCase();
+    });
+  }
+
+  void selectionToUpperCase() {
+    cursors.forEach((c) {
+      c.selectionToUpperCase();
+    });
+  }
+
   void backspace() {
     cursors.forEach((c) {
       // print('${c.block?.line} ${c.column}');
@@ -1076,6 +1088,16 @@ class DocumentProvider extends ChangeNotifier {
 
       case 'unindent':
         d.unindent();
+        doc.touch();
+        break;
+
+      case 'selection_to_lower_case':
+        d.selectionToLowerCase();
+        doc.touch();
+        break;
+
+      case 'selection_to_upper_case':
+        d.selectionToUpperCase();
         doc.touch();
         break;
 
