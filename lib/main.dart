@@ -32,16 +32,11 @@ void main(List<String> args) async {
 
   FFIBridge.initialize(app.extensionsPath);
 
-  // todo... move theme out of the parser
+  HLTheme theme = HLTheme.instance();
   TMParser()
-    ..loadTheme(
-        // '/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json'
-        // '/home/iceman/.editor//extensions/theme-monokai/themes/monokai-color-theme.json'
-        // 'Monokai'
-        'Dracula')
+    ..loadTheme(app.settings['theme'] ?? 'Monokai')
     ..loadIcons('material-icon-theme');
 
-  HLTheme theme = HLTheme.instance();
   UIProvider ui = UIProvider();
   StatusProvider status = StatusProvider();
   FileSearchProvider fileSearch = FileSearchProvider();
@@ -55,6 +50,15 @@ void main(List<String> args) async {
 
   FocusNode focusNode = FocusNode(debugLabel: 'root');
   ExplorerProvider explorer = ExplorerProvider();
+
+  // exclude patterns
+  dynamic folderExclude = app.settings['folder_exclude_patterns'] ?? [];
+  dynamic fileExclude = app.settings['file_exclude_patterns'] ?? [];
+  dynamic binaryExclude = app.settings['binary_file_patterns'] ?? [];
+  fileSearch.setExcludePatterns(folderExclude, fileExclude, binaryExclude);
+  explorer.explorer
+      .setExcludePatterns(folderExclude, fileExclude, binaryExclude);
+
   explorer.explorer.setRootPath(dirPath).then((files) {
     explorer.explorer.root?.isExpanded = true;
     // explorer.explorer.dump();

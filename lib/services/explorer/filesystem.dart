@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:path/path.dart' as _path;
 
+List<String> folderExclude = [];
+List<String> fileExclude = [];
+
 class ExplorerItem {
   ExplorerItem(String this.fullPath) {
     fileName = _path.basename(fullPath);
@@ -26,6 +29,17 @@ class ExplorerItem {
   dynamic data;
 
   void buildTree(List<ExplorerItem?> items) {
+    if (isDirectory) {
+      for (final ex in folderExclude) {
+        if (fullPath.indexOf(ex) != -1) return;
+      }
+    } else {
+      String ext = _path.extension(fullPath).toLowerCase();
+      for (final ex in fileExclude) {
+        if (ext == ex) return;
+      }
+    }
+
     items.add(this);
     if (!isExpanded) return;
     for (final c in children) {
@@ -241,6 +255,19 @@ class Explorer implements ExplorerListener {
   void onError(dynamic error) {}
 
   void search(String fileName) {}
+
+  void setExcludePatterns(
+      dynamic _folderExclude, dynamic _fileExclude, dynamic binaryExclude) {
+    for (String s in _folderExclude) {
+      folderExclude.add(s);
+    }
+    for (String s in [...binaryExclude, ..._fileExclude]) {
+      if (s.indexOf('*.') != -1) {
+        s = s.substring(1);
+      }
+      fileExclude.add(s);
+    }
+  }
 }
 
 abstract class ExplorerListener {

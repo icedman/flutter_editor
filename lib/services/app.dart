@@ -61,7 +61,7 @@ class AppProvider extends ChangeNotifier {
   }
 
   // settings
-  dynamic settings;
+  dynamic settings = {};
   double sidebarWidth = 240;
   double tabbarHeight = 32;
   double statusbarHeight = 32;

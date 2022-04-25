@@ -5,11 +5,20 @@ import 'dart:isolate';
 import 'package:editor/services/indexer/levenshtein.dart';
 import 'package:path/path.dart' as _path;
 
+const int MAX_FILES_SEARCHED_COUNT = 200;
+const int MAX_SEARCH_RESULT_LENGTH = 100;
+const int MAX_TEXT_SEARCH_LENGTH = 300;
+
 class FileSearch {
+  List<String> folderExclude = [];
+  List<String> fileExclude = [];
+
   Future<dynamic> findInFile(String text,
       {String path = '',
       bool caseSensitive = false,
       bool regex = false}) async {
+    // print(path);
+
     File f = File(path);
     List<dynamic> result = [];
     List<String> lines = [];
@@ -37,6 +46,7 @@ class FileSearch {
           source = source.toLowerCase();
         }
         int l = text.length;
+        if (line.length > MAX_TEXT_SEARCH_LENGTH) return;
 
         int idx = -1;
         if (regex) {
@@ -52,7 +62,26 @@ class FileSearch {
         }
 
         if (idx != -1) {
-          result.add({'text': line, 'lineNumber': (lineNumber + 1)});
+          String pre = '';
+          String post = '';
+          int s = idx - 20;
+          int e = idx + 40;
+          if (s < 0) {
+            s = 0;
+          } else {
+            pre = '... ';
+          }
+          if (e > line.length - 1) {
+            e = line.length - 1;
+          } else {
+            post = ' ...';
+          }
+
+          String substr = line.substring(s, e);
+          result.add({
+            'text': '${pre}${substr}${post}',
+            'lineNumber': (lineNumber + 1)
+          });
         }
 
         lineNumber++;
@@ -73,10 +102,10 @@ class FileSearch {
   }
 
   Future<List<dynamic>> find(String text,
-      {String path = '',
+      {String path = './',
       bool caseSensitive = false,
       bool regex = false}) async {
-    Directory dir = Directory(_path.normalize('./'));
+    Directory dir = Directory(_path.normalize(path));
     Completer<List<dynamic>> completer = Completer<List<dynamic>>();
 
     RegExp _wordRegExp = RegExp(
@@ -87,12 +116,32 @@ class FileSearch {
 
     List<dynamic> result = [];
     var lister = dir.list(recursive: true);
+    int fileSearched = 0;
     lister.listen((file) async {
-      String ext = _path.extension(file.path);
-      if (ext == '.dart') {
+      String folder = _path.dirname(_path.normalize(file.path));
+      for (final ex in folderExclude) {
+        if (folder.indexOf(ex) != -1) {
+          // print('exclude folder $folder');
+          return;
+        }
+      }
+
+      String ext = _path.extension(file.path).toLowerCase();
+      for (final ex in fileExclude) {
+        if (ext == ex) {
+          // print('exclude file $baseName');
+          return;
+        }
+      }
+
+      if (fileSearched++ > MAX_FILES_SEARCHED_COUNT) {
+        return;
+      }
+
+      if (!(file is Directory)) {
         dynamic res = await findInFile(text,
             path: file.path, caseSensitive: caseSensitive, regex: regex);
-        if (res != '') {
+        if (res != '' && result.length < MAX_SEARCH_RESULT_LENGTH) {
           result.add(res);
         }
       }
@@ -135,6 +184,13 @@ class FileSearchIsolate {
     return [];
   }
 
+  void setExcludePatterns(
+      dynamic folderExclude, dynamic fileExclude, dynamic binaryExclude) {
+    _isolateSendPort?.send('exclude::folder::${jsonEncode(folderExclude)}');
+    _isolateSendPort?.send('exclude::file::${jsonEncode(fileExclude)}');
+    _isolateSendPort?.send('exclude::binary::${jsonEncode(binaryExclude)}');
+  }
+
   static void remoteIsolate(SendPort sendPort) {
     FileSearch isolateFileSearch = FileSearch();
     ReceivePort _isolateReceivePort = ReceivePort();
@@ -151,6 +207,21 @@ class FileSearchIsolate {
             .then((res) {
           sendPort.send(jsonEncode(res));
         });
+      }
+      if (message.startsWith('exclude::')) {
+        String exclude = message.substring(9);
+        int idx = exclude.indexOf('::');
+        dynamic json = jsonDecode(exclude.substring(idx + 2)) ?? [];
+        for (String s in json) {
+          if (exclude.startsWith('folder::')) {
+            isolateFileSearch.folderExclude.add(s);
+          } else {
+            if (s.indexOf('*.') != -1) {
+              s = s.substring(1);
+            }
+            isolateFileSearch.fileExclude.add(s);
+          }
+        }
       }
     });
   }
