@@ -58,7 +58,7 @@ class Block {
   List<BlockBracket> brackets = [];
   Map<int, int> scopes = {};
 
-  Mode? mode;
+  dynamic mode;
   String className = '';
   String prevBlockClass = '';
 
@@ -1200,7 +1200,7 @@ class DocumentProvider extends ChangeNotifier {
         break;
 
       default:
-        print('unhandled command: $cmd');
+        // print('unhandled command: $cmd');
         break;
     }
 

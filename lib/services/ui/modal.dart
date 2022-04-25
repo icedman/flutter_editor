@@ -22,6 +22,7 @@ class UIButton extends StatelessWidget {
         letterSpacing: -0.5,
         color: theme.foreground);
     return InkWell(
+        canRequestFocus: false,
         child: Padding(
             padding: EdgeInsets.all(8), child: Text('$text', style: style)),
         onTap: () {

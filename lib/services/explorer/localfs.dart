@@ -15,9 +15,10 @@ class LocalFs extends ExplorerBackend {
 
   void setRootPath(String path) {
     rootPath = _path.normalize(path);
+    loadPath(path, recursive: true);
   }
 
-  void loadPath(String path, {bool recursive: false}) {
+  void loadPath(String path, {bool recursive = false}) {
     files = <FileSystemEntity>[];
     Directory dir = Directory(path);
     var lister = dir.list(recursive: recursive);
@@ -26,14 +27,35 @@ class LocalFs extends ExplorerBackend {
         l.onError(jsonEncode({'path': path, 'operation': 'load'}));
       });
     }, onDone: () {
+      Map<String, dynamic> dirs = {};
+      dirs[_path.normalize(dir.absolute.path)] = {
+        'path': _path.normalize(dir.absolute.path),
+        'isDirectory': true,
+        'items': []
+      };
       List<dynamic> items = [];
       for (final i in files) {
-        items.add({'path': i.path, 'isDirectory': (i is Directory)});
+        String p = _path.normalize(i.path);
+        if (i is Directory) {
+          dirs[p] = {
+            'path': p,
+            'isDirectory': true,
+            'items': [],
+          };
+        }
+
+        final d = dirs[_path.dirname(p)] ?? {};
+        d['items']?.add({'path': p, 'isDirectory': (i is Directory)});
       }
-      final json = jsonEncode(
-          {'path': _path.normalize(dir.absolute.path), 'items': items});
+
+      int delay = 0;
       listeners.forEach((l) {
-        l.onLoad(json);
+        for (final k in dirs.keys) {
+          final json = jsonEncode(dirs[k]);
+          Future.delayed(Duration(milliseconds: 50 * delay++), () {
+            l.onLoad(json);
+          });
+        }
       });
     });
   }

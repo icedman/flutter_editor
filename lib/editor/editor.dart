@@ -265,46 +265,6 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       }
     };
 
-    final onSearchInFiles = (text,
-        {int direction = 1,
-        bool caseSensitive = false,
-        bool regex = false,
-        bool repeat = false,
-        bool searchInFiles = false,
-        String? replace}) {
-      Document? resultDoc = app.open(':search.txt', focus: true);
-
-      resultDoc?.decorators['search_result'] = SearchResultDecorator()
-        ..text = text
-        ..regex = regex
-        ..caseSensitive = caseSensitive;
-
-      resultDoc?.title = 'Search Results';
-      resultDoc?.hideGutter = true;
-      resultDoc?.clear();
-      FileSearchProvider search =
-          Provider.of<FileSearchProvider>(context, listen: false);
-      search.onResult = (res) {
-        search.onResult = null;
-        for (final r in res) {
-          resultDoc?.insertText(r['file']);
-          for (final m in r['matches'] ?? []) {
-            resultDoc?.insertNewLine();
-            // resultDoc?.insertText('```js');
-            // resultDoc?.insertNewLine();
-            resultDoc?.insertText(m['text']);
-            resultDoc?.insertText(' [Ln ${m['lineNumber']}]');
-            // resultDoc?.insertNewLine();
-            // resultDoc?.insertText('```');
-          }
-          resultDoc?.insertNewLine();
-          resultDoc?.insertNewLine();
-        }
-        ui.clearPopups();
-      };
-      search.find(text, caseSensitive: caseSensitive, regex: regex);
-    };
-
     switch (cmd) {
       case 'switch_tab':
         {
@@ -322,36 +282,21 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
           return;
         }
 
-      case 'search':
-      case 'search_in_files':
+      case 'search_text':
         {
-          ui.setPopup(
-              SearchPopup(
-                  searchFiles: (cmd == 'search_in_files'),
-                  onSubmit: (text,
-                      {int direction = 1,
-                      bool caseSensitive = false,
-                      bool regex = false,
-                      bool repeat = false,
-                      bool searchInFiles = false,
-                      String? replace}) {
-                    if (searchInFiles) {
-                      onSearchInFiles.call(text,
-                          direction: direction,
-                          caseSensitive: caseSensitive,
-                          regex: regex,
-                          repeat: repeat);
-                    } else {
-                      onSearchInFile.call(text,
-                          direction: direction,
-                          caseSensitive: caseSensitive,
-                          regex: regex,
-                          repeat: repeat);
-                    }
-                  }),
-              blur: false,
-              shield: false,
-              onClearPopups: _regainFocus);
+          ui.setPopup(SearchPopup(onSubmit: (text,
+              {int direction = 1,
+              bool caseSensitive = false,
+              bool regex = false,
+              bool repeat = false,
+              bool searchInFiles = false,
+              String? replace}) {
+            onSearchInFile.call(text,
+                direction: direction,
+                caseSensitive: caseSensitive,
+                regex: regex,
+                repeat: repeat);
+          }), blur: false, shield: false, onClearPopups: _regainFocus);
           return;
         }
       case 'jump_to_line':
@@ -362,16 +307,17 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
           }), blur: false, shield: false, onClearPopups: _regainFocus);
         }
         return;
-
-      case 'close':
-        app.close(doc.doc.docPath);
-        return;
     }
 
     List<Block> modifiedBlocks = [];
 
     doc.begin();
     doc.command(cmd, params: params, modifiedBlocks: modifiedBlocks);
+
+    if (cmd == 'enter') {
+      doc.doc.autoIndent();
+    }
+
     doc.commit();
 
     for (final b in modifiedBlocks) {
@@ -431,6 +377,10 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       alting = alt;
     }
 
+    if (key.startsWith('Arrow') || key == 'Tab') {
+      _regainFocus();
+    }
+
     Document d = doc.doc;
     lastHashCode = code;
 
@@ -461,13 +411,11 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       case 'Tab':
       case 'Home':
       case 'End':
+      case 'Enter':
+      case '\n':
         command(
             buildKeys(key, control: controlling, shift: shifting, alt: alting));
         break;
-      case 'Enter':
-      case '\n':
-        _commandNewLine();
-        return;
       default:
         {
           int k = keyId;
@@ -507,12 +455,6 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     if ((lang?.closingBrackets ?? []).indexOf(text) != -1) {
       d.eraseDuplicateClose(text);
     }
-  }
-
-  void _commandNewLine() {
-    Document d = doc.doc;
-    command('enter');
-    d.autoIndent();
   }
 
   void onKeyUp() {

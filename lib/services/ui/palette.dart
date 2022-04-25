@@ -11,19 +11,13 @@ import 'package:editor/services/highlight/theme.dart';
 class UIPalettePopup extends StatefulWidget {
   UIPalettePopup(
       {Key? key,
-      Offset this.position = Offset.zero,
-      double this.width = 220,
-      int this.visibleItems = 8,
-      double this.alignX = 0,
-      double this.alignY = 0,
+      double this.width = 300,
+      int this.visibleItems = 6,
       UIMenuData? this.menu})
       : super(key: key);
 
   double width = 220;
-  int visibleItems = 8;
-  double alignX = 0;
-  double alignY = 0;
-  Offset position = Offset.zero;
+  int visibleItems = 6;
   UIMenuData? menu;
 
   @override
@@ -32,17 +26,29 @@ class UIPalettePopup extends StatefulWidget {
 
 class _UIPalettePopup extends State<UIPalettePopup> {
   late ScrollController scroller;
+  late FocusNode focusNode;
+  late TextEditingController inputEditController;
+
+  UIMenuData? filteredMenu;
 
   @override
   void initState() {
     super.initState();
+    focusNode = FocusNode();
     scroller = ScrollController();
+    inputEditController = TextEditingController();
+
+    WidgetsBinding.instance?.addPostFrameCallback((_) {
+      focusNode.requestFocus();
+    });
   }
 
   @override
   void dispose() {
-    super.dispose();
     scroller.dispose();
+    focusNode.dispose();
+    inputEditController.dispose();
+    super.dispose();
   }
 
   @override
@@ -51,8 +57,8 @@ class _UIPalettePopup extends State<UIPalettePopup> {
     AppProvider app = Provider.of<AppProvider>(context);
     UIProvider ui = Provider.of<UIProvider>(context);
 
-    Offset position = widget.position;
     UIMenuData? menu = widget.menu;
+    filteredMenu = menu;
 
     _cancel() {
       Future.delayed(const Duration(microseconds: 0), () {
@@ -78,21 +84,13 @@ class _UIPalettePopup extends State<UIPalettePopup> {
 
     double padding = 2;
     Size extents = getTextExtents(' ', style);
-    double itemHeight = (extents.height + 2 + (padding * 2));
+    double itemHeight = (((extents.height + 4) * 2) + (padding * 2));
     int itemsCount = items.length;
     if (itemsCount > maxItems) itemsCount = maxItems;
-    double height = 5 + (itemHeight + 1.5) * itemsCount;
+    double height = 8 + (itemHeight + 1.5) * itemsCount;
 
-    double dx = position.dx + (extents.width * widget.alignX);
-    double dy = position.dy + (itemHeight * widget.alignY);
-    if (dx + maxWidth > app.screenWidth + 2) {
-      dx = app.screenWidth - 2 - maxWidth;
-    }
-    if (dy + height > app.screenHeight - 40) {
-      dy = position.dy - height - 4;
-    }
-
-    Offset _position = Offset(dx, dy);
+    double textFieldHeight = 32;
+    height += textFieldHeight;
 
     if (scroller.positions.isNotEmpty) {
       double start = scroller.position.pixels / itemHeight;
@@ -112,7 +110,8 @@ class _UIPalettePopup extends State<UIPalettePopup> {
 
     Widget _item(BuildContext context, int index) {
       UIMenuData? item = items[index];
-      String s = item?.title ?? '';
+      String title = item?.title ?? '';
+      String subtitle = item?.subtitle ?? '';
       return InkWell(
           onTap: () {
             menu?.select(index);
@@ -123,36 +122,60 @@ class _UIPalettePopup extends State<UIPalettePopup> {
               child: Container(
                   color: index == menu?.menuIndex ? theme.background : null,
                   width: maxWidth,
-                  child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Text(' $s  ',
-                          // style: index == decor.menuIndex
-                          //     ? style.copyWith(color: theme.foreground)
-                          //     : style,
-                          style: style.copyWith(color: theme.comment),
-                          softWrap: false,
-                          overflow: TextOverflow.clip)))));
+                  child: ListTile(
+                      title: Text(title,
+                          style: style.copyWith(color: theme.function)),
+                      subtitle: ScrollableText(subtitle,
+                          style: style.copyWith(color: theme.comment))))));
     }
 
-    return Positioned(
-        top: _position.dy,
-        left: _position.dx,
-        child: Material(
-            color: bg,
-            child: Container(
-                width: maxWidth + padding,
-                height: height,
-                decoration: BoxDecoration(
-                    // color: bg,
-                    border: Border.all(
-                        color: darken(theme.background, 0), width: 1.5)),
-                child: Padding(
-                    padding: EdgeInsets.all(padding),
-                    child: ListView.builder(
-                        controller: scroller,
-                        padding: EdgeInsets.zero,
-                        itemCount: items.length,
-                        itemExtent: itemHeight,
-                        itemBuilder: _item)))));
+    return Align(
+        alignment: Alignment.topCenter,
+        child: Padding(
+            padding: EdgeInsets.only(top: app.tabbarHeight),
+            child: Material(
+                color: bg,
+                child: Container(
+                    width: maxWidth + padding,
+                    height: height,
+                    decoration: BoxDecoration(
+                        border: Border.all(
+                            color: darken(theme.background, 0), width: 1.5)),
+                    child: Padding(
+                        padding: EdgeInsets.all(padding),
+                        child: Column(children: [
+                          Container(
+                              height: textFieldHeight,
+                              // color: theme.comment,
+                              child: Padding(
+                                  padding: EdgeInsets.all(4),
+                                  child: TextField(
+                                      onSubmitted: (value) {
+                                        focusNode.requestFocus();
+                                      },
+                                      textInputAction: TextInputAction.done,
+                                      style: TextStyle(
+                                          //fontFamily: app.fontFamily,
+                                          fontSize: theme.uiFontSize,
+                                          color: theme.foreground),
+                                      controller: inputEditController,
+                                      decoration: InputDecoration(
+                                          border: InputBorder.none,
+                                          hintText: 'Find...',
+                                          hintStyle: TextStyle(
+                                              //fontFamily: theme.fontFamily,
+                                              fontSize: theme.uiFontSize,
+                                              fontStyle: FontStyle.italic,
+                                              color: theme.comment)),
+                                      focusNode: focusNode,
+                                      autofocus: true))),
+                          Expanded(
+                              child: ListView.builder(
+                                  controller: scroller,
+                                  padding: EdgeInsets.zero,
+                                  itemCount: items.length,
+                                  itemExtent: itemHeight,
+                                  itemBuilder: _item))
+                        ]))))));
   }
 }

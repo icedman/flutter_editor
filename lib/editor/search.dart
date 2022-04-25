@@ -275,17 +275,17 @@ class _SearchPopup extends State<SearchPopup> {
                             focusNode1.requestFocus();
                           }),
                     ],
-                    IconButton(
-                        icon: Icon(Icons.folder,
-                            size: theme.uiFontSize,
-                            color:
-                                searchFiles ? theme.function : theme.comment),
-                        onPressed: () {
-                          setState(() {
-                            searchFiles = !searchFiles;
-                          });
-                          focusNode1.requestFocus();
-                        }),
+                    // IconButton(
+                    //     icon: Icon(Icons.folder,
+                    //         size: theme.uiFontSize,
+                    //         color:
+                    //             searchFiles ? theme.function : theme.comment),
+                    //     onPressed: () {
+                    //       setState(() {
+                    //         searchFiles = !searchFiles;
+                    //       });
+                    //       focusNode1.requestFocus();
+                    //     }),
                     Expanded(child: Container()),
                   ]),
                   // Expanded(child: Container())

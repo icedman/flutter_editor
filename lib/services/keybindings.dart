@@ -8,9 +8,11 @@ class Command {
 }
 
 final Map<String, Command> _sublime = {
+  'cancel': Command('cancel'),
   'ctrl+q': Command('quit'),
-  'ctrl+f': Command('search'),
-  'ctrl+shift+f': Command('search_in_files'),
+  'ctrl+shift+f': Command('search_text_in_files'),
+  'ctrl+p': Command('search_files'),
+  'ctrl+f': Command('search_text'),
   'ctrl+g': Command('jump_to_line'),
   'ctrl+z': Command('undo'),
   'ctrl+shift+z': Command('redo'),
@@ -86,7 +88,7 @@ class Keybindings {
   int lastHashCode = 0;
   String lastKeys = '';
 
-  Command? resolve(String keys, { int code = 0 }) {
+  Command? resolve(String keys, {int code = 0}) {
     if (lastHashCode != code && lastHashCode != 0) {
       keys = '$lastKeys+$keys';
       lastHashCode = 0;

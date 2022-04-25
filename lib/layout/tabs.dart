@@ -22,6 +22,7 @@ class TabIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
+        canRequestFocus: false,
         child: Padding(
             padding: EdgeInsets.all(4),
             child: Container(width: 32, height: 32, child: icon)),
@@ -185,9 +186,7 @@ class EditorTabs extends StatelessWidget {
     for (final doc in app.documents) {
       String path = doc.docPath;
       views.add(Editor(
-          // key: PageStorageKey(doc.documentId),
-          path: path,
-          document: doc));
+          key: PageStorageKey(doc.documentId), path: path, document: doc));
     }
 
     if (views.length == 0) {

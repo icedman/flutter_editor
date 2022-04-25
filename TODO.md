@@ -25,7 +25,7 @@ fileicons (done)
 text search (done)
 file search (done)
 
-filesystem - exclude
+filesystem - exclude certain folders and binaries
 file - external
 
 # ui
@@ -49,7 +49,6 @@ builder
 git
 sftp
 async
-
 # scripting
 quickjs
 workspace
@@ -71,4 +70,5 @@ scroll position on tab change (fixed)
 vscode keybindings
 menu too low (fixed)
 tab close causes disposed error - at scrollToCursor, editor, document
-
+itemFromPath - can't find correct file item
+menu auto complete ... extra space added

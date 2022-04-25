@@ -25,25 +25,20 @@ void main(List<String> args) async {
 
   FFIBridge.load();
 
-  String extPath = '/home/iceman/.editor/extensions/';
   String path = './';
-
-  if (Platform.isAndroid) {
-    extPath = '/sdcard/.editor/extensions/';
-    path = '/sdcard/Developer/tests/tinywl.c';
-  }
-
   if (args.isNotEmpty) {
     path = args[0];
   }
 
-  FFIBridge.initialize(extPath);
+  FFIBridge.initialize(app.extensionsPath);
 
   // todo... move theme out of the parser
   TMParser()
     ..loadTheme(
-        '/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json')
-    // ..loadTheme('/home/iceman/.editor//extensions/theme-monokai/themes/monokai-color-theme.json')
+        // '/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json'
+        // '/home/iceman/.editor//extensions/theme-monokai/themes/monokai-color-theme.json'
+        // 'Monokai'
+        'Dracula')
     ..loadIcons('material-icon-theme');
 
   HLTheme theme = HLTheme.instance();
@@ -58,10 +53,11 @@ void main(List<String> args) async {
     dirPath = _path.dirname(path);
   }
 
-  FocusNode focusNode = FocusNode();
+  FocusNode focusNode = FocusNode(debugLabel: 'root');
   ExplorerProvider explorer = ExplorerProvider();
   explorer.explorer.setRootPath(dirPath).then((files) {
     explorer.explorer.root?.isExpanded = true;
+    // explorer.explorer.dump();
     explorer.rebuild();
   });
 
@@ -94,8 +90,9 @@ class App extends StatelessWidget {
     UIProvider ui = Provider.of<UIProvider>(context, listen: false);
     HLTheme theme = Provider.of<HLTheme>(context);
 
-    Brightness scheme = Brightness.light; // isDark(theme.background) ? Brightness.dark : Brightness.light;
-    
+    Brightness scheme = Brightness
+        .light; // isDark(theme.background) ? Brightness.dark : Brightness.light;
+
     ThemeData themeData = ThemeData(
       focusColor: Color.fromRGBO(0, 0, 0, 0.1),
       brightness: scheme,
@@ -132,26 +129,27 @@ class App extends StatelessWidget {
         theme: themeData,
         home: Focus(
           focusNode: focusNode ?? FocusNode(),
-          child: AppLayout(),
+          child: TheApp(),
           autofocus: true,
           onKey: (FocusNode node, RawKeyEvent event) {
             if (event.runtimeType.toString() == 'RawKeyDownEvent') {
-              String keys = buildKeys(event.logicalKey.keyLabel, 
+              String keys = buildKeys(event.logicalKey.keyLabel,
                   control: event.isControlPressed,
                   shift: event.isShiftPressed,
                   alt: event.isAltPressed);
-              
-              switch (keys) {
+              Command? cmd =
+                  app.keybindings.resolve(keys, code: event.hashCode);
+              switch (cmd?.command ?? '') {
                 case 'cancel':
                   ui.clearPopups();
                   break;
+                case 'close':
+                  app.close('');
+                  break;
               }
-
-              // Command? cmd = app.keybindings.resolve(keys, code: event.hashCode);
-              // print(cmd?.command);
             }
             if (event.runtimeType.toString() == 'RawKeyUpEvent') {}
-            return KeyEventResult.handled;
+            return KeyEventResult.ignored;
           },
         ));
   }

@@ -32,7 +32,7 @@ class _FileIcon extends State<FileIcon> {
 
   @override
   Widget build(BuildContext context) {
-    if (icon == null) {
+    if (icon == null && widget.path != '') {
       File iconFile = File(widget.path);
       icon = SvgPicture.file(iconFile, width: widget.size, height: widget.size);
     }
@@ -194,6 +194,7 @@ class ExplorerTreeItem extends StatelessWidget {
     }
 
     return InkWell(
+        canRequestFocus: false,
         child: GestureDetector(
             onSecondaryTapDown: (details) {
               print(_item.fullPath);
