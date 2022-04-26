@@ -122,7 +122,7 @@ packages:
       path: highlight
       ref: line-by-line-parsing
       resolved-ref: "904c0bbaf5deabbedff0dede89ea09d081400250"
-      url: "git://github.com/icedman/highlight.dart"
+      url: "http://github.com/icedman/highlight.dart"
     source: git
     version: "0.7.0"
   lints:

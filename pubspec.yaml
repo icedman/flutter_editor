@@ -44,7 +44,7 @@ dependencies:
 dependency_overrides:
   highlight:
       git:
-        url: git://github.com/icedman/highlight.dart
+        url: http://github.com/icedman/highlight.dart
         ref: line-by-line-parsing
         path: highlight
 
