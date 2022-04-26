@@ -129,32 +129,6 @@ class App extends StatelessWidget {
     );
 
     return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: themeData,
-        home: Focus(
-          focusNode: focusNode ?? FocusNode(),
-          child: TheApp(),
-          autofocus: true,
-          onKey: (FocusNode node, RawKeyEvent event) {
-            if (event.runtimeType.toString() == 'RawKeyDownEvent') {
-              String keys = buildKeys(event.logicalKey.keyLabel,
-                  control: event.isControlPressed,
-                  shift: event.isShiftPressed,
-                  alt: event.isAltPressed);
-              Command? cmd =
-                  app.keybindings.resolve(keys, code: event.hashCode);
-              switch (cmd?.command ?? '') {
-                case 'cancel':
-                  ui.clearPopups();
-                  break;
-                case 'close':
-                  app.close('');
-                  break;
-              }
-            }
-            if (event.runtimeType.toString() == 'RawKeyUpEvent') {}
-            return KeyEventResult.ignored;
-          },
-        ));
+        debugShowCheckedModeBanner: false, theme: themeData, home: TheApp());
   }
 }

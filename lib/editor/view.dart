@@ -139,7 +139,7 @@ class GutterLine extends StatelessWidget {
     HLTheme theme = Provider.of<HLTheme>(context);
     return Container(
         color: (block?.carets ?? []).isNotEmpty
-            ? theme.selection
+            ? colorCombine(theme.selection, theme.background, aw: 2, bw: 3)
             : theme.background,
         height: height,
         width: width,

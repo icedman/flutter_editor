@@ -209,15 +209,14 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     Cursor cursor = d.cursor().copy();
 
     AppProvider app = Provider.of<AppProvider>(context, listen: false);
+
+    // todo.. let popups handle their input...
     UIProvider ui = Provider.of<UIProvider>(context, listen: false);
     if (ui.popups.isNotEmpty) {
       UIMenuData? menu = ui.menu('indexer::${d.documentId}');
       int idx = menu?.menuIndex ?? 0;
       int size = menu?.items.length ?? 0;
       switch (cmd) {
-        case 'cancel':
-          ui.clearPopups();
-          return;
         case 'up':
           if (idx > 0) {
             menu?.menuIndex--;
@@ -236,6 +235,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
             ui.clearPopups();
             return;
           }
+          return;
       }
     }
 

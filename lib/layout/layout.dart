@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -252,16 +253,24 @@ class TheApp extends StatefulWidget {
 
 class _TheApp extends State<TheApp> with WidgetsBindingObserver {
   late FocusNode focusNode;
+  // late Timer timer;
 
   @override
   initState() {
     super.initState();
     focusNode = FocusNode(debugLabel: 'app');
+
+    // timer = Timer.periodic(Duration(milliseconds: 500), (timer) {
+    // if (!focusNode.hasFocus) {
+    // focusNode.requestFocus();
+    // }
+    // });
   }
 
   @override
   dispose() {
     focusNode.dispose();
+    // timer.cancel();
     super.dispose();
   }
 
@@ -310,11 +319,12 @@ class _TheApp extends State<TheApp> with WidgetsBindingObserver {
       search.find(text, caseSensitive: caseSensitive, regex: regex);
     };
 
-    return Focus(
+    return RawKeyboardListener(
       focusNode: focusNode,
       child: AppLayout(),
       autofocus: true,
-      onKey: (FocusNode node, RawKeyEvent event) {
+      // regain focus
+      onKey: (RawKeyEvent event) {
         if (event.runtimeType.toString() == 'RawKeyDownEvent') {
           String keys = buildKeys(event.logicalKey.keyLabel,
               control: event.isControlPressed,
@@ -327,6 +337,11 @@ class _TheApp extends State<TheApp> with WidgetsBindingObserver {
               ui.clearPopups();
               break;
 
+            case 'close':
+              app.close('');
+              focusNode.requestFocus();
+              break;
+
             case 'search_files':
               {
                 ExplorerProvider explorer =
@@ -334,7 +349,7 @@ class _TheApp extends State<TheApp> with WidgetsBindingObserver {
                 UIProvider ui = Provider.of<UIProvider>(context, listen: false);
                 UIMenuData? menu = ui.menu('palette::files', onSelect: (item) {
                   Future.delayed(const Duration(milliseconds: 50), () {
-                    ui.setPopup(UIModal(message: 'Delete?'));
+                    app.open(item.data, focus: true);
                   });
                 });
                 menu?.items.clear();
@@ -343,44 +358,52 @@ class _TheApp extends State<TheApp> with WidgetsBindingObserver {
                 List<ExplorerItem?> files = explorer.explorer.files();
                 for (final item in files) {
                   if (item == null) continue;
+                  String relativePath = item.fullPath.substring(
+                      (explorer.explorer.root?.fullPath ?? '').length);
                   menu?.items.add(UIMenuData()
                     ..title = item.fileName
-                    ..subtitle = item.fullPath);
+                    ..subtitle = '.$relativePath'
+                    ..data = item.fullPath);
                 }
 
-                ui.setPopup(UIPalettePopup(menu: menu, width: 400),
-                    blur: false, shield: false);
+                Future.delayed(const Duration(milliseconds: 50), () {
+                  ui.setPopup(UIPalettePopup(menu: menu, width: 500),
+                      blur: false, shield: false);
+                });
 
                 break;
               }
 
             case 'search_text_in_files':
               {
-                ui.setPopup(
-                  SearchPopup(
-                      searchFiles: true,
-                      onSubmit: (text,
-                          {int direction = 1,
-                          bool caseSensitive = false,
-                          bool regex = false,
-                          bool repeat = false,
-                          bool searchInFiles = false,
-                          String? replace}) {
-                        onSearchInFiles.call(text,
-                            direction: direction,
-                            caseSensitive: caseSensitive,
-                            regex: regex,
-                            repeat: repeat);
-                      }),
-                  blur: false,
-                  shield: false,
-                );
+                Future.delayed(const Duration(milliseconds: 50), () {
+                  ui.setPopup(
+                    SearchPopup(
+                        searchFiles: true,
+                        onSubmit: (text,
+                            {int direction = 1,
+                            bool caseSensitive = false,
+                            bool regex = false,
+                            bool repeat = false,
+                            bool searchInFiles = false,
+                            String? replace}) {
+                          onSearchInFiles.call(text,
+                              direction: direction,
+                              caseSensitive: caseSensitive,
+                              regex: regex,
+                              repeat: repeat);
+                        }),
+                    blur: false,
+                    shield: false,
+                  );
+                });
+
                 break;
               }
           }
         }
         if (event.runtimeType.toString() == 'RawKeyUpEvent') {}
-        return KeyEventResult.ignored;
+        // return KeyEventResult.ignored;
       },
     );
   }

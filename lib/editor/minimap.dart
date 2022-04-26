@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:editor/editor/document.dart';
 import 'package:editor/editor/decorations.dart';
+import 'package:editor/services/util.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 
@@ -202,7 +203,8 @@ class _Minimap extends State<Minimap> {
                   : Container(
                       width: mapWidth,
                       height: (viewPortHeight * minimapLineSpacing).toDouble(),
-                      color: theme.selection.withOpacity(0.5))),
+                      color: colorCombine(theme.selection, theme.background,
+                          aw: 1, bw: 4))),
           ListView.builder(
               controller: scroller,
               itemCount: pages,

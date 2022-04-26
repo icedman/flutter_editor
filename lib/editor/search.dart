@@ -13,7 +13,7 @@ import 'package:editor/services/highlight/theme.dart';
 class SearchPopup extends StatefulWidget {
   SearchPopup(
       {Function? this.onSubmit,
-      bool this.ignoreCase = false,
+      bool this.ignoreCase = true,
       bool this.regex = false,
       bool this.replace = false,
       bool this.searchFiles = false});

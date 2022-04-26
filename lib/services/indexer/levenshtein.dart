@@ -7,6 +7,15 @@ final MAX2 = (a, b) => (a > b ? a : b);
 int levenshtein_distance(String _s1, String _s2) {
   String s1 = _s1.toLowerCase();
   String s2 = _s2.toLowerCase();
+
+  List<String> rep = ['/', '\\', ' ', '.'];
+  for (final c in rep) {
+    s1 = s1.replaceAll(c, '');
+    s2 = s2.replaceAll(c, '');
+  }
+
+  if (s1 == s2) return 0;
+
   int s1len = 0;
   int s2len = 0;
   int x = 0;
@@ -29,7 +38,10 @@ int levenshtein_distance(String _s1, String _s2) {
       lastdiag = olddiag;
     }
   }
-  return (column[s1len]);
+  int score = (column[s1len]);
+
+  // print('$s1 $s2 $score');
+  return score;
 }
 
 class Item {

@@ -203,7 +203,8 @@ class Highlighter {
               (line == anchorLine && i < cur.anchorColumn)) {
           } else {
             style = style.copyWith(
-                backgroundColor: theme.selection.withOpacity(0.75));
+                backgroundColor: colorCombine(theme.selection, theme.background,
+                    aw: 2, bw: 3));
             break;
           }
         }
