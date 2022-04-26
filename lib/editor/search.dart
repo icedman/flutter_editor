@@ -16,14 +16,16 @@ class SearchPopup extends StatefulWidget {
       bool this.ignoreCase = true,
       bool this.regex = false,
       bool this.replace = false,
-      bool this.searchFiles = false});
+      bool this.searchFiles = false,
+      String this.searchPath = ''});
 
   Function? onSubmit;
   bool regex = false;
   bool replace = false;
   bool ignoreCase = true;
-  bool searchFiles = false;
   int searchDirection = 0;
+  bool searchFiles = false;
+  String searchPath = '';
 
   @override
   _SearchPopup createState() => _SearchPopup();
@@ -85,7 +87,8 @@ class _SearchPopup extends State<SearchPopup> {
             ? inputEditController2.text
             : null,
         repeat: repeat,
-        searchInFiles: searchFiles);
+        searchInFiles: searchFiles,
+        searchPath: inputEditController3.text);
   }
 
   @override

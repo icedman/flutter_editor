@@ -134,16 +134,16 @@ class Explorer implements ExplorerListener {
   Future<bool> setRootPath(String path) {
     String p = _path.normalize(Directory(path).absolute.path);
     root = ExplorerItem(p);
-    return loadPath(p, recursive: true);
+    return loadPath(p);
   }
 
-  Future<bool> loadPath(String path, {bool recursive: false}) {
+  Future<bool> loadPath(String path, {bool recursive: false, int depth = 3}) {
     String p = _path.normalize(Directory(path).absolute.path);
     if (isLoading(p)) {
       _busy();
       return Future.value(false);
     }
-    backend?.loadPath(path, recursive: recursive);
+    backend?.loadPath(path, recursive: recursive, depth: depth);
 
     Completer<bool> completer = Completer<bool>();
     requests[p] = completer;
@@ -280,7 +280,7 @@ abstract class ExplorerListener {
 abstract class ExplorerBackend {
   void addListener(ExplorerListener listener);
   void setRootPath(String path);
-  void loadPath(String path, {bool recursive = false});
+  void loadPath(String path, {bool recursive = false, int depth = 3});
   void openFile(String path);
   void createDirectory(String path);
   void createFile(String path);

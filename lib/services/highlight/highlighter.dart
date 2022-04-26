@@ -204,7 +204,7 @@ class Highlighter {
           } else {
             style = style.copyWith(
                 backgroundColor: colorCombine(theme.selection, theme.background,
-                    aw: 2, bw: 3));
+                    aw: 3, bw: 1));
             break;
           }
         }

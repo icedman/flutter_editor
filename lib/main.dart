@@ -64,6 +64,7 @@ void main(List<String> args) async {
     // explorer.explorer.dump();
     explorer.rebuild();
   });
+  // explorer.explorer.backend?.setRootPath(dirPath); // preloads 4 depths
 
   explorer.onSelect = (item) {
     if (!item.isDirectory) {

@@ -92,8 +92,9 @@ class AppProvider extends ChangeNotifier {
     extensionsPath = expandPath('$appResourceRoot/extensions') + '/';
     keybindings = Keybindings();
   }
-
+  
   Document? open(String path, {bool focus = false, int scrollTo = -1}) {
+    Document? prevFocus = document;
     String p = _path.normalize(Directory(path).absolute.path);
     for (final d in documents) {
       if (d.docPath == p) {

@@ -110,10 +110,13 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     d.addListener('onInsertNewLine', () {
       //
     });
-    d.addListener('onFocus', (bool hasFocus) {
+    d.addListener('onFocus', (int documentId) {
+      if (documentId == d.documentId) {
         StatusProvider status = Provider.of<StatusProvider>(context, listen: false);
         status.setIndexedStatus(1,
-            'xxx');
+            'xxx $documentId');
+      }
+      print(documentId);
     });
     d.addListener('onReady', () {
       Future.delayed(const Duration(seconds: 3), () {
@@ -295,6 +298,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
               bool regex = false,
               bool repeat = false,
               bool searchInFiles = false,
+              String searchPath = '',
               String? replace}) {
             onSearchInFile.call(text,
                 direction: direction,

@@ -5,7 +5,7 @@ import 'dart:isolate';
 import 'package:editor/services/indexer/levenshtein.dart';
 import 'package:path/path.dart' as _path;
 
-const int MAX_FILES_SEARCHED_COUNT = 200;
+const int MAX_FILES_SEARCHED_COUNT = 1000;
 const int MAX_SEARCH_RESULT_LENGTH = 100;
 const int MAX_TEXT_SEARCH_LENGTH = 300;
 
@@ -17,6 +17,7 @@ class FileSearch {
       {String path = '',
       bool caseSensitive = false,
       bool regex = false}) async {
+      
     // print(path);
 
     File f = File(path);
@@ -40,7 +41,7 @@ class FileSearch {
           .map(utf8.decode)
           .transform(const LineSplitter())
           .forEach((line) {
-        lines.add(line);
+        // lines.add(line);
         String source = line;
         if (!caseSensitive && !regex) {
           source = source.toLowerCase();
@@ -60,7 +61,7 @@ class FileSearch {
         } else {
           idx = source.indexOf(text);
         }
-
+        
         if (idx != -1) {
           String pre = '';
           String post = '';
@@ -106,6 +107,9 @@ class FileSearch {
       bool caseSensitive = false,
       bool regex = false}) async {
     Directory dir = Directory(_path.normalize(path));
+    
+    // print('>>${dir.absolute.path}');
+    
     Completer<List<dynamic>> completer = Completer<List<dynamic>>();
 
     RegExp _wordRegExp = RegExp(
@@ -146,9 +150,13 @@ class FileSearch {
         }
       }
     }, onError: (err) {
-      completer.complete(result);
+      Future.delayed(const Duration(milliseconds: 500), () {
+        completer.complete(result);
+      });
     }, onDone: () {
-      completer.complete(result);
+      Future.delayed(const Duration(milliseconds: 500), () {
+        completer.complete(result);
+      });
     });
 
     return completer.future;
@@ -207,6 +215,18 @@ class FileSearchIsolate {
             .then((res) {
           sendPort.send(jsonEncode(res));
         });
+      }
+      if (message.startsWith('file::')) {
+        dynamic json = jsonDecode(message.substring(6));
+        String text = json['text'] ?? '';
+        String path = json['path'] ?? '';
+        bool caseSensitive = json['caseSensitive'] == true;
+        // bool regex = json['regex'] == true;
+        // isolateFileSearch
+            // .find(text, path: path, caseSensitive: caseSensitive, regex: regex)
+            // .then((res) {
+          // sendPort.send(jsonEncode(res));
+        // });
       }
       if (message.startsWith('exclude::')) {
         String exclude = message.substring(9);

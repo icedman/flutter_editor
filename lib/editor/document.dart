@@ -153,7 +153,7 @@ class Document {
   void removeListener(String event, Function? func) {
     // !todo
   }
-
+    
   Cursor cursor() {
     if (cursors.isEmpty) {
       cursors.add(Cursor(document: this, block: firstBlock()));

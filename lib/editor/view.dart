@@ -263,7 +263,7 @@ class ViewLine extends StatelessWidget {
           double w = extents.width;
           double h = extents.height;
           if (doc.overwriteMode) {
-            h = 2;
+            h = 1.75;
             top += extents.height - 2;
           } else {
             w = 2;

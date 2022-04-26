@@ -15,18 +15,25 @@ class LocalFs extends ExplorerBackend {
 
   void setRootPath(String path) {
     rootPath = _path.normalize(path);
-    loadPath(path, recursive: true);
+    loadPath(path);
+    Future.delayed(const Duration(milliseconds: 2000), () {
+      loadPath(path, recursive: true, depth: 4);
+    });
+  }
+ 
+  int _depth(String path) {
+    String ll = path.replaceAll('/', '');
+    ll = ll.replaceAll('\\','');
+    return (path.length - ll.length);
   }
 
-  void loadPath(String path, {bool recursive = false}) {
+  void loadPath(String path, {bool recursive = false, int depth = 3 }) {
     files = <FileSystemEntity>[];
     Directory dir = Directory(path);
-    var lister = dir.list(recursive: recursive);
-    lister.listen((file) => files.add(file), onError: (err) {
-      listeners.forEach((l) {
-        l.onError(jsonEncode({'path': path, 'operation': 'load'}));
-      });
-    }, onDone: () {
+    int depthRoot = _depth(dir.absolute.path);
+    var lister = dir.list(recursive: recursive, followLinks: false);
+    
+    final _sendTheFiles = () {
       Map<String, dynamic> dirs = {};
       dirs[_path.normalize(dir.absolute.path)] = {
         'path': _path.normalize(dir.absolute.path),
@@ -47,6 +54,8 @@ class LocalFs extends ExplorerBackend {
         final d = dirs[_path.dirname(p)] ?? {};
         d['items']?.add({'path': p, 'isDirectory': (i is Directory)});
       }
+      
+      files.clear();
 
       int delay = 0;
       listeners.forEach((l) {
@@ -57,6 +66,26 @@ class LocalFs extends ExplorerBackend {
           });
         }
       });
+    };
+    
+    lister.listen((file) {
+        int depthFile = _depth(file.absolute.path);
+        if (recursive && (depthFile - depthRoot) > depth) {
+          if (files.length > 0) {
+            _sendTheFiles();
+          }
+          return;
+        }
+        
+        // print('${(depthFile - depthRoot)}');
+        
+        files.add(file);
+      }, onError: (err) {
+      listeners.forEach((l) {
+        l.onError(jsonEncode({'path': path, 'operation': 'load'}));
+      });
+    }, onDone: () {
+      _sendTheFiles();
     });
   }
 
