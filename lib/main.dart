@@ -14,6 +14,7 @@ import 'package:editor/services/ui/ui.dart';
 import 'package:editor/services/ui/status.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/tmparser.dart';
+import 'package:editor/services/keybindings.dart';
 
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,28 +25,18 @@ void main(List<String> args) async {
 
   FFIBridge.load();
 
-  String extPath = '/home/iceman/.editor/extensions/';
   String path = './';
-
-  if (Platform.isAndroid) {
-    extPath = '/sdcard/.editor/extensions/';
-    path = '/sdcard/Developer/tests/tinywl.c';
-  }
-
   if (args.isNotEmpty) {
     path = args[0];
   }
 
-  FFIBridge.initialize(extPath);
-
-  // todo... move theme out of the parser
-  TMParser()
-    ..loadTheme(
-        '/home/iceman/.editor/extensions/dracula-theme.theme-dracula-2.24.2/theme/dracula.json')
-    // ..loadTheme('/home/iceman/.editor//extensions/theme-monokai/themes/monokai-color-theme.json')
-    ..loadIcons('material-icon-theme');
+  FFIBridge.initialize(app.extensionsPath);
 
   HLTheme theme = HLTheme.instance();
+  TMParser()
+    ..loadTheme(app.settings['theme'] ?? 'Monokai')
+    ..loadIcons('material-icon-theme');
+
   UIProvider ui = UIProvider();
   StatusProvider status = StatusProvider();
   FileSearchProvider fileSearch = FileSearchProvider();
@@ -57,11 +48,20 @@ void main(List<String> args) async {
     dirPath = _path.dirname(path);
   }
 
-  FocusNode focusNode = FocusNode();
-
+  FocusNode focusNode = FocusNode(debugLabel: 'root');
   ExplorerProvider explorer = ExplorerProvider();
+
+  // exclude patterns
+  dynamic folderExclude = app.settings['folder_exclude_patterns'] ?? [];
+  dynamic fileExclude = app.settings['file_exclude_patterns'] ?? [];
+  dynamic binaryExclude = app.settings['binary_file_patterns'] ?? [];
+  fileSearch.setExcludePatterns(folderExclude, fileExclude, binaryExclude);
+  explorer.explorer
+      .setExcludePatterns(folderExclude, fileExclude, binaryExclude);
+
   explorer.explorer.setRootPath(dirPath).then((files) {
     explorer.explorer.root?.isExpanded = true;
+    // explorer.explorer.dump();
     explorer.rebuild();
   });
 
@@ -90,17 +90,20 @@ class App extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    AppProvider app = Provider.of<AppProvider>(context, listen: false);
     UIProvider ui = Provider.of<UIProvider>(context, listen: false);
     HLTheme theme = Provider.of<HLTheme>(context);
 
+    Brightness scheme = Brightness
+        .light; // isDark(theme.background) ? Brightness.dark : Brightness.light;
+
     ThemeData themeData = ThemeData(
       focusColor: Color.fromRGBO(0, 0, 0, 0.1),
-      brightness: isDark(theme.background) ? Brightness.dark : Brightness.light,
+      brightness: scheme,
       colorScheme: ColorScheme.fromSwatch(
         primarySwatch: toMaterialColor(theme.background),
         accentColor: toMaterialColor(theme.background),
-        brightness:
-            isDark(theme.background) ? Brightness.dark : Brightness.light,
+        brightness: scheme,
       ),
       errorColor: Colors.red,
       primarySwatch: toMaterialColor(darken(theme.background, sidebarDarken)),
@@ -126,24 +129,6 @@ class App extends StatelessWidget {
     );
 
     return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        theme: themeData,
-        home: Focus(
-          focusNode: focusNode ?? FocusNode(),
-          child: AppLayout(),
-          autofocus: true,
-          onKey: (FocusNode node, RawKeyEvent event) {
-            if (event.runtimeType.toString() == 'RawKeyDownEvent') {
-              String keys = buildKeys(event.logicalKey.keyLabel);
-              switch (keys) {
-                case 'cancel':
-                  ui.clearPopups();
-                  break;
-              }
-            }
-            if (event.runtimeType.toString() == 'RawKeyUpEvent') {}
-            return KeyEventResult.ignored;
-          },
-        ));
+        debugShowCheckedModeBanner: false, theme: themeData, home: TheApp());
   }
 }

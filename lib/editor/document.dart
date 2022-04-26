@@ -58,7 +58,7 @@ class Block {
   List<BlockBracket> brackets = [];
   Map<int, int> scopes = {};
 
-  Mode? mode;
+  dynamic mode;
   String className = '';
   String prevBlockClass = '';
 
@@ -112,7 +112,7 @@ class Document {
   List<Cursor> extraCursors = [];
   List<Cursor> sectionCursors = [];
   Map<String, List<Function?>> listeners = {};
-  Map<String, Function> decorators = {};
+  Map<String, LineDecorator> decorators = {};
 
   String tabString = '    ';
   int detectedTabSpaces = 0;
@@ -497,6 +497,18 @@ class Document {
     });
   }
 
+  void selectionToLowerCase() {
+    cursors.forEach((c) {
+      c.selectionToLowerCase();
+    });
+  }
+
+  void selectionToUpperCase() {
+    cursors.forEach((c) {
+      c.selectionToUpperCase();
+    });
+  }
+
   void backspace() {
     cursors.forEach((c) {
       // print('${c.block?.line} ${c.column}');
@@ -838,6 +850,7 @@ class DocumentProvider extends ChangeNotifier {
   bool ready = false;
   bool pinned = false;
 
+  Offset scrollOffset = Offset.zero;
   Offset offsetForCaret = Offset.zero;
   Size scrollAreaSize = Size.zero;
 
@@ -1078,6 +1091,16 @@ class DocumentProvider extends ChangeNotifier {
         doc.touch();
         break;
 
+      case 'selection_to_lower_case':
+        d.selectionToLowerCase();
+        doc.touch();
+        break;
+
+      case 'selection_to_upper_case':
+        d.selectionToUpperCase();
+        doc.touch();
+        break;
+
       case 'copy':
         Clipboard.setData(ClipboardData(text: d.selectedText()));
         break;
@@ -1177,7 +1200,7 @@ class DocumentProvider extends ChangeNotifier {
         break;
 
       default:
-        print('unhandled command: $cmd');
+        // print('unhandled command: $cmd');
         break;
     }
 

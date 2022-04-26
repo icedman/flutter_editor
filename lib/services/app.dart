@@ -18,9 +18,10 @@ const bool LIGHT_MODE = false;
 const String appResourceRoot = '~/.editor';
 const double configVersion = 1.1;
 late Directory root;
+
 String expandPath(String path) {
   String res = path.replaceAll('~', root.parent.absolute.path);
-  return res;
+  return _path.normalize(res);
 }
 
 Future<ByteData> loadFontFile(String path) async {
@@ -60,7 +61,7 @@ class AppProvider extends ChangeNotifier {
   }
 
   // settings
-  dynamic settings;
+  dynamic settings = {};
   double sidebarWidth = 240;
   double tabbarHeight = 32;
   double statusbarHeight = 32;
@@ -84,8 +85,11 @@ class AppProvider extends ChangeNotifier {
   String extractingWhat = '';
   bool resourcesReady = false;
 
+  String extensionsPath = '';
+
   Future<void> initialize() async {
     root = await getApplicationDocumentsDirectory();
+    extensionsPath = expandPath('$appResourceRoot/extensions') + '/';
     keybindings = Keybindings();
   }
 
@@ -111,6 +115,9 @@ class AppProvider extends ChangeNotifier {
   }
 
   void close(String path) {
+    if (path == '') {
+      path = document?.docPath ?? '';
+    }
     String p = _path.normalize(Directory(path).absolute.path);
     document = null;
     for (final d in documents) {
@@ -130,6 +137,7 @@ class AppProvider extends ChangeNotifier {
     if (document == null && documents.length > 0) {
       document = documents[0];
     }
+    notifyListeners();
   }
 
   Future<void> setupResources({bool upgrade = false}) async {

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 
 import 'package:editor/services/app.dart';
+import 'package:editor/services/keybindings.dart';
 import 'package:editor/services/util.dart';
 import 'package:editor/services/ui/ui.dart';
 import 'package:editor/services/highlight/theme.dart';
@@ -10,6 +11,9 @@ import 'package:editor/services/highlight/theme.dart';
 class UIMenuData {
   int menuIndex = 0;
   String title = '';
+  String subtitle = '';
+  dynamic data;
+  int score = 0;
   List<UIMenuData> items = [];
 
   Function? onSelect;
@@ -18,6 +22,17 @@ class UIMenuData {
     if (index >= 0 && index < items.length && items[index] != null) {
       onSelect?.call(items[index]);
     }
+  }
+
+  void selectItem(UIMenuData? item) {
+    if (item != null) {
+      onSelect?.call(item);
+    }
+  }
+
+  @override
+  String toString() {
+    return title;
   }
 }
 
@@ -45,16 +60,19 @@ class UIMenuPopup extends StatefulWidget {
 
 class _UIMenuPopup extends State<UIMenuPopup> {
   late ScrollController scroller;
+  late FocusNode rawInputNode;
 
   @override
   void initState() {
     super.initState();
+    rawInputNode = FocusNode();
     scroller = ScrollController();
   }
 
   @override
   void dispose() {
     super.dispose();
+    rawInputNode.dispose();
     scroller.dispose();
   }
 
@@ -101,7 +119,7 @@ class _UIMenuPopup extends State<UIMenuPopup> {
     if (dx + maxWidth > app.screenWidth + 2) {
       dx = app.screenWidth - 2 - maxWidth;
     }
-    if (dy + height > app.screenHeight + 40) {
+    if (dy + height > app.screenHeight - 40) {
       dy = position.dy - height - 4;
     }
 
@@ -161,11 +179,45 @@ class _UIMenuPopup extends State<UIMenuPopup> {
                         color: darken(theme.background, 0), width: 1.5)),
                 child: Padding(
                     padding: EdgeInsets.all(padding),
-                    child: ListView.builder(
-                        controller: scroller,
-                        padding: EdgeInsets.zero,
-                        itemCount: items.length,
-                        itemExtent: itemHeight,
-                        itemBuilder: _item)))));
+                    child: RawKeyboardListener(
+                        focusNode: rawInputNode,
+                        autofocus: true,
+                        onKey: (RawKeyEvent event) {
+                          // editor -- aggressively regains focus
+                          // if (event.runtimeType.toString() == 'RawKeyDownEvent') {
+                          // String keys = buildKeys(event.logicalKey.keyLabel,
+                          // control: event.isControlPressed,
+                          // shift: event.isShiftPressed,
+                          // alt: event.isAltPressed);
+                          // int idx = menu?.menuIndex ?? 0;
+                          // int size = menu?.items.length ?? 0;
+                          // switch(keys) {
+                          // case 'up':
+                          // if (idx > 0) {
+                          // menu?.menuIndex--;
+                          // setState(() {});
+                          // }
+                          // return;
+                          // case 'down':
+                          // if (idx + 1 < size) {
+                          // menu?.menuIndex++;
+                          // setState(() {});
+                          // }
+                          // return;
+                          // case 'enter':
+                          // {
+                          // menu?.select(menu?.menuIndex ?? -1);
+                          // ui.clearPopups();
+                          // return;
+                          // }
+                          // }
+                          // }
+                        },
+                        child: ListView.builder(
+                            controller: scroller,
+                            padding: EdgeInsets.zero,
+                            itemCount: items.length,
+                            itemExtent: itemHeight,
+                            itemBuilder: _item))))));
   }
 }

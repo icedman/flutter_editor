@@ -22,6 +22,7 @@ class TabIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
+        canRequestFocus: false,
         child: Padding(
             padding: EdgeInsets.all(4),
             child: Container(width: 32, height: 32, child: icon)),

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 
 class Command {
   Command(String this.command, [dynamic this.params]);
@@ -7,9 +8,11 @@ class Command {
 }
 
 final Map<String, Command> _sublime = {
+  'cancel': Command('cancel'),
   'ctrl+q': Command('quit'),
-  'ctrl+f': Command('search'),
-  'ctrl+shift+f': Command('search_in_files'),
+  'ctrl+shift+f': Command('search_text_in_files'),
+  'ctrl+p': Command('search_files'),
+  'ctrl+f': Command('search_text'),
   'ctrl+g': Command('jump_to_line'),
   'ctrl+z': Command('undo'),
   'ctrl+shift+z': Command('redo'),
@@ -38,13 +41,64 @@ final Map<String, Command> _sublime = {
   'ctrl+9': Command('switch_tab', 8),
   'ctrl+0': Command('switch_tab', 9),
   'ctrl+shift+|': Command('toggle_pinned'),
+  'ctrl+k': Command('await'),
+  'ctrl+k+ctrl+u': Command('selection_to_upper_case'),
+  'ctrl+k+ctrl+l': Command('selection_to_lower_case'),
 };
+
+String buildKeys(String keys,
+    {bool control: false, bool shift: false, bool alt: false}) {
+  String res = '';
+
+  keys = keys.toLowerCase();
+
+  // morph
+  if (keys == 'escape') {
+    keys = 'cancel';
+  }
+  if (keys == '\n') {
+    keys = 'enter';
+  }
+  if (keys.startsWith('arrow')) {
+    keys = keys.substring(6);
+  }
+  if (keys == 'space') {
+    keys = ' ';
+  }
+
+  if (control) {
+    res = 'ctrl';
+  }
+  if (shift) {
+    if (res != '') res += '+';
+    res += 'shift';
+  }
+  if (alt) {
+    if (res != '') res += '+';
+    res += 'alt';
+  }
+  if (res != '') res += '+';
+  res += keys;
+
+  return res;
+}
 
 class Keybindings {
   Map<String, Command> commands = _sublime;
+  int lastHashCode = 0;
+  String lastKeys = '';
 
-  Command? resolve(String keys) {
-    // print(keys);
-    return commands[keys];
+  Command? resolve(String keys, {int code = 0}) {
+    if (lastHashCode != code && lastHashCode != 0) {
+      keys = '$lastKeys+$keys';
+      lastHashCode = 0;
+    }
+    Command? res = commands[keys];
+    if (res?.command == 'await') {
+      lastHashCode = code;
+      lastKeys = keys;
+      return null;
+    }
+    return res;
   }
 }

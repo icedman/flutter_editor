@@ -139,7 +139,7 @@ class GutterLine extends StatelessWidget {
     HLTheme theme = Provider.of<HLTheme>(context);
     return Container(
         color: (block?.carets ?? []).isNotEmpty
-            ? theme.selection
+            ? colorCombine(theme.selection, theme.background, aw: 2, bw: 3)
             : theme.background,
         height: height,
         width: width,
@@ -593,10 +593,10 @@ class _View extends State<View> {
 
     if (doc.scrollTo != -1) {
       int jumpTo = doc.scrollTo;
-      Future.delayed(const Duration(milliseconds: 50), () {
+      Future.delayed(const Duration(milliseconds: 0), () {
         scrollToLine(jumpTo);
       });
-      Future.delayed(const Duration(milliseconds: 100), scrollToCursor);
+      Future.delayed(const Duration(milliseconds: 0), scrollToCursor);
       doc.scrollTo = -1;
     }
 

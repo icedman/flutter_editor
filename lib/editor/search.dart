@@ -13,7 +13,7 @@ import 'package:editor/services/highlight/theme.dart';
 class SearchPopup extends StatefulWidget {
   SearchPopup(
       {Function? this.onSubmit,
-      bool this.ignoreCase = false,
+      bool this.ignoreCase = true,
       bool this.regex = false,
       bool this.replace = false,
       bool this.searchFiles = false});
@@ -166,13 +166,18 @@ class _SearchPopup extends State<SearchPopup> {
             focusNode: focusNode3,
             autofocus: true));
 
+    double popupWidth = 400;
+    if (app.screenWidth < 500) {
+      popupWidth = app.screenWidth;
+    }
+
     return Positioned(
         right: 0,
         top: app.tabbarHeight,
         child: Material(
             color: darken(theme.background, sidebarDarken),
             child: Container(
-                width: 400,
+                width: popupWidth,
                 // decoration: BoxDecoration(
                 //   color: darken(theme.background, sidebarDarken),
                 //   // borderRadius:
@@ -220,34 +225,35 @@ class _SearchPopup extends State<SearchPopup> {
                             _search();
                             focusNode1.requestFocus();
                           }),
-                      IconButton(
-                          icon: Text('Aa',
-                              style: TextStyle(
-                                  fontSize: theme.uiFontSize,
-                                  color: ignoreCase
-                                      ? theme.comment
-                                      : theme.function,
-                                  fontWeight: FontWeight.bold)),
-                          color: ignoreCase ? theme.comment : theme.function,
-                          onPressed: () {
-                            setState(() {
-                              ignoreCase = !ignoreCase;
-                            });
-                            focusNode1.requestFocus();
-                          }),
-                      IconButton(
-                          icon: Text('.*',
-                              style: TextStyle(
-                                  fontSize: theme.uiFontSize,
-                                  color: regex ? theme.function : theme.comment,
-                                  fontWeight: FontWeight.bold)),
-                          color: regex ? theme.function : theme.comment,
-                          onPressed: () {
-                            setState(() {
-                              regex = !regex;
-                            });
-                            focusNode1.requestFocus();
-                          }),
+                    ],
+                    IconButton(
+                        icon: Text('Aa',
+                            style: TextStyle(
+                                fontSize: theme.uiFontSize,
+                                color:
+                                    ignoreCase ? theme.comment : theme.function,
+                                fontWeight: FontWeight.bold)),
+                        color: ignoreCase ? theme.comment : theme.function,
+                        onPressed: () {
+                          setState(() {
+                            ignoreCase = !ignoreCase;
+                          });
+                          focusNode1.requestFocus();
+                        }),
+                    IconButton(
+                        icon: Text('.*',
+                            style: TextStyle(
+                                fontSize: theme.uiFontSize,
+                                color: regex ? theme.function : theme.comment,
+                                fontWeight: FontWeight.bold)),
+                        color: regex ? theme.function : theme.comment,
+                        onPressed: () {
+                          setState(() {
+                            regex = !regex;
+                          });
+                          focusNode1.requestFocus();
+                        }),
+                    if (!searchFiles) ...[
                       IconButton(
                           icon: Icon(Icons.find_replace,
                               size: theme.uiFontSize,
@@ -269,19 +275,17 @@ class _SearchPopup extends State<SearchPopup> {
                             focusNode1.requestFocus();
                           }),
                     ],
-                    /*
-                    IconButton(
-                        icon: Icon(Icons.folder,
-                            size: theme.uiFontSize,
-                            color:
-                                searchFiles ? theme.function : theme.comment),
-                        onPressed: () {
-                          setState(() {
-                            searchFiles = !searchFiles;
-                          });
-                          focusNode1.requestFocus();
-                        }),
-                        */
+                    // IconButton(
+                    //     icon: Icon(Icons.folder,
+                    //         size: theme.uiFontSize,
+                    //         color:
+                    //             searchFiles ? theme.function : theme.comment),
+                    //     onPressed: () {
+                    //       setState(() {
+                    //         searchFiles = !searchFiles;
+                    //       });
+                    //       focusNode1.requestFocus();
+                    //     }),
                     Expanded(child: Container()),
                   ]),
                   // Expanded(child: Container())
@@ -326,12 +330,17 @@ class _GotoPopup extends State<GotoPopup> {
     UIProvider ui = Provider.of<UIProvider>(context);
     HLTheme theme = Provider.of<HLTheme>(context);
 
+    double popupWidth = 400;
+    if (app.screenWidth < 500) {
+      popupWidth = app.screenWidth;
+    }
+
     double sz = 20;
     return Positioned(
         right: 0,
         top: app.tabbarHeight,
         child: Container(
-            width: 400,
+            width: popupWidth,
             decoration: BoxDecoration(
               color: darken(theme.background, sidebarDarken),
               // borderRadius:

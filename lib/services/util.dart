@@ -96,3 +96,10 @@ Future<bool> extractArchive(String zip, String dir, {bool asset = true}) async {
   }
   return true;
 }
+
+Widget ScrollableText(String text, {TextStyle? style}) {
+  return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Text(text,
+          style: style, softWrap: false, overflow: TextOverflow.clip));
+}

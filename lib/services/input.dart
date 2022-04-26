@@ -7,43 +7,6 @@ import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
 import 'package:editor/services/util.dart';
 
-String buildKeys(String keys,
-    {bool control: false, bool shift: false, bool alt: false}) {
-  String res = '';
-
-  keys = keys.toLowerCase();
-
-  // morph
-  if (keys == 'escape') {
-    keys = 'cancel';
-  }
-  if (keys == '\n') {
-    keys = 'enter';
-  }
-  if (keys.startsWith('arrow')) {
-    keys = keys.substring(6);
-  }
-  if (keys == 'space') {
-    keys = ' ';
-  }
-
-  if (control) {
-    res = 'ctrl';
-  }
-  if (shift) {
-    if (res != '') res += '+';
-    res += 'shift';
-  }
-  if (alt) {
-    if (res != '') res += '+';
-    res += 'alt';
-  }
-  if (res != '') res += '+';
-  res += keys;
-
-  return res;
-}
-
 class CustomEditingController extends TextEditingController {
   @override
   TextSpan buildTextSpan(
@@ -81,8 +44,6 @@ class InputListener extends StatefulWidget {
 }
 
 class _InputListener extends State<InputListener> {
-  // late FocusNode focusNode;
-  // late FocusNode textFocusNode;
   late TextEditingController controller;
 
   Offset lastTap = Offset.zero;
@@ -90,8 +51,6 @@ class _InputListener extends State<InputListener> {
   @override
   void initState() {
     super.initState();
-    // focusNode = FocusNode();
-    // textFocusNode = FocusNode();
     controller = CustomEditingController();
 
     controller.addListener(() {
@@ -101,18 +60,10 @@ class _InputListener extends State<InputListener> {
       }
       controller.text = '';
     });
-
-    // if (widget.showKeyboard) {
-    //   Future.delayed(Duration(milliseconds: 50), () {
-    //     textFocusNode.requestFocus();
-    //   });
-    // }
   }
 
   @override
   void dispose() {
-    // focusNode.dispose();
-    // textFocusNode.dispose();
     controller.dispose();
     super.dispose();
   }
@@ -188,12 +139,13 @@ class _InputListener extends State<InputListener> {
                 keyId: event.logicalKey.keyId,
                 shift: event.isShiftPressed,
                 control: event.isControlPressed,
-                alt: event.isAltPressed);
+                alt: event.isAltPressed,
+                code: event.hashCode);
           }
           if (event.runtimeType.toString() == 'RawKeyUpEvent') {
             widget.onKeyUp?.call();
           }
-          return KeyEventResult.handled;
+          return KeyEventResult.ignored;
         });
   }
 }

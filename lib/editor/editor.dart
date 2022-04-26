@@ -51,6 +51,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
   bool shifting = false;
   bool controlling = false;
   bool alting = false;
+  int lastHashCode = 0;
 
   List<Block> indexingQueue = [];
   HLLanguage? lang;
@@ -175,7 +176,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
 
   void onShortcut(String keys) {
     AppProvider app = Provider.of<AppProvider>(context, listen: false);
-    Command? cmd = app.keybindings.resolve(keys);
+    Command? cmd = app.keybindings.resolve(keys, code: lastHashCode);
     command(cmd?.command ?? '', params: cmd?.params);
   }
 
@@ -208,15 +209,14 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     Cursor cursor = d.cursor().copy();
 
     AppProvider app = Provider.of<AppProvider>(context, listen: false);
+
+    // todo.. let popups handle their input...
     UIProvider ui = Provider.of<UIProvider>(context, listen: false);
     if (ui.popups.isNotEmpty) {
       UIMenuData? menu = ui.menu('indexer::${d.documentId}');
       int idx = menu?.menuIndex ?? 0;
       int size = menu?.items.length ?? 0;
       switch (cmd) {
-        case 'cancel':
-          ui.clearPopups();
-          return;
         case 'up':
           if (idx > 0) {
             menu?.menuIndex--;
@@ -235,6 +235,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
             ui.clearPopups();
             return;
           }
+          return;
       }
     }
 
@@ -264,83 +265,6 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       }
     };
 
-    final onSearchInFiles = (text,
-        {int direction = 1,
-        bool caseSensitive = false,
-        bool regex = false,
-        bool repeat = false,
-        bool searchInFiles = false,
-        String? replace}) {
-      Document? resultDoc = app.open(':search.txt', focus: true);
-
-      resultDoc?.decorators['search_result'] = (Block block) {
-        List<LineDecoration> res = [];
-        String t = block.text;
-        String f = text;
-
-        HLTheme theme = HLTheme.instance();
-        int lnIdx = t.indexOf('[Ln');
-        if (lnIdx == -1) {
-          return [
-            LineDecoration()
-              ..start = 0
-              ..end = t.length
-              ..color = theme.comment
-          ];
-        }
-
-        res.add(LineDecoration()
-          ..start = lnIdx
-          ..end = t.length
-          ..color = theme.function
-          ..tap = 'open_search_result');
-
-        int start = 0;
-        while (true) {
-          int idx = t.indexOf(f, start);
-          if (idx != -1) {
-            res.add(LineDecoration()
-              ..start = idx
-              ..end = (idx + f.length - 1)
-              ..italic = true
-              ..underline = true
-              ..color = theme.string
-              ..tap = 'open_search_result');
-            start = idx + f.length;
-            continue;
-          }
-          break;
-        }
-
-        return res;
-      };
-
-      resultDoc?.title = 'Search Results';
-      resultDoc?.hideGutter = true;
-      resultDoc?.clear();
-      FileSearchProvider search =
-          Provider.of<FileSearchProvider>(context, listen: false);
-      search.onResult = (res) {
-        search.onResult = null;
-        for (final r in res) {
-          resultDoc?.insertText(r['file']);
-          for (final m in r['matches'] ?? []) {
-            resultDoc?.insertNewLine();
-            // resultDoc?.insertText('```js');
-            // resultDoc?.insertNewLine();
-            resultDoc?.insertText(m['text']);
-            resultDoc?.insertText(' [Ln ${m['lineNumber']}]');
-            // resultDoc?.insertNewLine();
-            // resultDoc?.insertText('```');
-          }
-          resultDoc?.insertNewLine();
-          resultDoc?.insertNewLine();
-        }
-        ui.clearPopups();
-      };
-      search.find(text);
-    };
-
     switch (cmd) {
       case 'switch_tab':
         {
@@ -358,36 +282,21 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
           return;
         }
 
-      case 'search':
-      case 'search_in_files':
+      case 'search_text':
         {
-          ui.setPopup(
-              SearchPopup(
-                  searchFiles: (cmd == 'search_in_files'),
-                  onSubmit: (text,
-                      {int direction = 1,
-                      bool caseSensitive = false,
-                      bool regex = false,
-                      bool repeat = false,
-                      bool searchInFiles = false,
-                      String? replace}) {
-                    if (searchInFiles) {
-                      onSearchInFiles.call(text,
-                          direction: direction,
-                          caseSensitive: caseSensitive,
-                          regex: regex,
-                          repeat: repeat);
-                    } else {
-                      onSearchInFile.call(text,
-                          direction: direction,
-                          caseSensitive: caseSensitive,
-                          regex: regex,
-                          repeat: repeat);
-                    }
-                  }),
-              blur: false,
-              shield: false,
-              onClearPopups: _regainFocus);
+          ui.setPopup(SearchPopup(onSubmit: (text,
+              {int direction = 1,
+              bool caseSensitive = false,
+              bool regex = false,
+              bool repeat = false,
+              bool searchInFiles = false,
+              String? replace}) {
+            onSearchInFile.call(text,
+                direction: direction,
+                caseSensitive: caseSensitive,
+                regex: regex,
+                repeat: repeat);
+          }), blur: false, shield: false, onClearPopups: _regainFocus);
           return;
         }
       case 'jump_to_line':
@@ -398,16 +307,17 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
           }), blur: false, shield: false, onClearPopups: _regainFocus);
         }
         return;
-
-      case 'close':
-        app.close(doc.doc.docPath);
-        return;
     }
 
     List<Block> modifiedBlocks = [];
 
     doc.begin();
     doc.command(cmd, params: params, modifiedBlocks: modifiedBlocks);
+
+    if (cmd == 'enter') {
+      doc.doc.autoIndent();
+    }
+
     doc.commit();
 
     for (final b in modifiedBlocks) {
@@ -459,16 +369,20 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       bool shift = false,
       bool control = false,
       bool alt = false,
-      bool softKeyboard = false}) {
+      bool softKeyboard = false,
+      int code = 0}) {
     if (!softKeyboard) {
       shifting = shift;
       controlling = control;
       alting = alt;
     }
 
-    // print('$softKeyboard $key ${key.length} ${controlling}');
+    if (key.startsWith('Arrow') || key == 'Tab') {
+      _regainFocus();
+    }
 
     Document d = doc.doc;
+    lastHashCode = code;
 
     UIProvider ui = Provider.of<UIProvider>(context, listen: false);
     if (doc.softWrap && ui.popups.isEmpty) {
@@ -497,12 +411,10 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       case 'Tab':
       case 'Home':
       case 'End':
-        command(
-            buildKeys(key, control: controlling, shift: shifting, alt: alting));
-        break;
       case 'Enter':
       case '\n':
-        _commandNewLine();
+        command(
+            buildKeys(key, control: controlling, shift: shifting, alt: alting));
         break;
       default:
         {
@@ -543,12 +455,6 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     if ((lang?.closingBrackets ?? []).indexOf(text) != -1) {
       d.eraseDuplicateClose(text);
     }
-  }
-
-  void _commandNewLine() {
-    Document d = doc.doc;
-    command('enter');
-    d.autoIndent();
   }
 
   void onKeyUp() {
@@ -699,7 +605,8 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
                   Row(children: [
                     Expanded(
                         child: InputListener(
-                            child: View(),
+                            child:
+                                View(key: PageStorageKey(doc.doc.documentId)),
                             focusNode: focusNode,
                             textFocusNode: textFocusNode,
                             onKeyDown: onKeyDown,

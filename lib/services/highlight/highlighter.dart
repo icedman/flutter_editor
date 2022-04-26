@@ -10,7 +10,6 @@ import 'package:editor/editor/view.dart';
 import 'package:editor/services/util.dart';
 import 'package:editor/services/ffi/bridge.dart';
 import 'package:editor/services/highlight/theme.dart';
-import 'package:editor/services/highlight/fhl.dart';
 import 'package:editor/services/highlight/tmparser.dart';
 
 abstract class HLEngine {
@@ -55,6 +54,12 @@ class LineDecoration {
     end = json['end'] ?? 0;
     final clr = json['color'] ?? [0, 0, 0];
     color = Color.fromRGBO(clr[0], clr[1], clr[2], 1);
+  }
+}
+
+class LineDecorator {
+  List<LineDecoration> run(Block? block) {
+    return [];
   }
 }
 
@@ -115,9 +120,9 @@ class Highlighter {
     }
     List<LineDecoration> decors = block?.decors ?? [];
 
-    Map<String, Function> decorators = block?.document?.decorators ?? {};
+    Map<String, LineDecorator> decorators = block?.document?.decorators ?? {};
     for (final h in decorators.keys) {
-      for (final d in (decorators[h]?.call(block) ?? [])) {
+      for (final d in (decorators[h]?.run(block) ?? [])) {
         decors.add(d);
       }
     }
@@ -198,7 +203,8 @@ class Highlighter {
               (line == anchorLine && i < cur.anchorColumn)) {
           } else {
             style = style.copyWith(
-                backgroundColor: theme.selection.withOpacity(0.75));
+                backgroundColor: colorCombine(theme.selection, theme.background,
+                    aw: 2, bw: 3));
             break;
           }
         }

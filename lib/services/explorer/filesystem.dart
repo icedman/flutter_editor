@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:path/path.dart' as _path;
 
+List<String> folderExclude = [];
+List<String> fileExclude = [];
+
 class ExplorerItem {
   ExplorerItem(String this.fullPath) {
     fileName = _path.basename(fullPath);
@@ -26,10 +29,30 @@ class ExplorerItem {
   dynamic data;
 
   void buildTree(List<ExplorerItem?> items) {
+    if (isDirectory) {
+      for (final ex in folderExclude) {
+        if (fullPath.indexOf(ex) != -1) return;
+      }
+    } else {
+      String ext = _path.extension(fullPath).toLowerCase();
+      for (final ex in fileExclude) {
+        if (ext == ex) return;
+      }
+    }
+
     items.add(this);
     if (!isExpanded) return;
     for (final c in children) {
       c?.buildTree(items);
+    }
+  }
+
+  void files(List<ExplorerItem?> items) {
+    if (!isDirectory) {
+      items.add(this);
+    }
+    for (final c in children) {
+      c?.files(items);
     }
   }
 
@@ -100,7 +123,7 @@ class Explorer implements ExplorerListener {
   Map<String, Completer> requests = {};
 
   void _busy() {
-    //...
+    //...setRootPath
   }
 
   void setBackend(ExplorerBackend? back) {
@@ -111,16 +134,16 @@ class Explorer implements ExplorerListener {
   Future<bool> setRootPath(String path) {
     String p = _path.normalize(Directory(path).absolute.path);
     root = ExplorerItem(p);
-    return loadPath(p);
+    return loadPath(p, recursive: true);
   }
 
-  Future<bool> loadPath(String path) {
+  Future<bool> loadPath(String path, {bool recursive: false}) {
     String p = _path.normalize(Directory(path).absolute.path);
     if (isLoading(p)) {
       _busy();
       return Future.value(false);
     }
-    backend?.loadPath(path);
+    backend?.loadPath(path, recursive: recursive);
 
     Completer<bool> completer = Completer<bool>();
     requests[p] = completer;
@@ -197,6 +220,12 @@ class Explorer implements ExplorerListener {
     return _tree;
   }
 
+  List<ExplorerItem?> files() {
+    List<ExplorerItem?> _files = [];
+    root?.files(_files);
+    return _files;
+  }
+
   // event
   void onLoad(dynamic items) {
     dynamic json = jsonDecode(items);
@@ -226,6 +255,19 @@ class Explorer implements ExplorerListener {
   void onError(dynamic error) {}
 
   void search(String fileName) {}
+
+  void setExcludePatterns(
+      dynamic _folderExclude, dynamic _fileExclude, dynamic binaryExclude) {
+    for (String s in _folderExclude) {
+      folderExclude.add(s);
+    }
+    for (String s in [...binaryExclude, ..._fileExclude]) {
+      if (s.indexOf('*.') != -1) {
+        s = s.substring(1);
+      }
+      fileExclude.add(s);
+    }
+  }
 }
 
 abstract class ExplorerListener {
@@ -238,7 +280,7 @@ abstract class ExplorerListener {
 abstract class ExplorerBackend {
   void addListener(ExplorerListener listener);
   void setRootPath(String path);
-  void loadPath(String path);
+  void loadPath(String path, {bool recursive = false});
   void openFile(String path);
   void createDirectory(String path);
   void createFile(String path);

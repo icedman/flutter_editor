@@ -681,51 +681,43 @@ theme_ptr theme_from_name(const std::string path,
     // theme_path =
     // "C:\\Users\\iceman\\.editor\\extensions\\dracula-theme.theme-dracula-2.24.0\\theme\\dracula-soft.json";
 
-    for (auto& ext : extensions) {
-        if (!ext.hasThemes)
-            continue;
-        Json::Value contribs = ext.package["contributes"];
-        // if (!contribs.isMember("themes")) {
-        //     continue;
-        // }
+    if (!file_exists(theme_path.c_str()))
+        for (auto& ext : extensions) {
+            if (!ext.hasThemes)
+                continue;
+            Json::Value contribs = ext.package["contributes"];
 
-        Json::Value themes = contribs["themes"];
-        for (int i = 0; i < themes.size(); i++) {
-            Json::Value theme = themes[i];
+            Json::Value themes = contribs["themes"];
+            for (int i = 0; i < themes.size(); i++) {
+                Json::Value theme = themes[i];
 
-            std::string theme_ui;
-            if (theme.isMember("uiTheme")) {
-                theme_ui = theme["uiTheme"].asString();
-            }
-
-            // log("theme compare %s %s\n", theme_ui.c_str(),
-            // theme["label"].asString().c_str());
-
-            if (theme["id"].asString() == theme_path || theme["label"].asString() == theme_path) {
-                theme_path = ext.path + "/" + theme["path"].asString();
-                // std::cout << ext.path << "..." << std::endl;
-                // std::cout << theme_path << std::endl;
-
-                if (theme.isMember("uiTheme") && uiTheme != "" && theme["uiTheme"].asString() != uiTheme) {
-                    continue;
+                std::string theme_ui;
+                if (theme.isMember("uiTheme")) {
+                    theme_ui = theme["uiTheme"].asString();
                 }
 
-                // printf("theme: %s [%s]\n", ext.path.c_str(), theme_path.c_str());
-                ext_path = ext.path;
-                found = true;
+                if (theme["id"].asString() == theme_path || theme["label"].asString() == theme_path) {
+                    theme_path = ext.path + "/" + theme["path"].asString();
+                    if (theme.isMember("uiTheme") && uiTheme != "" && theme["uiTheme"].asString() != uiTheme) {
+                        continue;
+                    }
+
+                    // printf("theme: %s [%s]\n", ext.path.c_str(), theme_path.c_str());
+                    ext_path = ext.path;
+                    found = true;
+                    break;
+                }
+            }
+
+            if (found) {
+                // ext.addToHistory = true;
                 break;
             }
         }
 
-        if (found) {
-            // ext.addToHistory = true;
-            break;
-        }
-    }
-
     Json::Value themeItem = parse::loadJson(theme_path);
 
-    if (!themeItem.isMember("contributes") && !!themeItem["contributes"].isMember("themes")) {
+    if (!themeItem.isMember("colors") && !themeItem.isMember("tokenColors")) {
         Json::Reader reader;
         reader.parse(defaultTheme, themeItem);
     }
