@@ -99,7 +99,7 @@ class Document {
   String title = '';
   int documentId = 0;
   int langId = 0;
-
+  
   // todo.. both these are all over the place
   bool hideGutter = false;
   bool hideMinimap = false;
@@ -849,7 +849,8 @@ class DocumentProvider extends ChangeNotifier {
   bool showMinimap = true;
   bool ready = false;
   bool pinned = false;
-
+  bool overwriteMode = false;
+  
   Offset scrollOffset = Offset.zero;
   Offset offsetForCaret = Offset.zero;
   Size scrollAreaSize = Size.zero;

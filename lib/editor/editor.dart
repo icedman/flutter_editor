@@ -110,6 +110,11 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     d.addListener('onInsertNewLine', () {
       //
     });
+    d.addListener('onFocus', (bool hasFocus) {
+        StatusProvider status = Provider.of<StatusProvider>(context, listen: false);
+        status.setIndexedStatus(1,
+            'xxx');
+    });
     d.addListener('onReady', () {
       Future.delayed(const Duration(seconds: 3), () {
         indexer.indexFile(widget.path);
@@ -401,6 +406,10 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     }
 
     switch (key) {
+      case 'Insert':
+        doc.overwriteMode = !doc.overwriteMode;
+        doc.touch();
+        break;
       case 'Escape':
       case 'Arrow Left':
       case 'Arrow Right':
@@ -450,7 +459,11 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     Document d = doc.doc;
     command('insert', params: text);
     if (text.length == 1) {
-      d.autoClose(lang?.autoClose ?? {});
+      if (doc.overwriteMode) {
+        d.deleteText();
+      } else {
+        d.autoClose(lang?.autoClose ?? {});
+      }
     }
     if ((lang?.closingBrackets ?? []).indexOf(text) != -1) {
       d.eraseDuplicateClose(text);
