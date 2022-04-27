@@ -58,7 +58,7 @@ class Block {
   List<BlockBracket> brackets = [];
   Map<int, int> scopes = {};
 
-  dynamic mode;
+  dynamic mode; // flutter_highlight << remove soon
   String className = '';
   String prevBlockClass = '';
 
@@ -99,7 +99,7 @@ class Document {
   String title = '';
   int documentId = 0;
   int langId = 0;
-  
+
   // todo.. both these are all over the place
   bool hideGutter = false;
   bool hideMinimap = false;
@@ -153,7 +153,7 @@ class Document {
   void removeListener(String event, Function? func) {
     // !todo
   }
-    
+
   Cursor cursor() {
     if (cursors.isEmpty) {
       cursors.add(Cursor(document: this, block: firstBlock()));
@@ -850,7 +850,7 @@ class DocumentProvider extends ChangeNotifier {
   bool ready = false;
   bool pinned = false;
   bool overwriteMode = false;
-  
+
   Offset scrollOffset = Offset.zero;
   Offset offsetForCaret = Offset.zero;
   Size scrollAreaSize = Size.zero;

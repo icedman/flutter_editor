@@ -299,7 +299,7 @@ class _TheApp extends State<TheApp> with WidgetsBindingObserver {
           Provider.of<FileSearchProvider>(context, listen: false);
       search.onResult = (res) {
         search.onResult = null;
-        if (res.length  == 0) {
+        if (res.length == 0) {
           resultDoc?.insertText('none found');
         }
         for (final r in res) {
@@ -319,7 +319,8 @@ class _TheApp extends State<TheApp> with WidgetsBindingObserver {
         app.notifyListeners();
         ui.clearPopups();
       };
-      search.find(text, caseSensitive: caseSensitive, regex: regex, path: searchPath);
+      search.find(text,
+          caseSensitive: caseSensitive, regex: regex, path: searchPath);
       ui.clearPopups();
     };
 

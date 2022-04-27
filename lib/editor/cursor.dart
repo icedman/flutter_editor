@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:editor/editor/document.dart';
-import 'package:editor/editor/history.dart';
 import 'package:flutter/material.dart';
 
 String safeSubstring(String text, int start, [int? end]) {

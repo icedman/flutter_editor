@@ -17,7 +17,6 @@ class FileSearch {
       {String path = '',
       bool caseSensitive = false,
       bool regex = false}) async {
-      
     // print(path);
 
     File f = File(path);
@@ -61,7 +60,7 @@ class FileSearch {
         } else {
           idx = source.indexOf(text);
         }
-        
+
         if (idx != -1) {
           String pre = '';
           String post = '';
@@ -107,9 +106,9 @@ class FileSearch {
       bool caseSensitive = false,
       bool regex = false}) async {
     Directory dir = Directory(_path.normalize(path));
-    
+
     // print('>>${dir.absolute.path}');
-    
+
     Completer<List<dynamic>> completer = Completer<List<dynamic>>();
 
     RegExp _wordRegExp = RegExp(
@@ -223,9 +222,9 @@ class FileSearchIsolate {
         bool caseSensitive = json['caseSensitive'] == true;
         // bool regex = json['regex'] == true;
         // isolateFileSearch
-            // .find(text, path: path, caseSensitive: caseSensitive, regex: regex)
-            // .then((res) {
-          // sendPort.send(jsonEncode(res));
+        // .find(text, path: path, caseSensitive: caseSensitive, regex: regex)
+        // .then((res) {
+        // sendPort.send(jsonEncode(res));
         // });
       }
       if (message.startsWith('exclude::')) {

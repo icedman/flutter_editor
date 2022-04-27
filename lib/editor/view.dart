@@ -259,7 +259,7 @@ class ViewLine extends StatelessWidget {
 
           double left = gutterWidth + offsetForCaret.dx;
           double top = offsetForCaret.dy;
-          
+
           double w = extents.width;
           double h = extents.height;
           if (doc.overwriteMode) {
@@ -271,8 +271,7 @@ class ViewLine extends StatelessWidget {
           carets.add(Positioned(
               left: left,
               top: top,
-              child: AnimatedCaret(
-                  width: w, height: h, color: col.color)));
+              child: AnimatedCaret(width: w, height: h, color: col.color)));
 
           Offset cursorOffset =
               box?.localToGlobal(Offset(left, top)) ?? Offset.zero;

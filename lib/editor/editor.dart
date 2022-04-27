@@ -112,9 +112,9 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     });
     d.addListener('onFocus', (int documentId) {
       if (documentId == d.documentId) {
-        StatusProvider status = Provider.of<StatusProvider>(context, listen: false);
-        status.setIndexedStatus(1,
-            'xxx $documentId');
+        StatusProvider status =
+            Provider.of<StatusProvider>(context, listen: false);
+        status.setIndexedStatus(1, '$documentId');
       }
       print(documentId);
     });
