@@ -63,6 +63,7 @@ class Block {
   String prevBlockClass = '';
 
   ValueNotifier notifier = ValueNotifier(0);
+  int renderedId = 0;
 
   void makeDirty({bool highlight = false}) {
     mode = null;
@@ -72,7 +73,13 @@ class Block {
       prevBlockClass = '';
       decors = null;
       brackets = [];
+      Future.delayed(const Duration(milliseconds: 0), () {
+        notifier.value++;
+      });
+      return;
     }
+
+    // notify immediately
     notifier.value++;
     if (notifier.value > 0xff) {
       notifier.value = 0;

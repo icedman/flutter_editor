@@ -172,6 +172,7 @@ class ViewLine extends StatelessWidget {
   Widget build(BuildContext context) {
     int lineNumber = block?.line ?? 0;
     // print('rebuild $lineNumber');
+    block?.renderedId = (block ?? Block('')).notifier.value;
     return ValueListenableBuilder(
       valueListenable: (block ?? Block('')).notifier,
       builder: (context, value, child) {

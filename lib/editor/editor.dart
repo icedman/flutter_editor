@@ -67,9 +67,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     if (widget.document != null) {
       doc.doc = widget.document ?? doc.doc;
     }
-    // if (widget.path.isNotEmpty) {
     doc.openFile(widget.path);
-    // }
 
     if (doc.doc.hideGutter) {
       doc.showGutter = false;
