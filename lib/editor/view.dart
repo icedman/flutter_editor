@@ -305,6 +305,7 @@ class ViewLine extends StatelessWidget {
       }
     }
 
+    /*
     return Stack(children: [
       Padding(
           padding: EdgeInsets.only(left: gutterWidth),
@@ -317,6 +318,9 @@ class ViewLine extends StatelessWidget {
           style: gutterStyle),
       ...carets,
     ]);
+    */
+    // return RichText(text: TextSpan(children: spans), softWrap: softWrap);
+    return Text(block?.text ?? '', style: TextStyle(color: Colors.white));
   }
 }
 

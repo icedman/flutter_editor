@@ -329,6 +329,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
 
     doc.commit();
 
+    /*
     for (final b in modifiedBlocks) {
       if (!indexingQueue.contains(b)) {
         indexingQueue.add(b);
@@ -367,10 +368,11 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     } else {
       ui.clearPopups();
     }
+    */
 
-    StatusProvider status = Provider.of<StatusProvider>(context, listen: false);
-    status.setIndexedStatus(0,
-        'Ln ${((d.cursor().block?.line ?? 0) + 1)}, Col ${(d.cursor().column + 1)}');
+    // StatusProvider status = Provider.of<StatusProvider>(context, listen: false);
+    // status.setIndexedStatus(0,
+        // 'Ln ${((d.cursor().block?.line ?? 0) + 1)}, Col ${(d.cursor().column + 1)}');
   }
 
   void onKeyDown(String key,
@@ -632,7 +634,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
                             onDoubleTapDown: onDoubleTapDown,
                             onPanUpdate: onPanUpdate,
                             showKeyboard: app.showKeyboard)),
-                    Minimap()
+                    // Minimap()
                   ]),
                 ])),
 

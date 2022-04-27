@@ -116,7 +116,7 @@ class Highlighter {
     HLLanguage? lang = engine.language(0);
 
     if (block?.decors == null && text.length < 500) {
-      block?.decors = engine.run(block, line, document);
+      // block?.decors = engine.run(block, line, document);
     }
     List<LineDecoration> decors = block?.decors ?? [];
 

@@ -307,11 +307,11 @@ class Document {
   }
 
   void begin() {
-    history.begin(this);
+    // history.begin(this);
   }
 
   void commit() {
-    history.commit();
+    // history.commit();
   }
 
   void undo() {
