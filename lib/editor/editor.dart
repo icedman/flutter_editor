@@ -322,11 +322,9 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
 
     doc.begin();
     doc.command(cmd, params: params, modifiedBlocks: modifiedBlocks);
-
     if (cmd == 'enter') {
       doc.doc.autoIndent();
     }
-
     doc.commit();
 
     /*

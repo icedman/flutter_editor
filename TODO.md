@@ -56,6 +56,12 @@ editor
 decorations
 console
 
+# jank
+rebuild single lines on single line edits
+add link decoration
+add tab decoration
+add fold decoration
+
 # bug
 auto scroll make smoother
 minimap - proportionate scroll

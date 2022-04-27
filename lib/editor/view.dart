@@ -148,8 +148,48 @@ class GutterLine extends StatelessWidget {
   }
 }
 
+
 class ViewLine extends StatelessWidget {
   ViewLine({
+    Key? key,
+    Key? this.caretKey,
+    Block? this.block,
+    int this.line = 0,
+    double this.gutterWidth = 0,
+    TextStyle? this.gutterStyle,
+    double this.width = 0,
+    double this.height = 0,
+  }) : super(key: key);
+
+  Key? caretKey;
+  Block? block;
+  int line = 0;
+  double width = 0;
+  double height = 0;
+  double gutterWidth = 0;
+  TextStyle? gutterStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    int lineNumber = block?.line ?? 0;
+    print('rebuild $lineNumber');
+    return ValueListenableBuilder(
+      valueListenable: (block ?? Block('')).notifier,
+      builder: (context, value, child) {
+        return _ViewLine(
+                line: line,
+                block: block,
+                width: width,
+                height: height,
+                gutterWidth: gutterWidth,
+                gutterStyle: gutterStyle);
+      },
+    );
+  }
+}
+ 
+class _ViewLine extends StatelessWidget {
+  _ViewLine({
     Key? key,
     Key? this.caretKey,
     Block? this.block,
@@ -175,10 +215,12 @@ class ViewLine extends StatelessWidget {
     DecorInfo decor = Provider.of<DecorInfo>(context, listen: false);
 
     int lineNumber = block?.line ?? 0;
-
+    print('rebuild renderer $lineNumber');
+    
     Block b = block ?? Block('', document: doc.doc);
     if (b.spans == null) {
       Highlighter hl = Provider.of<Highlighter>(context, listen: false);
+      // todo > create link decoration
       hl.run(b, b.line, b.document ?? Document(), onTap: (command) {
         switch (command) {
           case ':unfold':
@@ -247,6 +289,7 @@ class ViewLine extends StatelessWidget {
 
     // render carets
     List<Widget> carets = [];
+    // move to separate widget
     if ((block?.carets ?? []).isNotEmpty) {
       if (textPainter == null) {
         textPainter = painter();
@@ -285,6 +328,7 @@ class ViewLine extends StatelessWidget {
     }
 
     List<Cursor> extras = [...doc.doc.extraCursors, ...doc.doc.sectionCursors];
+    // move to separate widget
     if (extras.isNotEmpty) {
       for (final e in extras) {
         if (e.block != block) continue;
@@ -304,8 +348,7 @@ class ViewLine extends StatelessWidget {
         }
       }
     }
-
-    /*
+    
     return Stack(children: [
       Padding(
           padding: EdgeInsets.only(left: gutterWidth),
@@ -318,9 +361,7 @@ class ViewLine extends StatelessWidget {
           style: gutterStyle),
       ...carets,
     ]);
-    */
     // return RichText(text: TextSpan(children: spans), softWrap: softWrap);
-    return Text(block?.text ?? '', style: TextStyle(color: Colors.white));
   }
 }
 

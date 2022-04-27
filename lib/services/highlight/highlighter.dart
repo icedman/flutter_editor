@@ -116,7 +116,7 @@ class Highlighter {
     HLLanguage? lang = engine.language(0);
 
     if (block?.decors == null && text.length < 500) {
-      // block?.decors = engine.run(block, line, document);
+      block?.decors = engine.run(block, line, document);
     }
     List<LineDecoration> decors = block?.decors ?? [];
 
@@ -128,22 +128,24 @@ class Highlighter {
     }
 
     // tabs << convert to decorator
-    int indentSize = Document.countIndentSize(text);
-    int tabSpaces = (block?.document?.detectedTabSpaces ?? 1);
-    if (tabSpaces == 0) tabSpaces = 2;
-    int tabStops = indentSize ~/ tabSpaces;
-    Color tabStopColor = colorCombine(theme.comment, theme.background, bw: 3);
-    for (int i = 0; i <= tabStops; i++) {
-      int start = i * tabSpaces;
-      int end = start;
-      decors.insert(
-          0,
-          LineDecoration()
-            ..start = start
-            ..end = end
-            ..color = tabStopColor
-            ..tab = true);
-    }
+    // {
+      // int indentSize = Document.countIndentSize(text);
+      // int tabSpaces = (block?.document?.detectedTabSpaces ?? 1);
+      // if (tabSpaces == 0) tabSpaces = 2;
+      // int tabStops = indentSize ~/ tabSpaces;
+      // Color tabStopColor = colorCombine(theme.comment, theme.background, bw: 3);
+      // for (int i = 0; i <= tabStops; i++) {
+        // int start = i * tabSpaces;
+        // int end = start;
+        // decors.insert(
+            // 0,
+            // LineDecoration()
+              // ..start = start
+              // ..end = end
+              // ..color = tabStopColor
+              // ..tab = true);
+      // }
+    // }
 
     text += ' ';
     String prevText = '';

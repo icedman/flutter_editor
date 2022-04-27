@@ -61,6 +61,8 @@ class Block {
   dynamic mode; // flutter_highlight << remove soon
   String className = '';
   String prevBlockClass = '';
+  
+  ValueNotifier notifier = ValueNotifier(0);
 
   void makeDirty({bool highlight = false}) {
     mode = null;
@@ -71,6 +73,7 @@ class Block {
       decors = null;
       brackets = [];
     }
+    notifier.value++;
   }
 
   bool isFolded() {
@@ -307,11 +310,11 @@ class Document {
   }
 
   void begin() {
-    // history.begin(this);
+    history.begin(this);
   }
 
   void commit() {
-    // history.commit();
+    history.commit();
   }
 
   void undo() {
@@ -864,7 +867,8 @@ class DocumentProvider extends ChangeNotifier {
   }
 
   void touch() {
-    notifyListeners();
+    print('warning.. remove this');
+    // notifyListeners();
   }
 
   void _makeDirty() {
@@ -1079,17 +1083,17 @@ class DocumentProvider extends ChangeNotifier {
 
       case 'toggle_comment':
         d.toggleComment();
-        doc.touch();
+        // doc.touch();
         break;
 
       case 'indent':
         d.indent();
-        doc.touch();
+        // doc.touch();
         break;
 
       case 'unindent':
         d.unindent();
-        doc.touch();
+        // doc.touch();
         break;
 
       case 'selection_to_lower_case':
@@ -1099,7 +1103,7 @@ class DocumentProvider extends ChangeNotifier {
 
       case 'selection_to_upper_case':
         d.selectionToUpperCase();
-        doc.touch();
+        // doc.touch();
         break;
 
       case 'copy':
@@ -1204,6 +1208,8 @@ class DocumentProvider extends ChangeNotifier {
         // print('unhandled command: $cmd');
         break;
     }
+    
+    // todo touch only changed blocks
 
     // cursor moved
     // rebuild bracket match
@@ -1211,6 +1217,7 @@ class DocumentProvider extends ChangeNotifier {
     d.sectionCursors = [];
     Cursor newCursor = d.cursor();
     if (cursor.block != newCursor.block || cursor.column != newCursor.column) {
+      // bracket pair
       Future.delayed(const Duration(milliseconds: 5), () {
         BlockBracket b = d.brackedUnderCursor(newCursor, openOnly: true);
         final res = d.findBracketPair(b);
@@ -1222,9 +1229,10 @@ class DocumentProvider extends ChangeNotifier {
             c.color = Colors.white.withOpacity(0.7);
             d.extraCursors.add(c);
           }
-          doc.touch();
+          // doc.touch();
         }
       });
+      // closing bracket pair
       Future.delayed(const Duration(milliseconds: 10), () {
         BlockBracket b = d.findUnclosedBracket(newCursor);
         final res = d.findBracketPair(b);
@@ -1236,7 +1244,7 @@ class DocumentProvider extends ChangeNotifier {
             c.color = Colors.yellow.withOpacity(0.7);
             d.sectionCursors.add(c);
           }
-          doc.touch();
+          // doc.touch();
         }
       });
     }
@@ -1251,7 +1259,7 @@ class DocumentProvider extends ChangeNotifier {
 
     if (doScroll) {
       scrollTo = d.cursor().block?.line ?? -1;
-      touch();
+      // touch();
     }
   }
 }
