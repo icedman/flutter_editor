@@ -106,7 +106,7 @@ class AppProvider extends ChangeNotifier {
       }
     }
     Document doc = Document(path: path);
-    doc.scrollTo = scrollTo;
+    doc.scrollToOnLoad = scrollTo;
     documents.add(doc);
     if (focus || documents.length == 1) {
       document = doc;

@@ -118,8 +118,8 @@ class MinimapPage extends StatelessWidget {
     int l = p.toInt() + (start * perPage);
     DocumentProvider doc =
         Provider.of<DocumentProvider>(context, listen: false);
-    doc.scrollTo = l + lead;
-    doc.touch();
+    // doc.scrollTo = l + lead;
+    doc.scrollToLine(l + lead);
   }
 }
 

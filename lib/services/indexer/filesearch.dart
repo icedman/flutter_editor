@@ -153,6 +153,7 @@ class FileSearch {
         completer.complete(result);
       });
     }, onDone: () {
+      // todo ... do streams
       Future.delayed(const Duration(milliseconds: 500), () {
         completer.complete(result);
       });

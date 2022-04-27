@@ -74,6 +74,9 @@ class Block {
       brackets = [];
     }
     notifier.value++;
+    if (notifier.value > 0xff) {
+      notifier.value = 0;
+    }
   }
 
   bool isFolded() {
@@ -106,7 +109,8 @@ class Document {
   // todo.. both these are all over the place
   bool hideGutter = false;
   bool hideMinimap = false;
-  int scrollTo = -1;
+
+  int scrollToOnLoad = -1;
 
   List<Block> blocks = [];
   List<Cursor> cursors = [];
@@ -514,7 +518,6 @@ class Document {
 
   void backspace() {
     cursors.forEach((c) {
-      // print('${c.block?.line} ${c.column}');
       if ((c.block?.previous != null) || c.column > 0) {
         c.moveCursorLeft();
         c.deleteText();
@@ -847,6 +850,9 @@ class DocumentProvider extends ChangeNotifier {
   Document doc = Document();
 
   int scrollTo = -1;
+  int visibleStart = -1;
+  int visibleEnd = -1;
+
   bool softWrap = true;
   bool showGutter = true;
   bool showMinimap = true;
@@ -867,8 +873,8 @@ class DocumentProvider extends ChangeNotifier {
   }
 
   void touch() {
-    print('warning.. remove this');
-    // notifyListeners();
+    print('warning.. minimize use of this');
+    notifyListeners();
   }
 
   void _makeDirty() {
@@ -917,12 +923,14 @@ class DocumentProvider extends ChangeNotifier {
         d.undo();
         doScroll = true;
         d.begin();
+        touch();
         break;
 
       case 'redo':
         d.redo();
         doScroll = true;
         d.begin();
+        touch();
         break;
 
       case 'insert':
@@ -1083,27 +1091,22 @@ class DocumentProvider extends ChangeNotifier {
 
       case 'toggle_comment':
         d.toggleComment();
-        // doc.touch();
         break;
 
       case 'indent':
         d.indent();
-        // doc.touch();
         break;
 
       case 'unindent':
         d.unindent();
-        // doc.touch();
         break;
 
       case 'selection_to_lower_case':
         d.selectionToLowerCase();
-        doc.touch();
         break;
 
       case 'selection_to_upper_case':
         d.selectionToUpperCase();
-        // doc.touch();
         break;
 
       case 'copy':
@@ -1154,12 +1157,9 @@ class DocumentProvider extends ChangeNotifier {
       case 'select_all':
         d.moveCursorToStartOfDocument();
         d.moveCursorToEndOfDocument(keepAnchor: true);
-
         for (final b in d.blocks) {
           b.makeDirty();
         }
-
-        doc.touch();
         break;
 
       case 'select_word':
@@ -1263,7 +1263,9 @@ class DocumentProvider extends ChangeNotifier {
   void scrollToLine(int line) {
     if (line != scrollTo) {
       scrollTo = line;
-      notifyListeners();
+      if (line - 4 < visibleStart || line + 4 > visibleEnd) {
+        notifyListeners();
+      }
     }
   }
 }

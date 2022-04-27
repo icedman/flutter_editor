@@ -38,7 +38,7 @@ class IndexNode {
     String prefix = text.substring(0, level);
     String _prefix = prefix.toLowerCase();
     if (!nodes.containsKey(_prefix)) {
-      if (prefix.length == 1 && '0123456789_'.indexOf(prefix) != -1) {
+      if (prefix.length == 1 && '0123456789'.indexOf(prefix) != -1) {
         return null;
       }
       nodes[_prefix] = IndexNode(text: prefix, level: level + 1);

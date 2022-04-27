@@ -79,8 +79,8 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     }
 
     doc.doc.langId = highlighter.engine.loadLanguage(widget.path).langId;
-    doc.scrollToLine(doc.doc.scrollTo);
-    doc.doc.scrollTo = -1;
+    doc.scrollToLine(doc.doc.scrollToOnLoad);
+    doc.doc.scrollToOnLoad = -1;
 
     Document d = doc.doc;
     lang = highlighter.engine.language(d.langId);
@@ -98,18 +98,14 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     });
     d.addListener('onAddBlock', (documentId, blockId) {
       FFIBridge.run(() => FFIBridge.add_block(documentId, blockId));
+      doc.touch();
     });
     d.addListener('onRemoveBlock', (documentId, blockId) {
       FFIBridge.run(() => FFIBridge.remove_block(documentId, blockId));
+      doc.touch();
     });
-    d.addListener('onInsertText', (text) {
-      // if (text.length == 1) {
-      // d.autoClose(lang?.autoClose ?? {});
-      // }
-    });
-    d.addListener('onInsertNewLine', () {
-      //
-    });
+    d.addListener('onInsertText', (text) {});
+    d.addListener('onInsertNewLine', () {});
     d.addListener('onFocus', (int documentId) {
       if (documentId == d.documentId) {
         StatusProvider status =
@@ -285,7 +281,6 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       case 'toggle_pinned':
         {
           doc.pinned = !doc.pinned;
-          doc.touch();
           return;
         }
 
@@ -326,7 +321,8 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     }
     doc.commit();
 
-    if (false) {
+    // if (false)
+    {
       for (final b in modifiedBlocks) {
         if (!indexingQueue.contains(b)) {
           indexingQueue.add(b);

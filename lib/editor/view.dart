@@ -171,7 +171,7 @@ class ViewLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     int lineNumber = block?.line ?? 0;
-    print('rebuild $lineNumber');
+    // print('rebuild $lineNumber');
     return ValueListenableBuilder(
       valueListenable: (block ?? Block('')).notifier,
       builder: (context, value, child) {
@@ -214,7 +214,7 @@ class _ViewLine extends StatelessWidget {
     DecorInfo decor = Provider.of<DecorInfo>(context, listen: false);
 
     int lineNumber = block?.line ?? 0;
-    print('rebuild renderer $lineNumber');
+    // print('rebuild renderer $lineNumber');
 
     Block b = block ?? Block('', document: doc.doc);
     if (b.spans == null) {
@@ -407,15 +407,9 @@ class _View extends State<View> {
       double totalHeight = docSize * fontHeight;
 
       if (scroller.positions.isNotEmpty) {
-        double p = scroller.position.pixels / scroller.position.maxScrollExtent;
-        // int line = (p * docSize).toInt();
-        visibleLine = (p * docSize).toInt();
         updateVisibleRange(context);
-        // if (visibleLine != line) {
-        // setState(() {
-        // visibleLine = line;
-        // });
-        // }
+        double p = scroller.position.pixels / scroller.position.maxScrollExtent;
+        visibleLine = (p * docSize).toInt();
 
         Offset scroll = Offset(0, scroller.position.pixels);
         DecorInfo decor = Provider.of<DecorInfo>(context, listen: false);
@@ -487,17 +481,19 @@ class _View extends State<View> {
       }
     }
 
+    DocumentProvider doc =
+        Provider.of<DocumentProvider>(context, listen: false);
+    doc.visibleStart = visibleStart;
+    doc.visibleEnd = visibleEnd;
     // print('$visibleStart $visibleEnd');
   }
 
   bool isLineVisible(int line) {
     bool res = (line >= visibleStart && line <= visibleEnd);
-
     if (visibleStart == -1 || visibleEnd == -1) {
       print('visible range error: $visibleStart $visibleEnd');
       return true;
     }
-
     return res;
   }
 
