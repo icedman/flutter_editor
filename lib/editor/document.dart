@@ -61,7 +61,7 @@ class Block {
   dynamic mode; // flutter_highlight << remove soon
   String className = '';
   String prevBlockClass = '';
-  
+
   ValueNotifier notifier = ValueNotifier(0);
 
   void makeDirty({bool highlight = false}) {
@@ -1208,7 +1208,7 @@ class DocumentProvider extends ChangeNotifier {
         // print('unhandled command: $cmd');
         break;
     }
-    
+
     // todo touch only changed blocks
 
     // cursor moved
@@ -1229,7 +1229,6 @@ class DocumentProvider extends ChangeNotifier {
             c.color = Colors.white.withOpacity(0.7);
             d.extraCursors.add(c);
           }
-          // doc.touch();
         }
       });
       // closing bracket pair
@@ -1244,7 +1243,6 @@ class DocumentProvider extends ChangeNotifier {
             c.color = Colors.yellow.withOpacity(0.7);
             d.sectionCursors.add(c);
           }
-          // doc.touch();
         }
       });
     }
@@ -1258,8 +1256,14 @@ class DocumentProvider extends ChangeNotifier {
     }
 
     if (doScroll) {
-      scrollTo = d.cursor().block?.line ?? -1;
-      // touch();
+      scrollToLine(d.cursor().block?.line ?? -1);
+    }
+  }
+
+  void scrollToLine(int line) {
+    if (line != scrollTo) {
+      scrollTo = line;
+      notifyListeners();
     }
   }
 }

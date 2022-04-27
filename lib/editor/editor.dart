@@ -79,7 +79,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     }
 
     doc.doc.langId = highlighter.engine.loadLanguage(widget.path).langId;
-    doc.scrollTo = doc.doc.scrollTo;
+    doc.scrollToLine(doc.doc.scrollTo);
     doc.doc.scrollTo = -1;
 
     Document d = doc.doc;
@@ -268,8 +268,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
         }
         d.clearCursors();
         d.cursor().copyFrom(cur, keepAnchor: true);
-        doc.scrollTo = cur.block?.line ?? 0;
-        doc.touch();
+        doc.scrollToLine(cur.block?.line ?? 0);
       }
     };
 
@@ -327,50 +326,50 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     }
     doc.commit();
 
-    /*
-    for (final b in modifiedBlocks) {
-      if (!indexingQueue.contains(b)) {
-        indexingQueue.add(b);
+    if (false) {
+      for (final b in modifiedBlocks) {
+        if (!indexingQueue.contains(b)) {
+          indexingQueue.add(b);
+        }
       }
-    }
 
-    if (d.cursors.length == 1) {
-      while (indexingQueue.isNotEmpty) {
-        Block l = indexingQueue.last;
-        if (d.cursor().block == l) break;
-        indexingQueue.removeLast();
-        indexer.indexWords(l.text);
-        break;
+      if (d.cursors.length == 1) {
+        while (indexingQueue.isNotEmpty) {
+          Block l = indexingQueue.last;
+          if (d.cursor().block == l) break;
+          indexingQueue.removeLast();
+          indexer.indexWords(l.text);
+          break;
+        }
       }
-    }
 
-    if (modifiedBlocks.isNotEmpty) {
-      // onInputText..
-      UIMenuData? menu = ui.menu('indexer::${d.documentId}');
-      ui.setPopup(
-          UIMenuPopup(position: decor.caretPosition, alignY: 1, menu: menu),
-          blur: false,
-          shield: false);
+      if (modifiedBlocks.isNotEmpty) {
+        // onInputText..
+        UIMenuData? menu = ui.menu('indexer::${d.documentId}');
+        ui.setPopup(
+            UIMenuPopup(position: decor.caretPosition, alignY: 1, menu: menu),
+            blur: false,
+            shield: false);
 
-      Cursor cur = d.cursor().copy();
-      cur.moveCursorLeft();
-      cur.selectWord();
-      if (cur.column == d.cursor().column) {
-        String t = cur.selectedText();
-        if (t.length > 1) {
-          indexer.find(t);
+        Cursor cur = d.cursor().copy();
+        cur.moveCursorLeft();
+        cur.selectWord();
+        if (cur.column == d.cursor().column) {
+          String t = cur.selectedText();
+          if (t.length > 1) {
+            indexer.find(t);
+          }
+        } else {
+          ui.clearPopups();
         }
       } else {
         ui.clearPopups();
       }
-    } else {
-      ui.clearPopups();
     }
-    */
 
-    // StatusProvider status = Provider.of<StatusProvider>(context, listen: false);
-    // status.setIndexedStatus(0,
-        // 'Ln ${((d.cursor().block?.line ?? 0) + 1)}, Col ${(d.cursor().column + 1)}');
+    StatusProvider status = Provider.of<StatusProvider>(context, listen: false);
+    status.setIndexedStatus(0,
+        'Ln ${((d.cursor().block?.line ?? 0) + 1)}, Col ${(d.cursor().column + 1)}');
   }
 
   void onKeyDown(String key,
@@ -394,7 +393,8 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     lastHashCode = code;
 
     UIProvider ui = Provider.of<UIProvider>(context, listen: false);
-    if (doc.softWrap && ui.popups.isEmpty) {
+    if (doc.softWrap && ui.popups.isEmpty && doc.doc.cursors.length == 1) {
+      int curLine = doc.doc.cursor().block?.line ?? 0;
       switch (key) {
         case 'Arrow Up':
         case 'Arrow Down':
@@ -402,9 +402,14 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
             RenderObject? obj = context.findRenderObject();
             double move = decor.fontHeight / 2 +
                 ((key == 'Arrow Up' ? -decor.fontHeight : decor.fontHeight));
-            onTapDown(obj,
-                Offset(decor.caretPosition.dx, decor.caretPosition.dy + move));
-            return;
+            Offset pos =
+                Offset(decor.caretPosition.dx, decor.caretPosition.dy + move);
+            Offset o = screenToCursor(obj, pos);
+            double dy = o.dy - curLine;
+            if (dy * dy == 1) {
+              onTapDown(obj, pos);
+              return;
+            }
           }
       }
     }
@@ -632,7 +637,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
                             onDoubleTapDown: onDoubleTapDown,
                             onPanUpdate: onPanUpdate,
                             showKeyboard: app.showKeyboard)),
-                    // Minimap()
+                    if (doc.showMinimap) ...[Minimap()]
                   ]),
                 ])),
 

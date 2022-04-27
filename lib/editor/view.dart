@@ -148,7 +148,6 @@ class GutterLine extends StatelessWidget {
   }
 }
 
-
 class ViewLine extends StatelessWidget {
   ViewLine({
     Key? key,
@@ -177,17 +176,17 @@ class ViewLine extends StatelessWidget {
       valueListenable: (block ?? Block('')).notifier,
       builder: (context, value, child) {
         return _ViewLine(
-                line: line,
-                block: block,
-                width: width,
-                height: height,
-                gutterWidth: gutterWidth,
-                gutterStyle: gutterStyle);
+            line: line,
+            block: block,
+            width: width,
+            height: height,
+            gutterWidth: gutterWidth,
+            gutterStyle: gutterStyle);
       },
     );
   }
 }
- 
+
 class _ViewLine extends StatelessWidget {
   _ViewLine({
     Key? key,
@@ -216,7 +215,7 @@ class _ViewLine extends StatelessWidget {
 
     int lineNumber = block?.line ?? 0;
     print('rebuild renderer $lineNumber');
-    
+
     Block b = block ?? Block('', document: doc.doc);
     if (b.spans == null) {
       Highlighter hl = Provider.of<Highlighter>(context, listen: false);
@@ -348,7 +347,7 @@ class _ViewLine extends StatelessWidget {
         }
       }
     }
-    
+
     return Stack(children: [
       Padding(
           padding: EdgeInsets.only(left: gutterWidth),
@@ -385,6 +384,7 @@ class _View extends State<View> {
   double fontWidth = 0;
   double fontHeight = 0;
   double gutterWidth = 0;
+  int scrollingTo = -1;
 
   @override
   void initState() {
@@ -393,11 +393,11 @@ class _View extends State<View> {
     scrollTo = PeriodicTimer();
 
     // hack - to recalculate layout on tab change
-    Future.delayed(const Duration(milliseconds: 0), () {
-      DocumentProvider doc =
-          Provider.of<DocumentProvider>(context, listen: false);
-      doc.touch();
-    });
+    // Future.delayed(const Duration(milliseconds: 0), () {
+    // DocumentProvider doc =
+    // Provider.of<DocumentProvider>(context, listen: false);
+    // doc.touch();
+    // });
 
     scroller.addListener(() {
       DocumentProvider doc =
@@ -408,13 +408,14 @@ class _View extends State<View> {
 
       if (scroller.positions.isNotEmpty) {
         double p = scroller.position.pixels / scroller.position.maxScrollExtent;
-        int line = (p * docSize).toInt();
+        // int line = (p * docSize).toInt();
+        visibleLine = (p * docSize).toInt();
         updateVisibleRange(context);
-        if (visibleLine != line) {
-          setState(() {
-            visibleLine = line;
-          });
-        }
+        // if (visibleLine != line) {
+        // setState(() {
+        // visibleLine = line;
+        // });
+        // }
 
         Offset scroll = Offset(0, scroller.position.pixels);
         DecorInfo decor = Provider.of<DecorInfo>(context, listen: false);
@@ -644,13 +645,12 @@ class _View extends State<View> {
       }
     }
 
-    if (doc.scrollTo != -1) {
-      int jumpTo = doc.scrollTo;
+    if (doc.scrollTo != -1 && doc.scrollTo != scrollingTo) {
+      scrollingTo = doc.scrollTo;
       Future.delayed(const Duration(milliseconds: 0), () {
-        scrollToLine(jumpTo);
+        scrollToLine(scrollingTo);
       });
       Future.delayed(const Duration(milliseconds: 0), scrollToCursor);
-      doc.scrollTo = -1;
     }
 
     RenderObject? obj = context.findRenderObject();
