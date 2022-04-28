@@ -5,6 +5,9 @@
 #include "theme.h"
 
 #include <time.h>
+#include <iostream>
+#include <fstream>
+#include <string>
 
 #define SKIP_PARSE_THRESHOLD 500
 
@@ -371,11 +374,62 @@ public:
 
 std::map<size_t, std::shared_ptr<Document>> documents;
 
+extern "C" {
+#include <tree_sitter/api.h>
+const TSLanguage *tree_sitter_javascript(void);
+#define LANGUAGE tree_sitter_javascript
+}
+
+void dump_tree(const char* buffer, TSNode node, int depth) {
+  int count = ts_node_child_count(node);
+  // char *str = ts_node_string(node);
+  int start = ts_node_start_byte(node);
+  int end = ts_node_end_byte(node);
+  char words[1024];
+
+  memcpy(words, buffer + (start * sizeof(char)), (end-start) * sizeof(char));
+  words[(end-start)] = '\0';
+
+  for(int i=0; i<depth; i++) printf(" ");
+  printf("%s [ %s ]\n", ts_node_type(node), words);
+  
+  for(int i=0; i<count; i++) {
+    TSNode child = ts_node_child(node, i);
+    dump_tree(buffer, child, depth + 1);
+  }
+}
+
+void build_tree(const char* buffer, int len) {
+  TSParser *parser = ts_parser_new();
+  if (!ts_parser_set_language(parser, LANGUAGE())) {
+    fprintf(stderr, "Invalid language\n");
+    exit(1);
+  }
+
+  TSTree *tree =
+      ts_parser_parse_string(parser, NULL, buffer, len);
+
+  TSNode root_node = ts_tree_root_node(tree);
+  dump_tree(buffer, root_node, 0);
+
+  ts_tree_delete(tree);
+  ts_parser_delete(parser);
+}
+
 EXPORT
-void create_document(int documentId) {
+void create_document(int documentId, char *path) {
   if (documents[documentId] == NULL) {
     documents[documentId] = std::make_shared<Document>();
   }
+
+  // if (strlen(path) > 0) {
+  //   printf(">>>%s\n", path);
+  //   std::ifstream t(path);
+  //   std::stringstream buffer;
+  //   buffer << t.rdbuf();
+  //   build_tree(buffer.str().c_str(), buffer.str().size());
+  //   // printf(">%s\n", buffer.str().c_str());
+  // }
 }
 
 EXPORT
@@ -400,8 +454,14 @@ void remove_block(int documentId, int blockId) {
 }
 
 EXPORT
-void set_block(int blockId, char *text) {
-  // block_texts[blockId] = text;
+void set_block(int documentId, int blockId, char *text) {
+  if (documents[documentId] == NULL) {
+    return;
+  }
+  if (documents[documentId]->blocks[blockId] == NULL) {
+    return;
+  }
+  // documents[documentId]->blocks[blockId]->text = text;
 }
 
 EXPORT
@@ -425,7 +485,7 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
     themeInfoId = themeId;
   }
 
-  create_document(document);
+  create_document(document, "");
 
   std::map<size_t, scope::scope_t> scopes;
 

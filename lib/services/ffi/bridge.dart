@@ -70,8 +70,8 @@ class FFIBridge {
             Pointer<Utf8>, int, int, int, int, int, int)>();
 
     final _create_document = nativeEditorApiLib
-        .lookup<NativeFunction<Void Function(Int32)>>('create_document');
-    create_document = _create_document.asFunction<void Function(int)>();
+        .lookup<NativeFunction<Void Function(Int32, Pointer<Utf8>)>>('create_document');
+    create_document = _create_document.asFunction<void Function(int, Pointer<Utf8>)>();
 
     final _destroy_document = nativeEditorApiLib
         .lookup<NativeFunction<Void Function(Int32)>>('destroy_document');
@@ -96,6 +96,12 @@ class FFIBridge {
   static void initialize(String path) {
     final _path = path.toNativeUtf8();
     _initialize(_path);
+    calloc.free(_path);
+  }
+
+  static void createDocument(int id, String path) {
+    final _path = path.toNativeUtf8();
+    create_document(id, _path);
     calloc.free(_path);
   }
 

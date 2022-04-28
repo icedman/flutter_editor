@@ -86,7 +86,8 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     d.blockComment = lang?.blockComment ?? [];
 
     d.addListener('onCreate', (documentId) {
-      FFIBridge.run(() => FFIBridge.create_document(documentId));
+      print("here!");
+      FFIBridge.run(() => FFIBridge.createDocument(documentId, doc.doc.docPath));
     });
     d.addListener('onDestroy', (documentId) {
       FFIBridge.run(() => FFIBridge.destroy_document(documentId));

@@ -90,7 +90,7 @@ class Block {
     disposeTimer = Timer(const Duration(milliseconds: 1500), dispose);
   }
 
-  void makeDirty({bool highlight = false}) {
+  void makeDirty({bool highlight = false, bool notify = true}) {
     mode = null;
     spans = null;
     carets = [];
@@ -101,16 +101,20 @@ class Block {
       prevBlockClass = '';
       decors = null;
       brackets = [];
-      Future.delayed(const Duration(milliseconds: 0), () {
-        notifier.value++;
-      });
+      if (notify) {
+        Future.delayed(const Duration(milliseconds: 0), () {
+          notifier.value++;
+        });
+      }
       return;
     }
 
     // notify immediately
-    notifier.value++;
-    if (notifier.value > 0xff) {
-      notifier.value = 0;
+    if (notify) {
+      notifier.value++;
+      if (notifier.value > 0xff) {
+        notifier.value = 0;
+      }
     }
   }
 
@@ -287,7 +291,7 @@ class Document {
     updateLineNumbers(0);
 
     for (int i = 0; i < blocks.length; i++) {
-      blocks[i].makeDirty(highlight: true);
+      blocks[i].makeDirty(highlight: true, notify: false);
     }
 
     if (blocks.isEmpty) {
