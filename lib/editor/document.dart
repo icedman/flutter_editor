@@ -63,12 +63,40 @@ class Block {
   String prevBlockClass = '';
 
   ValueNotifier notifier = ValueNotifier(0);
-  int renderedId = 0;
+  bool _notifier = true;
+  Timer? disposeTimer;
+
+  void listen() {
+    if (disposeTimer != null) {
+      disposeTimer?.cancel();
+      disposeTimer = null;
+    }
+    if (!_notifier) {
+      notifier = ValueNotifier(0);
+      _notifier = true;
+    }
+  }
+
+  void dispose() {
+    // when to call this
+    notifier.dispose();
+    _notifier = false;
+  }
+
+  void tryDispose() {
+    if (disposeTimer != null) {
+      disposeTimer?.cancel();
+    }
+    disposeTimer = Timer(const Duration(milliseconds: 1500), dispose);
+  }
 
   void makeDirty({bool highlight = false}) {
     mode = null;
     spans = null;
     carets = [];
+
+    listen();
+
     if (highlight) {
       prevBlockClass = '';
       decors = null;
@@ -157,6 +185,10 @@ class Document {
     listeners['onDestroy']?.forEach((l) {
       l?.call(documentId);
     });
+
+    for (final b in blocks) {
+      b.tryDispose();
+    }
   }
 
   void addListener(String event, Function? func) {
@@ -389,9 +421,9 @@ class Document {
     Block? previous = blockAtLine(index - 1);
     Block? next = blockAtLine(index + 1);
     blocks.removeAt(index);
+    block?.tryDispose();
     previous?.next = next;
     next?.previous = previous;
-
     updateLineNumbers(index);
 
     if (block != null) {

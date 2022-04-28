@@ -15,10 +15,6 @@ class LocalFs extends ExplorerBackend {
 
   void setRootPath(String path) {
     rootPath = _path.normalize(path);
-    loadPath(path);
-    Future.delayed(const Duration(milliseconds: 2000), () {
-      loadPath(path, recursive: true, depth: 4);
-    });
   }
 
   int _depth(String path) {
@@ -27,7 +23,7 @@ class LocalFs extends ExplorerBackend {
     return (path.length - ll.length);
   }
 
-  void loadPath(String path, {bool recursive = false, int depth = 3}) {
+  void _loadPath(String path, {bool recursive: false}) {
     files = <FileSystemEntity>[];
     Directory dir = Directory(path);
     int depthRoot = _depth(dir.absolute.path);
@@ -57,11 +53,10 @@ class LocalFs extends ExplorerBackend {
 
       files.clear();
 
-      int delay = 0;
       listeners.forEach((l) {
         for (final k in dirs.keys) {
           final json = jsonEncode(dirs[k]);
-          Future.delayed(Duration(milliseconds: 50 * delay++), () {
+          Future.delayed(Duration(milliseconds: 0), () {
             l.onLoad(json);
           });
         }
@@ -69,14 +64,6 @@ class LocalFs extends ExplorerBackend {
     };
 
     lister.listen((file) {
-      // int depthFile = _depth(file.absolute.path);
-      // if (recursive && (depthFile - depthRoot) > depth) {
-      // if (files.length > 0) {
-      // _sendTheFiles();
-      // }
-      // return;
-      // }
-      // print('${(depthFile - depthRoot)}');
       files.add(file);
     }, onError: (err) {
       listeners.forEach((l) {
@@ -85,6 +72,14 @@ class LocalFs extends ExplorerBackend {
     }, onDone: () {
       _sendTheFiles();
     });
+  }
+
+  void loadPath(String path) {
+    _loadPath(path);
+  }
+
+  void preload() {
+    _loadPath(rootPath, recursive: true);
   }
 
   void openFile(String path) {}

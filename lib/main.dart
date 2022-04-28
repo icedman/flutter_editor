@@ -63,6 +63,7 @@ void main(List<String> args) async {
     explorer.explorer.root?.isExpanded = true;
     // explorer.explorer.dump();
     explorer.rebuild();
+    // explorer.explorer.backend?.preload();
   });
   // explorer.explorer.backend?.setRootPath(dirPath); // preloads 4 depths
 

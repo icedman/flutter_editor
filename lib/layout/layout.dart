@@ -293,16 +293,17 @@ class _TheApp extends State<TheApp> with WidgetsBindingObserver {
         ..caseSensitive = caseSensitive;
 
       resultDoc?.title = 'Search Results';
-      resultDoc?.hideGutter = true;
+      // resultDoc?.hideGutter = true;
       resultDoc?.clear();
       FileSearchProvider search =
           Provider.of<FileSearchProvider>(context, listen: false);
       search.onResult = (res) {
-        search.onResult = null;
-        if (res.length == 0) {
-          resultDoc?.insertText('none found');
-        }
+        // search.onResult = null;
+        // if (res.length == 0) {
+        // resultDoc?.insertText('none found');
+        // }
         for (final r in res) {
+          resultDoc?.moveCursorToEndOfDocument();
           resultDoc?.insertText(r['file']);
           for (final m in r['matches'] ?? []) {
             resultDoc?.insertNewLine();
@@ -318,6 +319,9 @@ class _TheApp extends State<TheApp> with WidgetsBindingObserver {
         }
         app.notifyListeners();
         ui.clearPopups();
+      };
+      search.onDone = () {
+        search.onResult = null;
       };
       search.find(text,
           caseSensitive: caseSensitive, regex: regex, path: searchPath);

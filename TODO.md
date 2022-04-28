@@ -57,7 +57,9 @@ decorations
 console
 
 # jank
-rebuild single lines on single line edits
+rebuild single lines on single line edits (done)
+
+# decorations
 add link decoration
 add tab decoration
 add fold decoration
@@ -77,4 +79,4 @@ vscode keybindings
 menu too low (fixed)
 tab close causes disposed error - at scrollToCursor, editor, document
 itemFromPath - can't find correct file item
-menu auto complete ... extra space added
+menu auto complete ... extra space added (fixed)

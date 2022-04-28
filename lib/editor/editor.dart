@@ -90,9 +90,6 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     });
     d.addListener('onDestroy', (documentId) {
       FFIBridge.run(() => FFIBridge.destroy_document(documentId));
-      StatusProvider status =
-          Provider.of<StatusProvider>(context, listen: false);
-      status.setIndexedStatus(0, '');
     });
     d.addListener('onAddBlock', (documentId, blockId) {
       FFIBridge.run(() => FFIBridge.add_block(documentId, blockId));

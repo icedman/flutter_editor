@@ -5,8 +5,8 @@ import 'dart:isolate';
 import 'package:editor/services/indexer/levenshtein.dart';
 import 'package:path/path.dart' as _path;
 
-const int MAX_FILES_SEARCHED_COUNT = 1000;
-const int MAX_SEARCH_RESULT_LENGTH = 100;
+const int MAX_FILES_SEARCHED_COUNT = 2000;
+const int MAX_SEARCH_RESULT_LENGTH = 1000;
 const int MAX_TEXT_SEARCH_LENGTH = 300;
 
 class FileSearch {
@@ -101,21 +101,16 @@ class FileSearch {
     return res;
   }
 
-  Future<List<dynamic>> find(String text,
+  Future<dynamic> find(String text,
       {String path = './',
       bool caseSensitive = false,
-      bool regex = false}) async {
+      bool regex = false,
+      Function? onResult}) async {
     Directory dir = Directory(_path.normalize(path));
 
     // print('>>${dir.absolute.path}');
 
-    Completer<List<dynamic>> completer = Completer<List<dynamic>>();
-
-    RegExp _wordRegExp = RegExp(
-      text,
-      caseSensitive: caseSensitive,
-      multiLine: false,
-    );
+    Completer<dynamic> completer = Completer<dynamic>();
 
     List<dynamic> result = [];
     var lister = dir.list(recursive: true);
@@ -145,17 +140,18 @@ class FileSearch {
         dynamic res = await findInFile(text,
             path: file.path, caseSensitive: caseSensitive, regex: regex);
         if (res != '' && result.length < MAX_SEARCH_RESULT_LENGTH) {
-          result.add(res);
+          // result.add(res);
+          onResult?.call([res]);
         }
       }
     }, onError: (err) {
       Future.delayed(const Duration(milliseconds: 500), () {
-        completer.complete(result);
+        completer.complete({});
       });
     }, onDone: () {
       // todo ... do streams
       Future.delayed(const Duration(milliseconds: 500), () {
-        completer.complete(result);
+        completer.complete({});
       });
     });
 
@@ -174,6 +170,7 @@ class FileSearchIsolate {
   }
 
   Function? onResult;
+  Function? onDone;
   ReceivePort? _receivePort;
   Isolate? _isolate;
   SendPort? _isolateSendPort;
@@ -210,24 +207,30 @@ class FileSearchIsolate {
         String path = json['path'] ?? '';
         bool caseSensitive = json['caseSensitive'] == true;
         bool regex = json['regex'] == true;
-        isolateFileSearch
-            .find(text, path: path, caseSensitive: caseSensitive, regex: regex)
-            .then((res) {
+        isolateFileSearch.find(text,
+            path: path,
+            caseSensitive: caseSensitive,
+            regex: regex, onResult: (res) {
           sendPort.send(jsonEncode(res));
+        }).then((res) {
+          // done or fail
         });
+        return;
       }
-      if (message.startsWith('file::')) {
-        dynamic json = jsonDecode(message.substring(6));
-        String text = json['text'] ?? '';
-        String path = json['path'] ?? '';
-        bool caseSensitive = json['caseSensitive'] == true;
-        // bool regex = json['regex'] == true;
-        // isolateFileSearch
-        // .find(text, path: path, caseSensitive: caseSensitive, regex: regex)
-        // .then((res) {
-        // sendPort.send(jsonEncode(res));
-        // });
-      }
+
+      // if (message.startsWith('file::')) {
+      // dynamic json = jsonDecode(message.substring(6));
+      // String text = json['text'] ?? '';
+      // String path = json['path'] ?? '';
+      // bool caseSensitive = json['caseSensitive'] == true;
+      // bool regex = json['regex'] == true;
+      // isolateFileSearch
+      // .find(text, path: path, caseSensitive: caseSensitive, regex: regex)
+      // .then((res) {
+      // sendPort.send(jsonEncode(res));
+      // });
+      // }
+
       if (message.startsWith('exclude::')) {
         String exclude = message.substring(9);
         int idx = exclude.indexOf('::');
@@ -242,6 +245,7 @@ class FileSearchIsolate {
             isolateFileSearch.fileExclude.add(s);
           }
         }
+        return;
       }
     });
   }

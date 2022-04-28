@@ -112,7 +112,7 @@ class _EditorTabBar extends State<EditorTabBar> {
     }
 
     // update tab index
-    if (DefaultTabController.of(context)?.index != idx) {
+    if (DefaultTabController.of(context)?.index != idx || tabs.length == 0) {
       Future.delayed(const Duration(milliseconds: 100), () {
         DefaultTabController.of(context)?.index = idx;
         StatusProvider status =
