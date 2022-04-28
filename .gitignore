@@ -46,3 +46,6 @@ app.*.map.json
 /android/app/release
 
 **/.cxx/
+libs/tree-sitter*
+flutter_*.png
+

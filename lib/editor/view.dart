@@ -171,6 +171,7 @@ class ViewLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     int lineNumber = block?.line ?? 0;
+    
     // print('rebuild $lineNumber');
     return ValueListenableBuilder(
       key: key,
@@ -390,6 +391,7 @@ class _View extends State<View> {
   int visibleStart = -1;
   int visibleEnd = -1;
   bool largeDoc = false;
+  bool customListView = false;
 
   int visibleLine = 0;
   double fontWidth = 0;
@@ -420,7 +422,16 @@ class _View extends State<View> {
       if (scroller.positions.isNotEmpty) {
         updateVisibleRange(context);
         double p = scroller.position.pixels / scroller.position.maxScrollExtent;
-        visibleLine = (p * docSize).toInt();
+        int vl = (p * docSize).toInt();
+        if (vl != visibleLine) {
+          // todo... costly
+          if (customListView) {
+            setState(() {
+              visibleLine = vl;
+            });
+          }
+          visibleLine = vl;
+        }
 
         Offset scroll = Offset(0, scroller.position.pixels);
         DecorInfo decor = Provider.of<DecorInfo>(context, listen: false);
@@ -643,7 +654,7 @@ class _View extends State<View> {
     bool softWrap = doc.softWrap;
 
     double? extent;
-    largeDoc = (doc.doc.blocks.length > 10000);
+    largeDoc = doc.doc.largeDoc;
     if (!softWrap) {
       extent = fontHeight;
     } else {
@@ -673,8 +684,10 @@ class _View extends State<View> {
     }
 
     int docSize = doc.doc.computedSize();
+    customListView = true;
 
     if ((!largeDoc && softWrap)) {
+      customListView = false;
       return ListView.builder(
           controller: scroller,
           itemCount: docSize,

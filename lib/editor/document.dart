@@ -67,6 +67,7 @@ class Block {
   Timer? disposeTimer;
 
   void listen() {
+    // if (document?.largeDoc ?? false) return;
     if (disposeTimer != null) {
       disposeTimer?.cancel();
       disposeTimer = null;
@@ -79,8 +80,10 @@ class Block {
 
   void dispose() {
     // when to call this
-    notifier.dispose();
-    _notifier = false;
+    if (_notifier) {
+      notifier.dispose();
+      _notifier = false;
+    }
   }
 
   void tryDispose() {
@@ -90,27 +93,33 @@ class Block {
     disposeTimer = Timer(const Duration(milliseconds: 1500), dispose);
   }
 
-  void makeDirty({bool highlight = false}) {
+  void makeDirty({bool highlight = false, bool notify = true}) {
     mode = null;
     spans = null;
     carets = [];
 
-    listen();
+    if (notify) {
+      listen();
+    }
 
     if (highlight) {
       prevBlockClass = '';
       decors = null;
       brackets = [];
-      Future.delayed(const Duration(milliseconds: 0), () {
-        notifier.value++;
-      });
+      if (notify) {
+        Future.delayed(const Duration(milliseconds: 0), () {
+          notifier.value++;
+        });
+      }
       return;
     }
 
     // notify immediately
-    notifier.value++;
-    if (notifier.value > 0xff) {
-      notifier.value = 0;
+    if (notify) {
+      notifier.value++;
+      if (notifier.value > 0xff) {
+        notifier.value = 0;
+      }
     }
   }
 
@@ -140,6 +149,8 @@ class Document {
   String title = '';
   int documentId = 0;
   int langId = 0;
+
+  bool get largeDoc => (blocks.length > 10000);
 
   // todo.. both these are all over the place
   bool hideGutter = false;
@@ -287,7 +298,7 @@ class Document {
     updateLineNumbers(0);
 
     for (int i = 0; i < blocks.length; i++) {
-      blocks[i].makeDirty(highlight: true);
+      blocks[i].makeDirty(highlight: true, notify: false);
     }
 
     if (blocks.isEmpty) {
@@ -856,9 +867,9 @@ class Document {
     return null;
   }
 
-  void makeDirty({bool highlight = false}) {
+  void makeDirty({bool highlight = false, bool notify = false}) {
     for (final b in blocks) {
-      b.makeDirty(highlight: highlight);
+      b.makeDirty(highlight: highlight, notify: notify);
     }
   }
 
@@ -1296,6 +1307,9 @@ class DocumentProvider extends ChangeNotifier {
 
     if (doScroll) {
       scrollToLine(d.cursor().block?.line ?? -1);
+      // if (d.largeDoc) {
+      //   touch();
+      // }
     }
   }
 
