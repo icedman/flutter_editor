@@ -181,6 +181,7 @@ class SearchResultDecorator extends LineDecorator {
 
     HLTheme theme = HLTheme.instance();
     int lnIdx = t.indexOf('[Ln');
+    int lnEndIdx = t.indexOf(']');
     if (lnIdx == -1) {
       return [
         LineDecoration()
@@ -192,9 +193,10 @@ class SearchResultDecorator extends LineDecorator {
 
     res.add(LineDecoration()
       ..start = lnIdx
-      ..end = t.length
+      ..end = lnEndIdx
       ..color = theme.function
-      ..tap = 'open_search_result');
+      ..underline = true
+      ..tap = 'file://...');
 
     if (!caseSensitive && !regex) {
       f = f.toLowerCase();
@@ -231,12 +233,12 @@ class SearchResultDecorator extends LineDecorator {
 
     for (final r in _res) {
       res.add(LineDecoration()
-        ..start = r[0]
-        ..end = r[1]
-        ..italic = true
-        ..underline = true
-        ..color = theme.string
-        ..tap = 'open_search_result');
+            ..start = r[0]
+            ..end = r[1]
+            ..italic = true
+            ..color = theme.string
+          // ..tap = 'open_search_result'
+          );
     }
 
     return res;

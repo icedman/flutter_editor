@@ -112,6 +112,61 @@ class FileSearch {
 
     Completer<dynamic> completer = Completer<dynamic>();
 
+    var lister = dir.list(recursive: true);
+
+    int fileSearched = 0;
+    lister.listen((file) async {
+      String folder = _path.dirname(_path.normalize(file.path));
+      for (final ex in folderExclude) {
+        if (folder.indexOf(ex) != -1) {
+          // print('exclude folder $folder');
+          return;
+        }
+      }
+
+      String ext = _path.extension(file.path).toLowerCase();
+      for (final ex in fileExclude) {
+        if (ext == ex) {
+          // print('exclude file $baseName');
+          return;
+        }
+      }
+
+      if (fileSearched++ > MAX_FILES_SEARCHED_COUNT) {
+        return;
+      }
+
+      if (!(file is Directory)) {
+        dynamic res = await findInFile(text,
+            path: file.path, caseSensitive: caseSensitive, regex: regex);
+        if (res != '') {
+          onResult?.call([res]);
+        }
+      }
+    }, onError: (err) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        completer.complete({});
+      });
+    }, onDone: () {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        completer.complete({});
+      });
+    });
+
+    return completer.future;
+  }
+
+  Future<dynamic> findFiles(String text,
+      {String path = './',
+      bool caseSensitive = false,
+      bool regex = false,
+      Function? onResult}) async {
+    Directory dir = Directory(_path.normalize(path));
+
+    // print('>>${dir.absolute.path}');
+
+    Completer<dynamic> completer = Completer<dynamic>();
+
     List<dynamic> result = [];
     var lister = dir.list(recursive: true);
     int fileSearched = 0;
@@ -149,7 +204,6 @@ class FileSearch {
         completer.complete({});
       });
     }, onDone: () {
-      // todo ... do streams
       Future.delayed(const Duration(milliseconds: 500), () {
         completer.complete({});
       });

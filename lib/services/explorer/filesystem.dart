@@ -20,6 +20,8 @@ class ExplorerItem {
   bool isDirectory = false;
   bool isBinary = false;
   bool isExpanded = false;
+  
+  bool canLoadMore = false;
 
   double height = 0;
   int duration = 0;

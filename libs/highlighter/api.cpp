@@ -357,6 +357,7 @@ class Block {
 public:
   Block() : blockId(0), parser_state(NULL), commentLine(false) {}
 
+  // std::string text;
   int blockId;
   bool commentLine;
   parse::stack_ptr parser_state;
@@ -462,6 +463,7 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
   add_block(document, block);
   documents[document]->blocks[block]->parser_state = parser_state;
   documents[document]->blocks[block]->commentLine = false;
+  // documents[document]->blocks[block]->text = _text;
 
   std::map<size_t, scope::scope_t>::iterator it = scopes.begin();
   size_t n = 0;

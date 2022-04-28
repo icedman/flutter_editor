@@ -84,7 +84,7 @@ class Highlighter {
             : (TapGestureRecognizer()
               ..onTap = () {
                 for (final t in (style.fontFamilyFallback ?? [])) {
-                  onTap?.call(':$t');
+                  onTap?.call('$t');
                 }
               }),
         mouseCursor: style.fontFamilyFallback != null
@@ -96,10 +96,19 @@ class Highlighter {
       {Function? onTap, Function? onHover}) {
     HLTheme theme = HLTheme.instance();
 
+    // Paint paint = Paint()
+    // ..color = Colors.blue
+    // ..style = PaintingStyle.stroke
+    // ..strokeCap = StrokeCap.round
+    // ..strokeWidth = 2.0;
+
     TextStyle defaultStyle = TextStyle(
-        fontFamily: theme.fontFamily,
-        fontSize: theme.fontSize,
-        color: theme.foreground);
+      fontFamily: theme.fontFamily,
+      fontSize: theme.fontSize,
+      color: theme.foreground,
+      // background: paint
+    );
+
     List<InlineSpan> res = <InlineSpan>[];
 
     String text = block?.text ?? '';
@@ -128,24 +137,24 @@ class Highlighter {
     }
 
     // tabs << convert to decorator
-    // {
-    // int indentSize = Document.countIndentSize(text);
-    // int tabSpaces = (block?.document?.detectedTabSpaces ?? 1);
-    // if (tabSpaces == 0) tabSpaces = 2;
-    // int tabStops = indentSize ~/ tabSpaces;
-    // Color tabStopColor = colorCombine(theme.comment, theme.background, bw: 3);
-    // for (int i = 0; i <= tabStops; i++) {
-    // int start = i * tabSpaces;
-    // int end = start;
-    // decors.insert(
-    // 0,
-    // LineDecoration()
-    // ..start = start
-    // ..end = end
-    // ..color = tabStopColor
-    // ..tab = true);
-    // }
-    // }
+    {
+      int indentSize = Document.countIndentSize(text);
+      int tabSpaces = (block?.document?.detectedTabSpaces ?? 1);
+      if (tabSpaces == 0) tabSpaces = 2;
+      int tabStops = indentSize ~/ tabSpaces;
+      Color tabStopColor = colorCombine(theme.comment, theme.background, bw: 3);
+      for (int i = 0; i <= tabStops; i++) {
+        int start = i * tabSpaces;
+        int end = start;
+        decors.insert(
+            0,
+            LineDecoration()
+              ..start = start
+              ..end = end
+              ..color = tabStopColor
+              ..tab = true);
+      }
+    }
 
     text += ' ';
     String prevText = '';
@@ -254,7 +263,7 @@ class Highlighter {
           style: moreStyle,
           recognizer: TapGestureRecognizer()
             ..onTap = () {
-              onTap?.call(':unfold');
+              onTap?.call('unfold:');
             }));
     }
 

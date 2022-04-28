@@ -213,42 +213,53 @@ class _ViewLine extends StatelessWidget {
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
     Highlighter hl = Provider.of<Highlighter>(context);
     DecorInfo decor = Provider.of<DecorInfo>(context, listen: false);
-
+    
+    Block b = block ?? Block('', document: doc.doc);
     int lineNumber = block?.line ?? 0;
     // print('rebuild renderer $lineNumber');
-
-    Block b = block ?? Block('', document: doc.doc);
-    if (b.spans == null) {
-      Highlighter hl = Provider.of<Highlighter>(context, listen: false);
-      // todo > create link decoration
-      hl.run(b, b.line, b.document ?? Document(), onTap: (command) {
-        switch (command) {
-          case ':unfold':
+    
+    final _onLink = (command) {
+        String cmd = '';
+        String params = '';
+        int idx = command.indexOf(':');
+        if (idx != -1) {
+          cmd = command.substring(0, idx);
+          params = command.substring(idx);
+        }
+        switch (cmd) {
+          case 'unfold':
             doc.doc.unfold(b);
             b.makeDirty();
             doc.touch();
             break;
-          case ':open_search_result':
+          case 'file':
             {
-              Cursor cur = doc.doc.cursor();
-              cur.block = b;
-              cur.moveCursorToStartOfLine();
-              String t = (cur.block?.text ?? '');
-              int idx = t.indexOf('[Ln');
-              String lns = t.substring(idx + 4);
-              lns = lns.substring(0, lns.length - 1);
-              int ln = int.parse(lns);
-              while ((cur.block?.text ?? '').indexOf('[Ln') != -1) {
-                cur.moveCursorUp();
+              if (params == '://...') {
+                Cursor cur = doc.doc.cursor();
+                cur.block = b;
+                cur.moveCursorToStartOfLine();
+                String t = (cur.block?.text ?? '');
+                int idx = t.indexOf('[Ln');
+                String lns = t.substring(idx + 4);
+                lns = lns.substring(0, lns.length - 1);
+                int ln = int.parse(lns);
+                while ((cur.block?.text ?? '').indexOf('[Ln') != -1) {
+                  cur.moveCursorUp();
+                }
+                AppProvider.instance()
+                    .open(cur.block?.text ?? '', focus: true, scrollTo: ln);
               }
-              AppProvider.instance()
-                  .open(cur.block?.text ?? '', focus: true, scrollTo: ln);
               break;
             }
           default:
             break;
         }
-      });
+      };
+
+    if (b.spans == null) {
+      Highlighter hl = Provider.of<Highlighter>(context, listen: false);
+      // todo > create link decoration
+      hl.run(b, b.line, b.document ?? Document(), onTap: _onLink);
     }
 
     List<InlineSpan> spans = block?.spans ?? [];
