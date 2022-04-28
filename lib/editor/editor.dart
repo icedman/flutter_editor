@@ -317,7 +317,6 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     }
     doc.commit();
 
-    // if (false)
     {
       for (final b in modifiedBlocks) {
         if (!indexingQueue.contains(b)) {
@@ -336,13 +335,37 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       }
 
       if (modifiedBlocks.isNotEmpty) {
+        // todo janky >> debounce
         // onInputText..
+        _showAutoCompleteMenu();
+      } else {
+        ui.clearPopups();
+      }
+    }
+
+    StatusProvider status = Provider.of<StatusProvider>(context, listen: false);
+    status.setIndexedStatus(0,
+        'Ln ${((d.cursor().block?.line ?? 0) + 1)}, Col ${(d.cursor().column + 1)}');
+  }
+
+  Timer? debounceTimer;
+  void _showAutoCompleteMenu() {
+    if (debounceTimer != null) {
+      debounceTimer?.cancel();
+    }
+    
+    debounceTimer = Timer(const Duration(milliseconds: 400), () {
+        Document d = doc.doc;
+        AppProvider app = Provider.of<AppProvider>(context, listen: false);
+        UIProvider ui = Provider.of<UIProvider>(context, listen: false);
+    
         UIMenuData? menu = ui.menu('indexer::${d.documentId}');
         ui.setPopup(
-            UIMenuPopup(position: decor.caretPosition, alignY: 1, menu: menu),
+            UIMenuPopup(key: ValueKey('indexer::${d.documentId}'),
+              position: decor.caretPosition, alignY: 1, menu: menu),
             blur: false,
             shield: false);
-
+            
         Cursor cur = d.cursor().copy();
         cur.moveCursorLeft();
         cur.selectWord();
@@ -354,16 +377,9 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
         } else {
           ui.clearPopups();
         }
-      } else {
-        ui.clearPopups();
-      }
-    }
-
-    StatusProvider status = Provider.of<StatusProvider>(context, listen: false);
-    status.setIndexedStatus(0,
-        'Ln ${((d.cursor().block?.line ?? 0) + 1)}, Col ${(d.cursor().column + 1)}');
+    });
   }
-
+  
   void onKeyDown(String key,
       {int keyId = 0,
       bool shift = false,

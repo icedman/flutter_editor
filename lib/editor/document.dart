@@ -67,6 +67,7 @@ class Block {
   Timer? disposeTimer;
 
   void listen() {
+    // if (document?.largeDoc ?? false) return;
     if (disposeTimer != null) {
       disposeTimer?.cancel();
       disposeTimer = null;
@@ -79,8 +80,10 @@ class Block {
 
   void dispose() {
     // when to call this
-    notifier.dispose();
-    _notifier = false;
+    if (_notifier) {
+      notifier.dispose();
+      _notifier = false;
+    }
   }
 
   void tryDispose() {
@@ -95,7 +98,9 @@ class Block {
     spans = null;
     carets = [];
 
-    listen();
+    if (notify) {
+      listen();
+    }
 
     if (highlight) {
       prevBlockClass = '';
@@ -144,6 +149,8 @@ class Document {
   String title = '';
   int documentId = 0;
   int langId = 0;
+
+  bool get largeDoc => (blocks.length > 10000);
 
   // todo.. both these are all over the place
   bool hideGutter = false;
@@ -860,9 +867,9 @@ class Document {
     return null;
   }
 
-  void makeDirty({bool highlight = false}) {
+  void makeDirty({bool highlight = false, bool notify = false}) {
     for (final b in blocks) {
-      b.makeDirty(highlight: highlight);
+      b.makeDirty(highlight: highlight, notify: notify);
     }
   }
 
@@ -1300,6 +1307,9 @@ class DocumentProvider extends ChangeNotifier {
 
     if (doScroll) {
       scrollToLine(d.cursor().block?.line ?? -1);
+      // if (d.largeDoc) {
+      //   touch();
+      // }
     }
   }
 
