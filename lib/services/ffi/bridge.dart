@@ -49,8 +49,9 @@ class FFIBridge {
     icon_for_filename =
         _icon_for_filename.asFunction<Pointer<Utf8> Function(Pointer<Utf8>)>();
 
-    final _thm_color = nativeEditorApiLib.lookup<
-        NativeFunction<ThemeColor Function(Pointer<Utf8>)>>('theme_color');
+    final _thm_color = nativeEditorApiLib
+        .lookup<NativeFunction<ThemeColor Function(Pointer<Utf8>)>>(
+            'theme_color_from_scope');
     theme_color = _thm_color.asFunction<ThemeColor Function(Pointer<Utf8>)>();
 
     final _theme_info = nativeEditorApiLib

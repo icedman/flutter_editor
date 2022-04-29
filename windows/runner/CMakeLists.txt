@@ -39,6 +39,7 @@ add_library(editor_api
     ../../libs/tinyxml2/tinyxml2.cpp
     ../../libs/jsoncpp/dist/jsoncpp.cpp
     ../../libs/highlighter/api.cpp
+    ../../libs/highlighter.def
 )
 
 target_include_directories(editor_api 
