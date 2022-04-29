@@ -18,6 +18,13 @@
   extern "C" __attribute__((visibility("default"))) __attribute__((used))
 #endif
 
+extern "C" {
+#include <tree_sitter/api.h>
+const TSLanguage *tree_sitter_javascript(void);
+const TSLanguage *tree_sitter_c(void);
+#define LANGUAGE tree_sitter_c
+}
+
 #include <iostream>
 #include <string>
 
@@ -374,24 +381,23 @@ public:
 
 std::map<size_t, std::shared_ptr<Document>> documents;
 
-extern "C" {
-#include <tree_sitter/api.h>
-const TSLanguage *tree_sitter_javascript(void);
-#define LANGUAGE tree_sitter_javascript
-}
-
 void dump_tree(const char* buffer, TSNode node, int depth) {
   int count = ts_node_child_count(node);
   // char *str = ts_node_string(node);
   int start = ts_node_start_byte(node);
   int end = ts_node_end_byte(node);
-  char words[1024];
+  // char words[2048];
 
-  memcpy(words, buffer + (start * sizeof(char)), (end-start) * sizeof(char));
-  words[(end-start)] = '\0';
+  // memcpy(words, buffer + (start * sizeof(char)), (end-start) * sizeof(char));
+  // words[(end-start)] = '\0';
 
   for(int i=0; i<depth; i++) printf(" ");
-  printf("%s [ %s ]\n", ts_node_type(node), words);
+  {
+    const char* str = ts_node_string(node);
+    const char* type = ts_node_type(node);
+    printf("[ %s ]\n", type);
+    // printf("%s\n", str);
+  }
   
   for(int i=0; i<count; i++) {
     TSNode child = ts_node_child(node, i);
@@ -403,7 +409,6 @@ void build_tree(const char* buffer, int len) {
   TSParser *parser = ts_parser_new();
   if (!ts_parser_set_language(parser, LANGUAGE())) {
     fprintf(stderr, "Invalid language\n");
-    exit(1);
   }
 
   TSTree *tree =
@@ -416,20 +421,47 @@ void build_tree(const char* buffer, int len) {
   ts_parser_delete(parser);
 }
 
+struct buffer {
+  char *buf;
+  long len;
+};
+
+const char *read_file(void *payload, uint32_t byte_index,
+                TSPoint position, uint32_t *bytes_read) {
+  if (byte_index >= ((struct buffer *) payload)->len) {
+    *bytes_read = 0;
+    return (char *) "";
+  } else {
+    *bytes_read = 1;
+    return (char *) (((struct buffer *) payload)->buf) + byte_index;
+  }
+}
+
 EXPORT
 void create_document(int documentId, char *path) {
   if (documents[documentId] == NULL) {
     documents[documentId] = std::make_shared<Document>();
   }
 
-  // if (strlen(path) > 0) {
-  //   printf(">>>%s\n", path);
-  //   std::ifstream t(path);
-  //   std::stringstream buffer;
-  //   buffer << t.rdbuf();
-  //   build_tree(buffer.str().c_str(), buffer.str().size());
-  //   // printf(">%s\n", buffer.str().c_str());
-  // }
+  if (strlen(path) > 0) {
+    // printf(">>>%s\n", path);
+    // std::ifstream t(path);
+    // std::stringstream buffer;
+    // buffer << t.rdbuf();
+    // build_tree(buffer.str().c_str(), buffer.str().length());
+    
+
+    FILE *file = fopen(path, "r");
+    fseek(file, 0, SEEK_END);
+    long length = ftell (file);
+    fseek(file, 0, SEEK_SET);
+    char *buffer = (char*)malloc(length);
+    fread(buffer, 1, length, file);
+    fclose (file);
+    build_tree(buffer, length);
+    free(buffer);
+    
+  }
 }
 
 EXPORT

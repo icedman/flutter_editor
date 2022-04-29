@@ -22,6 +22,7 @@ add_library(treesitter
   ./tree-sitter/lib/src/tree_cursor.c
   ./tree-sitter-grammars/tree-sitter-javascript/src/parser.c
   ./tree-sitter-grammars/tree-sitter-javascript/src/scanner.c
+  ./tree-sitter-grammars/tree-sitter-c/src/parser.c
 )
 
 target_include_directories(treesitter 
