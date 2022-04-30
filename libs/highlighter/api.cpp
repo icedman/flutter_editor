@@ -415,6 +415,34 @@ void dump_tree(TSNode node, int depth, int line) {
   }
 }
 
+void walk_tree(TSTreeCursor *cursor, int depth, int line) {
+  TSNode node = ts_tree_cursor_current_node(cursor);
+  int start = ts_node_start_byte(node);
+  int end = ts_node_end_byte(node);  
+  
+  const char* type = ts_node_type(node);
+  TSPoint startPoint = ts_node_start_point(node);
+  TSPoint endPoint = ts_node_end_point(node);
+  if (line != -1 && (line < startPoint.row || line > endPoint.row)) {
+    return;
+  }
+
+  // for(int i=0; i<depth; i++) {
+    // printf(" ");
+  // }
+  // printf("(%d,%d) (%d,%d) [ %s ]\n", startPoint.row, startPoint.column, endPoint.row, endPoint.column, type);
+  
+  if (!ts_tree_cursor_goto_first_child(cursor)) {
+    return;
+  }
+  
+  do {
+    TSNode child = ts_tree_cursor_current_node(cursor);
+    walk_tree(cursor, depth + 1, line);
+    
+  } while(ts_tree_cursor_goto_next_sibling(cursor));
+}
+
 void build_tree(const char* buffer, int len, Document* doc) {
   TSParser *parser = ts_parser_new();
   if (!ts_parser_set_language(parser, LANGUAGE())) {
@@ -528,7 +556,9 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
 
   if (documents[document]->tree) {
     TSNode root_node = ts_tree_root_node(documents[document]->tree);
-    dump_tree(root_node, 0, line);
+    
+    TSTreeCursor cursor = ts_tree_cursor_new(root_node);
+    walk_tree(&cursor, 0, line);
   }
 
   // TIMER_BEGIN
