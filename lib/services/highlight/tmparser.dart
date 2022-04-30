@@ -83,6 +83,7 @@ class TMParser extends HLEngine {
         themeId,
         b.document?.documentId ?? 0,
         b.blockId,
+        b.line,
         prevBlock?.blockId ?? 0,
         nextBlock?.blockId ?? 0);
 

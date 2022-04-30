@@ -375,37 +375,47 @@ public:
 
 class Document {
 public:
+  Document() : tree(0) {}
+  
+  ~Document() {
+    if (tree) {
+      ts_tree_delete(tree);
+    }
+  }
+  
   int documentId = 0;
   std::map<size_t, std::shared_ptr<Block>> blocks;
+  TSTree *tree;
 };
 
 std::map<size_t, std::shared_ptr<Document>> documents;
 
-void dump_tree(const char* buffer, TSNode node, int depth) {
+void dump_tree(TSNode node, int depth, int line) {
   int count = ts_node_child_count(node);
   // char *str = ts_node_string(node);
   int start = ts_node_start_byte(node);
-  int end = ts_node_end_byte(node);
-  // char words[2048];
-
-  // memcpy(words, buffer + (start * sizeof(char)), (end-start) * sizeof(char));
-  // words[(end-start)] = '\0';
-
-  for(int i=0; i<depth; i++) printf(" ");
-  {
-    const char* str = ts_node_string(node);
-    const char* type = ts_node_type(node);
-    printf("[ %s ]\n", type);
-    // printf("%s\n", str);
+  int end = ts_node_end_byte(node);  
+  // const char* str = ts_node_string(node);
+  
+  const char* type = ts_node_type(node);
+  TSPoint startPoint = ts_node_start_point(node);
+  TSPoint endPoint = ts_node_end_point(node);
+  if (line != -1 && (line < startPoint.row || line > endPoint.row)) {
+    return;
   }
+
+  for(int i=0; i<depth; i++) {
+    printf(" ");
+  }
+  printf("(%d,%d) (%d,%d) [ %s ]\n", startPoint.row, startPoint.column, endPoint.row, endPoint.column, type);
   
   for(int i=0; i<count; i++) {
     TSNode child = ts_node_child(node, i);
-    dump_tree(buffer, child, depth + 1);
+    dump_tree(child, depth + 1, line);
   }
 }
 
-void build_tree(const char* buffer, int len) {
+void build_tree(const char* buffer, int len, Document* doc) {
   TSParser *parser = ts_parser_new();
   if (!ts_parser_set_language(parser, LANGUAGE())) {
     fprintf(stderr, "Invalid language\n");
@@ -414,27 +424,12 @@ void build_tree(const char* buffer, int len) {
   TSTree *tree =
       ts_parser_parse_string(parser, NULL, buffer, len);
 
-  TSNode root_node = ts_tree_root_node(tree);
-  dump_tree(buffer, root_node, 0);
+  // TSNode root_node = ts_tree_root_node(tree);
+  // dump_tree(root_node, 0, -1);
 
-  ts_tree_delete(tree);
+  doc->tree = tree;
+  // ts_tree_delete(tree);
   ts_parser_delete(parser);
-}
-
-struct buffer {
-  char *buf;
-  long len;
-};
-
-const char *read_file(void *payload, uint32_t byte_index,
-                TSPoint position, uint32_t *bytes_read) {
-  if (byte_index >= ((struct buffer *) payload)->len) {
-    *bytes_read = 0;
-    return (char *) "";
-  } else {
-    *bytes_read = 1;
-    return (char *) (((struct buffer *) payload)->buf) + byte_index;
-  }
 }
 
 EXPORT
@@ -444,23 +439,11 @@ void create_document(int documentId, char *path) {
   }
 
   if (strlen(path) > 0) {
-    // printf(">>>%s\n", path);
-    // std::ifstream t(path);
-    // std::stringstream buffer;
-    // buffer << t.rdbuf();
-    // build_tree(buffer.str().c_str(), buffer.str().length());
-    
-
-    FILE *file = fopen(path, "r");
-    fseek(file, 0, SEEK_END);
-    long length = ftell (file);
-    fseek(file, 0, SEEK_SET);
-    char *buffer = (char*)malloc(length);
-    fread(buffer, 1, length, file);
-    fclose (file);
-    build_tree(buffer, length);
-    free(buffer);
-    
+    printf(">>>%s\n", path);
+    std::ifstream t(path);
+    std::stringstream buffer;
+    buffer << t.rdbuf();
+    build_tree(buffer.str().c_str(), buffer.str().length(), documents[documentId].get());
   }
 }
 
@@ -468,7 +451,7 @@ EXPORT
 void destroy_document(int documentId) { documents[documentId] = NULL; }
 
 EXPORT
-void add_block(int documentId, int blockId) {
+void add_block(int documentId, int blockId, int line) {
   if (documents[documentId] == NULL) {
     return;
   }
@@ -478,7 +461,7 @@ void add_block(int documentId, int blockId) {
 }
 
 EXPORT
-void remove_block(int documentId, int blockId) {
+void remove_block(int documentId, int blockId, int line) {
   if (documents[documentId] == NULL) {
     return;
   }
@@ -486,7 +469,7 @@ void remove_block(int documentId, int blockId) {
 }
 
 EXPORT
-void set_block(int documentId, int blockId, char *text) {
+void set_block(int documentId, int blockId, int line, char *text) {
   if (documents[documentId] == NULL) {
     return;
   }
@@ -498,7 +481,7 @@ void set_block(int documentId, int blockId, char *text) {
 
 EXPORT
 textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
-                             int block, int previous_block, int next_block) {
+                             int block, int line, int previous_block, int next_block) {
   // end marker
   textstyle_buffer[0].start = 0;
   textstyle_buffer[0].length = 0;
@@ -541,6 +524,12 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
     parser_state = gm->seed();
     firstLine = true;
   }
+  
+
+  if (documents[document]->tree) {
+    TSNode root_node = ts_tree_root_node(documents[document]->tree);
+    dump_tree(root_node, 0, line);
+  }
 
   // TIMER_BEGIN
   parser_state = parse::parse(first, last, parser_state, scopes, firstLine);
@@ -552,7 +541,7 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
   // dump_tokens(scopes);
   // }
 
-  add_block(document, block);
+  add_block(document, block, 0);
   documents[document]->blocks[block]->parser_state = parser_state;
   documents[document]->blocks[block]->commentLine = false;
   // documents[document]->blocks[block]->text = _text;

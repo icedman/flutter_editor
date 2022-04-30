@@ -87,17 +87,18 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
 
     d.addListener('onCreate', (documentId) {
       print("here!");
-      FFIBridge.run(() => FFIBridge.createDocument(documentId, doc.doc.docPath));
+      FFIBridge.run(
+          () => FFIBridge.createDocument(documentId, doc.doc.docPath));
     });
     d.addListener('onDestroy', (documentId) {
       FFIBridge.run(() => FFIBridge.destroy_document(documentId));
     });
-    d.addListener('onAddBlock', (documentId, blockId) {
-      FFIBridge.run(() => FFIBridge.add_block(documentId, blockId));
+    d.addListener('onAddBlock', (documentId, blockId, line) {
+      FFIBridge.run(() => FFIBridge.add_block(documentId, blockId, line));
       doc.touch();
     });
-    d.addListener('onRemoveBlock', (documentId, blockId) {
-      FFIBridge.run(() => FFIBridge.remove_block(documentId, blockId));
+    d.addListener('onRemoveBlock', (documentId, blockId, line) {
+      FFIBridge.run(() => FFIBridge.remove_block(documentId, blockId, line));
       doc.touch();
     });
     d.addListener('onInsertText', (text) {});
@@ -353,33 +354,36 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     if (debounceTimer != null) {
       debounceTimer?.cancel();
     }
-    
+
     debounceTimer = Timer(const Duration(milliseconds: 400), () {
-        Document d = doc.doc;
-        AppProvider app = Provider.of<AppProvider>(context, listen: false);
-        UIProvider ui = Provider.of<UIProvider>(context, listen: false);
-    
-        UIMenuData? menu = ui.menu('indexer::${d.documentId}');
-        ui.setPopup(
-            UIMenuPopup(key: ValueKey('indexer::${d.documentId}'),
-              position: decor.caretPosition, alignY: 1, menu: menu),
-            blur: false,
-            shield: false);
-            
-        Cursor cur = d.cursor().copy();
-        cur.moveCursorLeft();
-        cur.selectWord();
-        if (cur.column == d.cursor().column) {
-          String t = cur.selectedText();
-          if (t.length > 1) {
-            indexer.find(t);
-          }
-        } else {
-          ui.clearPopups();
+      Document d = doc.doc;
+      AppProvider app = Provider.of<AppProvider>(context, listen: false);
+      UIProvider ui = Provider.of<UIProvider>(context, listen: false);
+
+      UIMenuData? menu = ui.menu('indexer::${d.documentId}');
+      ui.setPopup(
+          UIMenuPopup(
+              key: ValueKey('indexer::${d.documentId}'),
+              position: decor.caretPosition,
+              alignY: 1,
+              menu: menu),
+          blur: false,
+          shield: false);
+
+      Cursor cur = d.cursor().copy();
+      cur.moveCursorLeft();
+      cur.selectWord();
+      if (cur.column == d.cursor().column) {
+        String t = cur.selectedText();
+        if (t.length > 1) {
+          indexer.find(t);
         }
+      } else {
+        ui.clearPopups();
+      }
     });
   }
-  
+
   void onKeyDown(String key,
       {int keyId = 0,
       bool shift = false,

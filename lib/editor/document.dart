@@ -420,7 +420,7 @@ class Document {
     updateLineNumbers(index);
 
     listeners['onAddBlock']?.forEach((l) {
-      l?.call(documentId, block.blockId);
+      l?.call(documentId, block.blockId, block.line);
     });
 
     history.add(block);
@@ -439,7 +439,7 @@ class Document {
 
     if (block != null) {
       listeners['onRemoveBlock']?.forEach((l) {
-        l?.call(documentId, block.blockId);
+        l?.call(documentId, block.blockId, block.line);
       });
     }
 

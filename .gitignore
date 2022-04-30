@@ -47,4 +47,3 @@ app.*.map.json
 
 **/.cxx/
 flutter_*.png
-./lib/tree-sitter*

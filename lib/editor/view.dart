@@ -171,7 +171,7 @@ class ViewLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     int lineNumber = block?.line ?? 0;
-    
+
     // print('rebuild $lineNumber');
     return ValueListenableBuilder(
       key: key,
@@ -214,48 +214,48 @@ class _ViewLine extends StatelessWidget {
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
     Highlighter hl = Provider.of<Highlighter>(context);
     DecorInfo decor = Provider.of<DecorInfo>(context, listen: false);
-    
+
     Block b = block ?? Block('', document: doc.doc);
     int lineNumber = block?.line ?? 0;
     // print('rebuild renderer $lineNumber');
-    
+
     final _onLink = (command) {
-        String cmd = '';
-        String params = '';
-        int idx = command.indexOf(':');
-        if (idx != -1) {
-          cmd = command.substring(0, idx);
-          params = command.substring(idx);
-        }
-        switch (cmd) {
-          case 'unfold':
-            doc.doc.unfold(b);
-            b.makeDirty();
-            doc.touch();
-            break;
-          case 'file':
-            {
-              if (params == '://...') {
-                Cursor cur = doc.doc.cursor();
-                cur.block = b;
-                cur.moveCursorToStartOfLine();
-                String t = (cur.block?.text ?? '');
-                int idx = t.indexOf('[Ln');
-                String lns = t.substring(idx + 4);
-                lns = lns.substring(0, lns.length - 1);
-                int ln = int.parse(lns);
-                while ((cur.block?.text ?? '').indexOf('[Ln') != -1) {
-                  cur.moveCursorUp();
-                }
-                AppProvider.instance()
-                    .open(cur.block?.text ?? '', focus: true, scrollTo: ln);
+      String cmd = '';
+      String params = '';
+      int idx = command.indexOf(':');
+      if (idx != -1) {
+        cmd = command.substring(0, idx);
+        params = command.substring(idx);
+      }
+      switch (cmd) {
+        case 'unfold':
+          doc.doc.unfold(b);
+          b.makeDirty();
+          doc.touch();
+          break;
+        case 'file':
+          {
+            if (params == '://...') {
+              Cursor cur = doc.doc.cursor();
+              cur.block = b;
+              cur.moveCursorToStartOfLine();
+              String t = (cur.block?.text ?? '');
+              int idx = t.indexOf('[Ln');
+              String lns = t.substring(idx + 4);
+              lns = lns.substring(0, lns.length - 1);
+              int ln = int.parse(lns);
+              while ((cur.block?.text ?? '').indexOf('[Ln') != -1) {
+                cur.moveCursorUp();
               }
-              break;
+              AppProvider.instance()
+                  .open(cur.block?.text ?? '', focus: true, scrollTo: ln);
             }
-          default:
             break;
-        }
-      };
+          }
+        default:
+          break;
+      }
+    };
 
     if (b.spans == null) {
       Highlighter hl = Provider.of<Highlighter>(context, listen: false);
