@@ -9,6 +9,7 @@ import 'package:path/path.dart' as _path;
 import 'package:editor/editor/cursor.dart';
 import 'package:editor/editor/history.dart';
 import 'package:editor/services/highlight/highlighter.dart';
+import 'package:editor/services/ffi/bridge.dart';
 
 int _documentId = 0xffff;
 int _blockId = 0xffff;
@@ -299,8 +300,11 @@ class Document {
 
     for (int i = 0; i < blocks.length; i++) {
       blocks[i].makeDirty(highlight: true, notify: false);
+      FFIBridge.setBlock(documentId, blocks[i].blockId, i, blocks[i].text);      
     }
 
+    FFIBridge.runTreeSitter(documentId, docPath);
+    
     if (blocks.isEmpty) {
       clear();
     }
@@ -311,6 +315,7 @@ class Document {
     listeners['onReady']?.forEach((l) {
       l?.call();
     });
+
     return true;
   }
 

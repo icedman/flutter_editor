@@ -336,8 +336,6 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       }
 
       if (modifiedBlocks.isNotEmpty) {
-        // todo janky >> debounce
-        // onInputText..
         _showAutoCompleteMenu();
       } else {
         ui.clearPopups();
@@ -355,7 +353,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       debounceTimer?.cancel();
     }
 
-    debounceTimer = Timer(const Duration(milliseconds: 400), () {
+    debounceTimer = Timer(const Duration(milliseconds: 250), () {
       Document d = doc.doc;
       AppProvider app = Provider.of<AppProvider>(context, listen: false);
       UIProvider ui = Provider.of<UIProvider>(context, listen: false);

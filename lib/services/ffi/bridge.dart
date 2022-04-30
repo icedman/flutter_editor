@@ -23,6 +23,7 @@ class FFIBridge {
   static late Function theme_info;
   static late Function load_icons;
   static late Function icon_for_filename;
+  static late Function run_tree_sitter;
 
   static bool initialized = false;
 
@@ -75,6 +76,11 @@ class FFIBridge {
     create_document =
         _create_document.asFunction<void Function(int, Pointer<Utf8>)>();
 
+    final _run_tree_sitter = nativeEditorApiLib.lookup<
+        NativeFunction<Void Function(Int32, Pointer<Utf8>)>>('run_tree_sitter');
+    run_tree_sitter =
+        _run_tree_sitter.asFunction<void Function(int, Pointer<Utf8>)>();
+
     final _destroy_document = nativeEditorApiLib
         .lookup<NativeFunction<Void Function(Int32)>>('destroy_document');
     destroy_document = _destroy_document.asFunction<void Function(int)>();
@@ -110,6 +116,12 @@ class FFIBridge {
   static void createDocument(int id, String path) {
     final _path = path.toNativeUtf8();
     create_document(id, _path);
+    calloc.free(_path);
+  }
+
+  static void runTreeSitter(int id, String path) {
+    final _path = path.toNativeUtf8();
+    run_tree_sitter(id, _path);
     calloc.free(_path);
   }
 
@@ -174,6 +186,12 @@ class FFIBridge {
         run_highlighter(_t, lang, theme, document, block, line, prev, next);
     calloc.free(_t);
     return res;
+  }
+
+  static void setBlock(int document, int block, int line, String text) {
+    Pointer<Utf8> _t = text.toNativeUtf8();
+    set_block(document, block, line, _t);
+    calloc.free(_t);
   }
 
   static ThemeColor themeColor(String scope) {
