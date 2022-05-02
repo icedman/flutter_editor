@@ -1,8 +1,10 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:path/path.dart' as _path;
 
+import 'package:editor/editor/controller.dart';
 import 'package:editor/layout/layout.dart';
 import 'package:editor/layout/explorer.dart';
 import 'package:editor/services/ffi/bridge.dart';
@@ -19,6 +21,8 @@ import 'package:editor/services/keybindings.dart';
 void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  CodeEditingController.configure();
+  
   AppProvider app = AppProvider.instance();
   await app.initialize();
   await app.loadSettings();

@@ -18,7 +18,7 @@ class HLTheme extends ChangeNotifier {
   Color selection = Color(0xff44475a);
   Color function = Color(0xff50fa7b);
   Color keyword = Color(0xffff79c6);
-  Color string = Colors.yellow;
+  Color string = Color(0xffff00ff);
 
   static HLTheme instance() {
     return _theme;

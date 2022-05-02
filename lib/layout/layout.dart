@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:editor/editor/search.dart';
 import 'package:editor/editor/decorations.dart';
 import 'package:editor/editor/document.dart';
+import 'package:editor/editor/controller.dart';
 import 'package:editor/layout/tabs.dart';
 import 'package:editor/layout/statusbar.dart';
 import 'package:editor/layout/explorer.dart';

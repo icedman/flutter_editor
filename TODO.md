@@ -80,3 +80,37 @@ menu too low (fixed)
 tab close causes disposed error - at scrollToCursor, editor, document
 itemFromPath - can't find correct file item
 menu auto complete ... extra space added (fixed)
+
+# experiments
+
+tree-sitter
+
+# refactor
+
+widgetize - view
+widgetize - editor
+widgetize - explorer
+
+# structure
+
+pure classes
+ - buffer
+ - document
+ - block
+   - block_data
+ - cursor
+ - decorator
+ 
+widgets
+view
+ - view
+ - gutter
+ - decorations
+editor
+ - view
+ - popups
+ - minimap
+
+
+
+

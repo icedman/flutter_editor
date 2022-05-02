@@ -1,6 +1,7 @@
 import 'dart:convert';
+import 'dart:ui';
+import 'package:editor/editor/block.dart';
 import 'package:editor/editor/document.dart';
-import 'package:flutter/material.dart';
 
 String safeSubstring(String text, int start, [int? end]) {
   if ((end != null && start >= end) || start < 0 || text == '') {
@@ -33,7 +34,7 @@ class Cursor {
   int column = 0;
   Block? anchorBlock;
   int anchorColumn = 0;
-  Color color = Colors.white;
+  Color color = const Color(0xffffffff);
 
   Offset screenOffset = Offset.zero;
 
@@ -225,7 +226,7 @@ class Cursor {
   void moveCursorUp({int count = 1, bool keepAnchor = false}) {
     _moveCursorUp(count: count, keepAnchor: keepAnchor);
     int idx = 0;
-    while ((block?.isHidden() ?? false) && idx++ < 1000) {
+    while ((block?.isHidden ?? false) && idx++ < 1000) {
       _moveCursorUp(count: count, keepAnchor: keepAnchor);
     }
   }
@@ -243,7 +244,7 @@ class Cursor {
   void moveCursorDown({int count = 1, bool keepAnchor = false}) {
     _moveCursorDown(count: count, keepAnchor: keepAnchor);
     int idx = 0;
-    while ((block?.isHidden() ?? false) && idx++ < 1000) {
+    while ((block?.isHidden ?? false) && idx++ < 1000) {
       _moveCursorDown(count: count, keepAnchor: keepAnchor);
     }
   }
@@ -508,7 +509,7 @@ class Cursor {
     if (column >= l.length) {
       moveCursorToEndOfLine();
 
-      if (block?.isFolded() ?? true) {
+      if (block?.isFolded ?? true) {
         document?.unfold(block);
         return;
       }
@@ -526,7 +527,7 @@ class Cursor {
   }
 
   void insertNewLine() {
-    if (block?.isFolded() ?? true) {
+    if (block?.isFolded ?? true) {
       document?.unfold(block);
       return;
     }

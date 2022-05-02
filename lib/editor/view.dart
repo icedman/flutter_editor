@@ -5,7 +5,9 @@ import 'package:provider/provider.dart';
 
 import 'package:editor/editor/decorations.dart';
 import 'package:editor/editor/cursor.dart';
+import 'package:editor/editor/block.dart';
 import 'package:editor/editor/document.dart';
+import 'package:editor/editor/controller.dart';
 import 'package:editor/services/app.dart';
 import 'package:editor/services/util.dart';
 import 'package:editor/services/timer.dart';
@@ -175,7 +177,7 @@ class ViewLine extends StatelessWidget {
     // print('rebuild $lineNumber');
     return ValueListenableBuilder(
       key: key,
-      valueListenable: (block ?? Block('')).notifier,
+      valueListenable: (block ?? Block.empty).notifier.listenable(),
       builder: (context, value, child) {
         return _ViewLine(
             line: line,
@@ -404,14 +406,7 @@ class _View extends State<View> {
     scroller = ScrollController();
     hscroller = ScrollController();
     scrollTo = PeriodicTimer();
-
-    // hack - to recalculate layout on tab change
-    // Future.delayed(const Duration(milliseconds: 0), () {
-    // DocumentProvider doc =
-    // Provider.of<DocumentProvider>(context, listen: false);
-    // doc.touch();
-    // });
-
+    
     scroller.addListener(() {
       DocumentProvider doc =
           Provider.of<DocumentProvider>(context, listen: false);

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 
 import 'package:editor/editor/cursor.dart';
+import 'package:editor/editor/block.dart';
 import 'package:editor/editor/document.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
@@ -196,7 +197,7 @@ class SearchResultDecorator extends LineDecorator {
       ..end = lnEndIdx
       ..color = theme.function
       ..underline = true
-      ..tap = 'file://...');
+      ..link = 'file://...');
 
     if (!caseSensitive && !regex) {
       f = f.toLowerCase();

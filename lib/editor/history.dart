@@ -1,4 +1,5 @@
 import 'package:editor/editor/cursor.dart';
+import 'package:editor/editor/block.dart';
 import 'package:editor/editor/document.dart';
 
 class Action {
