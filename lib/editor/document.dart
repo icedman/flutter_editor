@@ -303,7 +303,7 @@ class Document {
       FFIBridge.setBlock(documentId, blocks[i].blockId, i, blocks[i].text);      
     }
 
-    FFIBridge.runTreeSitter(documentId, docPath);
+    // FFIBridge.runTreeSitter(documentId, docPath);
     
     if (blocks.isEmpty) {
       clear();

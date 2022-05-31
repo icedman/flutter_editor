@@ -8,6 +8,7 @@
 #include <iostream>
 #include <string>
 #include <time.h>
+#include <pthread.h>
 
 #define SKIP_PARSE_THRESHOLD 500
 
@@ -555,7 +556,12 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
   // end marker
   textstyle_buffer[0].start = 0;
   textstyle_buffer[0].length = 0;
+
   if (strlen(_text) > SKIP_PARSE_THRESHOLD) {
+    return textstyle_buffer;
+  }
+
+  if (parse::grammar_t::running_threads > 0) {
     return textstyle_buffer;
   }
 
@@ -577,6 +583,7 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
   set_block(document, block, line, _text);
   std::vector<TSNode> tree_nodes;
 
+  /*
   if (documents[document]->tree) {
     documents[document]->blocks[block]->nextId = next_block;
     if (documents[document]->blocks[previous_block] != NULL) {
@@ -591,6 +598,7 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
     TSTreeCursor cursor = ts_tree_cursor_new(root_node);
     walk_tree(&cursor, 0, line, &tree_nodes);
   }
+  */
 
   const char *text = str.c_str();
 
