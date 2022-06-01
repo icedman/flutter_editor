@@ -139,6 +139,7 @@ class _InputListener extends State<InputListener> {
             if (event.logicalKey.keyLabel.length > 1) {
               key = event.logicalKey.keyLabel;
             }
+            // print(key);
             widget.onKeyDown?.call(key,
                 keyId: event.logicalKey.keyId,
                 shift: event.isShiftPressed,

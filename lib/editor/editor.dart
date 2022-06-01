@@ -152,6 +152,10 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     focusNode = FocusNode();
     textFocusNode = FocusNode();
     WidgetsBinding.instance!.addObserver(this);
+
+    Future.delayed(const Duration(milliseconds: 50), () {
+      focusNode.requestFocus();
+    });
   }
 
   @override
@@ -458,8 +462,6 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
                   k <= LogicalKeyboardKey.keyZ.keyId) ||
               (k + 32 >= LogicalKeyboardKey.keyA.keyId &&
                   k + 32 <= LogicalKeyboardKey.keyZ.keyId)) {
-            // String ch =
-            //     String.fromCharCode(97 + k - LogicalKeyboardKey.keyA.keyId);
             if (control || alt) {
               onShortcut(buildKeys(key,
                   control: controlling, shift: shifting, alt: alting));
@@ -470,6 +472,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
           }
         }
         if (key.length == 1 || softKeyboard) {
+          // print('$controlling $key');
           if (controlling || alting) {
             onShortcut(buildKeys(key,
                 control: controlling, shift: shifting, alt: alting));

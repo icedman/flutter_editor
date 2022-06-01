@@ -96,7 +96,7 @@ class Block {
   Block? next;
 
   int originalLine = 0;
-  String originalText = '';
+  String? originalText;
   Iterable<RegExpMatch> words = [];
 
   List<LineDecoration>? decors = [];

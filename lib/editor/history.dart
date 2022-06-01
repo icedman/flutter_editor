@@ -1,12 +1,15 @@
 import 'package:editor/editor/cursor.dart';
 import 'package:editor/editor/block.dart';
 import 'package:editor/editor/document.dart';
+import 'package:diff_match_patch/diff_match_patch.dart';
 
 class Action {
   String type = '';
-  String text = '';
   String redoText = '';
-  String inserted = '';
+  // String inserted = '';
+  String insertedText = '';
+  String deletedText = '';
+  int column = 0;
   Block? block;
 }
 
@@ -33,6 +36,7 @@ class History {
       entry.cursors = cursors;
       entry.actions = actions;
 
+      /*
       if (entries.length > 1 && entry.actions.length == 1) {
         HistoryEntry prev = entries.last;
         if (prev.actions.length == 1) {
@@ -45,10 +49,13 @@ class History {
           }
         }
       }
+      */
 
-      for (final a in entry.actions) {
-        a.redoText = a.block?.text ?? '';
-      }
+      // for (final a in entry.actions) {
+      //   if (a.block?.originalText == null) {
+      //     a.block?.originalText = a.block?.text ?? '';
+      //   }
+      // }
 
       entries.add(entry);
       redoEntries.clear();
@@ -71,13 +78,29 @@ class History {
     actions.add(action);
   }
 
-  void update(Block? block, {String type = 'update', String inserted = ''}) {
-    // print('update ${block?.text} [$inserted]');
+  void diff(Action action, String t1, String t2) {
+    DiffMatchPatch p = DiffMatchPatch();
+    List<Diff> diffs = p.diff(t1, t2);
+    action.column = 0;
+    if (diffs.length > 1) {
+      if (diffs[0].operation == 0) {
+        action.column = diffs[0].text.length;
+      }
+      if (diffs[1].operation == 1) {
+        action.insertedText = diffs[1].text;
+      }
+      if (diffs[1].operation == -1) {
+        action.deletedText = diffs[1].text;
+      }
+    }
+  }
+
+  void update(Block? block, {String type = 'update', String newText = ''}) {
+    // print('update ${block?.text} [$newText]');
     Action action = Action();
     action.type = type;
     action.block = block;
-    action.text = block?.text ?? '';
-    action.inserted = inserted;
+    diff(action, block?.text ?? '', newText);
     actions.add(action);
   }
 
@@ -108,9 +131,9 @@ class History {
 
     HistoryEntry last = redoEntries.removeLast();
     entries.add(last);
-    for (final a in last.actions.reversed) {
+    for (final a in last.actions) {
+      // print('redo ${a.type} ${a.text} ${a.redoText}<<');
       switch (a.type) {
-        case 'insert':
         case 'update':
           a.block?.text = a.redoText;
           a.block?.makeDirty(highlight: true);
@@ -125,6 +148,7 @@ class History {
         case 'remove':
           update = true;
           _remove(a.block);
+          a.block?.text = a.redoText;
           break;
       }
     }
@@ -149,20 +173,37 @@ class History {
     HistoryEntry last = entries.removeLast();
     redoEntries.add(last);
     for (final a in last.actions.reversed) {
+      // print('undo ${a.type} ${a.text}<<');
       switch (a.type) {
-        case 'insert':
         case 'update':
-          a.block?.text = a.text;
-          a.block?.makeDirty(highlight: true);
-          break;
+          {
+            a.redoText = a.block?.text ?? '';
+            // a.block?.text = a.text;
+
+            Cursor cur = doc.cursor().copy();
+            cur.block = a.block;
+            cur.column = a.column;
+            cur.clearSelection();
+
+            if (a.insertedText.length > 0) {
+              cur.deleteText(numberOfCharacters: a.insertedText.length);
+            } else if (a.deletedText.length > 0) {
+              cur.insertText(a.deletedText);
+            }
+
+            a.block?.makeDirty(highlight: true);
+            break;
+          }
 
         case 'remove':
           update = true;
+          a.redoText = a.block?.text ?? '';
           _reinsert(a.block);
           break;
 
         case 'add':
           update = true;
+          a.redoText = a.block?.text ?? '';
           _remove(a.block);
           break;
       }
