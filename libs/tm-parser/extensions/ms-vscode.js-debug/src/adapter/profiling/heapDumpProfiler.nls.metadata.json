@@ -1,1 +1,0 @@
-{"messages":["Heap Snapshot","Generates a .heapsnapshot file you can open in the Chrome devtools"],"keys":["profile.heap.label","profile.heap.description"],"filePath":"adapter/profiling/heapDumpProfiler"}

@@ -72,7 +72,7 @@ class History {
   }
 
   void update(Block? block, {String type = 'update', String inserted = ''}) {
-    // print('update ${block?.text}');
+    // print('update ${block?.text} [$inserted]');
     Action action = Action();
     action.type = type;
     action.block = block;
@@ -152,7 +152,6 @@ class History {
       switch (a.type) {
         case 'insert':
         case 'update':
-          a.redoText = a.block?.text ?? a.text;
           a.block?.text = a.text;
           a.block?.makeDirty(highlight: true);
           break;

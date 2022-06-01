@@ -251,7 +251,6 @@ Json::Value load_plist_or_json(std::string path)
     }
     Json::Value result;
 
-    printf("convert!\n");
     tinyxml2::XMLDocument doc;
     doc.LoadFile(path.c_str());
     tinyxml2::XMLElement* pRoot = doc.RootElement();
@@ -282,7 +281,7 @@ void load_extensions(const std::string _path,
     free(cpath);
 
     // Json::Value contribs;
-    printf("loading extensions in %s\n", path.c_str());
+    // printf("loading extensions in %s\n", path.c_str());
     // std::vector<std::string> filter = { "themes", "iconThemes", "languages" };
 
     for (const auto& extensionPath : enumerate_dir(path)) {
@@ -367,7 +366,7 @@ void load_extensions(const std::string _path,
             mappedExtensions.emplace(ex.id, ex);
             // extensions.emplace_back(ex);
         } else {
-            printf(">exclude %s\n", ex.path.c_str());
+            // printf(">exclude %s\n", ex.path.c_str());
         }
     }
 
@@ -385,7 +384,7 @@ static bool load_language_configuration(const std::string path,
 {
     Json::Value root = parse::loadJson(path);
     if (root.empty()) {
-        log("unable to load configuration file %s", path.c_str());
+        printf("unable to load configuration file %s", path.c_str());
         return false;
     }
 
@@ -965,7 +964,7 @@ icon_t icon_for_file(icon_theme_ptr icons, std::string filename,
         return res;
     }
 
-    printf("not found %s\n", filename.c_str());
+    // printf("not found %s\n", filename.c_str());
     return res;
 }
 

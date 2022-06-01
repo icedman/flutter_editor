@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:path/path.dart' as _path;
 
 import 'package:editor/editor/controller.dart';
+import 'package:editor/editor/document.dart';
 import 'package:editor/layout/layout.dart';
 import 'package:editor/layout/explorer.dart';
 import 'package:editor/services/ffi/bridge.dart';
@@ -47,7 +48,10 @@ void main(List<String> args) async {
 
   String dirPath = path;
   if (!(await FileSystemEntity.isDirectory(path))) {
-    app.open(path);
+    Document? doc = app.open(path);
+
+    FFIBridge.createDocument(doc?.documentId ?? 0, doc?.docPath ?? '');
+
     app.openSidebar = false;
     dirPath = _path.dirname(path);
   }

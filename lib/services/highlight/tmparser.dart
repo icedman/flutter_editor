@@ -76,16 +76,17 @@ class TMParser extends HLEngine {
     b.scopes = {};
 
     String text = b.text;
-    text += ' ';
-
     final nspans = FFIBridge.runHighlighter(
         text,
         document.langId,
         themeId,
         b.document?.documentId ?? 0,
         b.blockId,
+        b.line,
         prevBlock?.blockId ?? 0,
         nextBlock?.blockId ?? 0);
+
+    text += ' ';
 
     bool comment = false;
     bool string = false;

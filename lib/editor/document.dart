@@ -7,6 +7,8 @@ import 'package:path/path.dart' as _path;
 import 'package:editor/editor/cursor.dart';
 import 'package:editor/editor/block.dart';
 import 'package:editor/editor/history.dart';
+import 'package:editor/services/highlight/highlighter.dart';
+import 'package:editor/services/ffi/bridge.dart';
 
 int _documentId = 0xffff;
 
@@ -24,6 +26,8 @@ class Document {
   static Function? createNotifier = () {
     return Notifier();
   };
+
+  bool languageReady = false;
 
   // todo.. both these are all over the place
   bool hideGutter = false;
@@ -174,8 +178,11 @@ class Document {
 
     for (int i = 0; i < blocks.length; i++) {
       blocks[i].makeDirty(highlight: true, notify: false);
+      FFIBridge.setBlock(documentId, blocks[i].blockId, i, blocks[i].text);      
     }
 
+    // FFIBridge.runTreeSitter(documentId, docPath);
+    
     if (blocks.isEmpty) {
       clear();
     }
@@ -186,6 +193,7 @@ class Document {
     listeners['onReady']?.forEach((l) {
       l?.call();
     });
+
     return true;
   }
 
@@ -295,7 +303,7 @@ class Document {
     updateLineNumbers(index);
 
     listeners['onAddBlock']?.forEach((l) {
-      l?.call(documentId, block.blockId);
+      l?.call(documentId, block.blockId, block.line);
     });
 
     history.add(block);
@@ -314,7 +322,7 @@ class Document {
 
     if (block != null) {
       listeners['onRemoveBlock']?.forEach((l) {
-        l?.call(documentId, block.blockId);
+        l?.call(documentId, block.blockId, block.line);
       });
     }
 
