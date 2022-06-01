@@ -11,6 +11,7 @@ import 'package:editor/services/util.dart';
 import 'package:editor/services/timer.dart';
 import 'package:editor/services/input.dart';
 import 'package:editor/services/ui/ui.dart';
+import 'package:editor/services/ffi/bridge.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 
@@ -625,6 +626,14 @@ class _View extends State<View> {
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
 
     if (!doc.ready) return Container();
+
+    // todo move to tmparser
+    if (!doc.doc.languageReady) {
+      doc.doc.languageReady = FFIBridge.has_running_threads() == 0;
+      Future.delayed(const Duration(milliseconds: 100), () {
+        doc.doc.makeDirty(highlight: true, notify: true);
+      });
+    }
 
     final TextStyle style = TextStyle(
         fontFamily: theme.fontFamily,

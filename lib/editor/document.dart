@@ -152,6 +152,7 @@ class Document {
   int langId = 0;
 
   bool get largeDoc => (blocks.length > 10000);
+  bool languageReady = false;
 
   // todo.. both these are all over the place
   bool hideGutter = false;
