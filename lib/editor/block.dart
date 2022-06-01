@@ -78,17 +78,17 @@ class Block {
     blockId = _blockId++;
     notifier = createNotifier?.call();
   }
-  
+
   static Block get empty => Block('');
   static Function? createNotifier = () {
     return Notifier();
   };
-  
+
   String get text => _text;
   void set text(String t) => _text = t;
-  
+
   String _text = '';
-  
+
   int blockId = 0;
   int line = 0;
   Document? document;
@@ -154,4 +154,3 @@ class Block {
     return false;
   }
 }
-

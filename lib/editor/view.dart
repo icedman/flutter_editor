@@ -407,7 +407,7 @@ class _View extends State<View> {
     scroller = ScrollController();
     hscroller = ScrollController();
     scrollTo = PeriodicTimer();
-    
+
     scroller.addListener(() {
       DocumentProvider doc =
           Provider.of<DocumentProvider>(context, listen: false);
@@ -415,9 +415,13 @@ class _View extends State<View> {
       int docSize = doc.doc.blocks.length;
       double totalHeight = docSize * fontHeight;
 
-      if (scroller.positions.isNotEmpty) {
+      if (scroller.positions.isNotEmpty &&
+          scroller.position.maxScrollExtent > 0) {
         updateVisibleRange(context);
-        double p = scroller.position.pixels / scroller.position.maxScrollExtent;
+        double p = 0;
+        if (scroller.position.maxScrollExtent > 0) {
+          p = scroller.position.pixels / scroller.position.maxScrollExtent;
+        }
         int vl = (p * docSize).toInt();
         if (vl != visibleLine) {
           // todo... costly

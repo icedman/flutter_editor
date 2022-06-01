@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(editor LANGUAGES CXX C)
 
-string(APPEND CMAKE_CXX_FLAGS " -Wno-c++11-narrowing")
+#string(APPEND CMAKE_CXX_FLAGS " -Wno-c++11-narrowing")
 string(APPEND CMAKE_CXX_FLAGS " -std=gnu++11")
 #string(APPEND CMAKE_CXX_FLAGS " -DDISABLE_ADD_GRAMMAR_THREADS")
 set (CMAKE_CXX_STANDARD 11)

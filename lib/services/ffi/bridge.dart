@@ -105,10 +105,9 @@ class FFIBridge {
     language_definition =
         _language_definition.asFunction<Pointer<Utf8> Function(int)>();
 
-    final _has_running_threads = nativeEditorApiLib.lookup<
-        NativeFunction<Int32 Function()>>('has_running_threads');
-    has_running_threads =
-        _has_running_threads.asFunction<int Function()>();
+    final _has_running_threads = nativeEditorApiLib
+        .lookup<NativeFunction<Int32 Function()>>('has_running_threads');
+    has_running_threads = _has_running_threads.asFunction<int Function()>();
 
     initialized = true;
   }

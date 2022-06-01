@@ -23,7 +23,7 @@ void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
 
   CodeEditingController.configure();
-  
+
   AppProvider app = AppProvider.instance();
   await app.initialize();
   await app.loadSettings();

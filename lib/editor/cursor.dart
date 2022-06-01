@@ -166,6 +166,7 @@ class Cursor {
   void moveCursorLeft({int count = 1, bool keepAnchor = false}) {
     block?.makeDirty();
     if (hasSelection() && !keepAnchor) {
+      Cursor cur = normalized();
       clearSelection();
       return;
     }

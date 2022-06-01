@@ -22,7 +22,7 @@ class Document {
 
   bool get largeDoc => (blocks.length > 10000);
   late Notifier notifier;
-  
+
   static Function? createNotifier = () {
     return Notifier();
   };
@@ -178,11 +178,11 @@ class Document {
 
     for (int i = 0; i < blocks.length; i++) {
       blocks[i].makeDirty(highlight: true, notify: false);
-      FFIBridge.setBlock(documentId, blocks[i].blockId, i, blocks[i].text);      
+      FFIBridge.setBlock(documentId, blocks[i].blockId, i, blocks[i].text);
     }
 
     // FFIBridge.runTreeSitter(documentId, docPath);
-    
+
     if (blocks.isEmpty) {
       clear();
     }
@@ -594,7 +594,7 @@ class Document {
     return res;
   }
 
-  void toggleFold() {    
+  void toggleFold() {
     Cursor cur = cursor().copy();
     sectionCursors = [];
     BlockBracket b = findUnclosedBracket(cur);
@@ -778,4 +778,3 @@ class Document {
     return l;
   }
 }
-

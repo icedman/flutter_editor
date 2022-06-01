@@ -79,9 +79,9 @@ struct theme_info_t {
 };
 
 struct textstyle_t {
-  int32_t start;
-  int32_t length;
-  int32_t flags;
+  int16_t start;
+  int16_t length;
+  int16_t flags;
   int16_t r;
   int16_t g;
   int16_t b;
@@ -90,7 +90,7 @@ struct textstyle_t {
   int16_t bg_g;
   int16_t bg_b;
   int16_t bg_a;
-  int16_t caret;
+  int8_t caret;
   bool bold;
   bool italic;
   bool underline;

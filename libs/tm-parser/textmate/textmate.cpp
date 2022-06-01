@@ -19,25 +19,31 @@ inline bool color_is_set(rgba_t clr) {
   return clr.r >= 0 && (clr.r != 0 || clr.g != 0 || clr.b != 0 || clr.a != 0);
 }
 
-inline textstyle_t construct_style(std::vector<span_info_t> &spans, int index) {
+inline textstyle_t construct_style(std::vector<span_info_t> &spans, int16_t index) {
   textstyle_t res = {
       index, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, false, false, false, false,
   };
 
-  int32_t start;
-  int32_t length;
-  int32_t flags;
-  int8_t r;
-  int8_t g;
-  int8_t b;
-  int8_t bg_r;
-  int8_t bg_g;
-  int8_t bg_b;
-  int8_t caret;
-  bool bold;
-  bool italic;
-  bool underline;
-  bool strike;
+  memset(&res, 0, sizeof(textstyle_t));
+  res.start = index;
+  res.length = 1;
+
+  // int16_t start;
+  // int16_t length;
+  // int16_t flags;
+  // int16_t r;
+  // int16_t g;
+  // int16_t b;
+  // int16_t a;
+  // int16_t bg_r;
+  // int16_t bg_g;
+  // int16_t bg_b;
+  // int16_t bg_a;
+  // int8_t caret;
+  // bool bold;
+  // bool italic;
+  // bool underline;
+  // bool strike;
 
   for (auto span : spans) {
     if (index >= span.start && index < span.start + span.length) {
@@ -45,6 +51,7 @@ inline textstyle_t construct_style(std::vector<span_info_t> &spans, int index) {
         res.r = span.fg.r;
         res.g = span.fg.g;
         res.b = span.fg.b;
+        res.a = span.fg.a;
       }
       res.italic = res.italic || span.italic;
 
@@ -60,10 +67,17 @@ inline textstyle_t construct_style(std::vector<span_info_t> &spans, int index) {
 }
 
 inline bool textstyles_equal(textstyle_t &first, textstyle_t &second) {
-  return first.italic == second.italic && first.underline == second.underline &&
-         first.r == second.r && first.g == second.g && first.b == second.b &&
-         first.bg_r == second.bg_r && first.bg_g == second.bg_g &&
-         first.bg_b == second.bg_b && first.caret == second.caret &&
+  return first.italic == second.italic && first.bold == second.bold &&
+        first.strike == second.strike && first.underline == second.underline &&
+         first.r == second.r &&
+         first.g == second.g &&
+         first.b == second.b &&
+         first.a == second.a &&
+         first.bg_r == second.bg_r &&
+         first.bg_g == second.bg_g &&
+         first.bg_b == second.bg_b &&
+         first.bg_a == second.bg_a &&
+         first.caret == second.caret &&
          first.flags == second.flags;
 }
 
@@ -391,14 +405,14 @@ Textmate::run_highlighter(char *_text, language_info_ptr lang, theme_ptr theme,
     scopeName = scope.back();
     // printf(">%s %d\n", scopeName.c_str());
 
-    span_info_t span = {.start = (int)n,
-                        .length = (int)(l - n),
+    span_info_t span = {.start = (int16_t)n,
+                        .length = (int16_t)(l - n),
                         .fg =
                             {
-                                (int)(255 * style.foreground.red),
-                                (int)(255 * style.foreground.green),
-                                (int)(255 * style.foreground.blue),
-                                style.foreground.index,
+                                (int16_t)(255 * style.foreground.red),
+                                (int16_t)(255 * style.foreground.green),
+                                (int16_t)(255 * style.foreground.blue),
+                                (int16_t)style.foreground.index,
                             },
                         .bg = {0, 0, 0, 0},
                         .bold = style.bold == bool_true,
@@ -434,30 +448,30 @@ Textmate::run_highlighter(char *_text, language_info_ptr lang, theme_ptr theme,
   }
 
   int idx = 0;
-  textstyle_t *prev = NULL;
-
   for (int i = 0; i < l && i < MAX_STYLED_SPANS; i++) {
-    textstyle_buffer.push_back(construct_style(spans, i));
-    textstyle_t *ts = &textstyle_buffer[idx];
+    textstyle_t _ts = construct_style(spans, i);
+    textstyle_t *prev = NULL;
+    if (textstyle_buffer.size() > 0) {
+      prev = &textstyle_buffer[textstyle_buffer.size()-1];
+    }
 
-    if (!color_is_set({ts->r, ts->g, ts->b, 0})) {
-      if (ts->r + ts->g + ts->b == 0) {
-        ts->r = themeInfo.fg_r;
-        ts->g = themeInfo.fg_g;
-        ts->b = themeInfo.fg_b;
-        ts->a = themeInfo.fg_a;
+    if (!color_is_set({_ts.r, _ts.g, _ts.b, 0})) {
+      if (_ts.r + _ts.g + _ts.b == 0) {
+        _ts.r = themeInfo.fg_r;
+        _ts.g = themeInfo.fg_g;
+        _ts.b = themeInfo.fg_b;
+        _ts.a = themeInfo.fg_a;
       }
     }
 
-    if (i > 0 &&
-        textstyles_equal(textstyle_buffer[idx], textstyle_buffer[idx - 1])) {
-      textstyle_buffer[idx - 1].length++;
-      idx--;
+    if (prev != NULL && (textstyles_equal(_ts, *prev))) {
+      prev->length++;
+    } else {
+      textstyle_buffer.push_back(_ts);
     }
-
-    idx++;
   }
 
+  idx = textstyle_buffer.size();
   if (idx > 0) {
     block->comment_block =
         (textstyle_buffer[idx - 1].flags & SCOPE_COMMENT_BLOCK);

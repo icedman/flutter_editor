@@ -15,7 +15,7 @@ class _Notifier extends Notifier {
   ValueNotifier notifier = ValueNotifier(0);
   bool _notifier = true;
   Timer? disposeTimer;
-  
+
   dynamic listenable() {
     init();
     return notifier;
@@ -27,7 +27,7 @@ class _Notifier extends Notifier {
       _notifier = false;
     }
   }
-  
+
   void init() {
     if (disposeTimer != null) {
       disposeTimer?.cancel();
@@ -38,14 +38,14 @@ class _Notifier extends Notifier {
       _notifier = true;
     }
   }
-  
+
   void dispose() {
     if (disposeTimer != null) {
       disposeTimer?.cancel();
     }
     disposeTimer = Timer(const Duration(milliseconds: 1500), dispose);
   }
-  
+
   void notify({bool now = true}) {
     if (now) {
       notifier.value++;
@@ -61,7 +61,6 @@ class _Notifier extends Notifier {
 }
 
 class CodeEditingController extends ChangeNotifier {
-
   static void configure() {
     Block.createNotifier = () {
       return _Notifier();
@@ -70,9 +69,9 @@ class CodeEditingController extends ChangeNotifier {
       return _Notifier();
     };
   }
-  
+
   Document doc = Document();
-  
+
   int scrollTo = -1;
   int visibleStart = -1;
   int visibleEnd = -1;
@@ -495,6 +494,4 @@ class CodeEditingController extends ChangeNotifier {
   }
 }
 
-class DocumentProvider extends CodeEditingController
-{
-}
+class DocumentProvider extends CodeEditingController {}

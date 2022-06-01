@@ -415,21 +415,23 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
             double move = decor.fontHeight / 2 +
                 ((key == 'Arrow Up' ? -decor.fontHeight : decor.fontHeight));
 
-              Offset pos =
-                  Offset(decor.caretPosition.dx, decor.caretPosition.dy + move);
-              Offset o = screenToCursor(obj, pos);
-              double dy = o.dy - curLine;
-              if (dy * dy <= 1) {
-                onTapDown(obj, pos);
-                if (prev != doc.doc.cursor()) {
-                  return;
-                }
+            Offset pos =
+                Offset(decor.caretPosition.dx, decor.caretPosition.dy + move);
+            Offset o = screenToCursor(obj, pos);
+            double dy = o.dy - curLine;
+            if (dy * dy <= 1) {
+              onTapDown(obj, pos);
+              if (prev != doc.doc.cursor()) {
+                return;
               }
+            }
           }
       }
     }
 
     switch (key) {
+      case '':
+        return;
       case 'Insert':
         doc.overwriteMode = !doc.overwriteMode;
         doc.touch();
@@ -456,14 +458,14 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
                   k <= LogicalKeyboardKey.keyZ.keyId) ||
               (k + 32 >= LogicalKeyboardKey.keyA.keyId &&
                   k + 32 <= LogicalKeyboardKey.keyZ.keyId)) {
-            String ch =
-                String.fromCharCode(97 + k - LogicalKeyboardKey.keyA.keyId);
+            // String ch =
+            //     String.fromCharCode(97 + k - LogicalKeyboardKey.keyA.keyId);
             if (control || alt) {
-              onShortcut(buildKeys(ch,
+              onShortcut(buildKeys(key,
                   control: controlling, shift: shifting, alt: alting));
               break;
             }
-            _commandInsert(ch);
+            _commandInsert(key);
             break;
           }
         }

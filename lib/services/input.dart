@@ -135,7 +135,11 @@ class _InputListener extends State<InputListener> {
         autofocus: true,
         onKey: (FocusNode node, RawKeyEvent event) {
           if (event.runtimeType.toString() == 'RawKeyDownEvent') {
-            widget.onKeyDown?.call(event.logicalKey.keyLabel,
+            String key = event.character ?? '';
+            if (event.logicalKey.keyLabel.length > 1) {
+              key = event.logicalKey.keyLabel;
+            }
+            widget.onKeyDown?.call(key,
                 keyId: event.logicalKey.keyId,
                 shift: event.isShiftPressed,
                 control: event.isControlPressed,

@@ -260,6 +260,8 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
   block_data_t *previous_block = documents[document]->blocks[previousBlockId].get();
   block_data_t *next_block = documents[document]->blocks[nextBlockId].get();
 
+  // printf("line %d\n", line);
+
   std::string tmp = _text;
   std::vector<textstyle_t> res = Textmate::run_highlighter(_text, 
       Textmate::language_info(langId),
@@ -270,13 +272,21 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
       );
 
   int idx = 0;
-  for(auto r : res) {
-    memcpy(&textstyle_buffer[idx], &r, sizeof(textstyle_t));
-    // printf(">%d %d %d\n", textstyle_buffer[idx].r, textstyle_buffer[idx].g, textstyle_buffer[idx].b);
+  auto it = res.begin();
+  while(it != res.end()) {
+    textstyle_t r = *it++;
+    textstyle_buffer[idx] = r;
+    // memcpy(&textstyle_buffer[idx], &r, sizeof(textstyle_t));
+    // printf(">(%d-%d) %d %d %d\n",
+    //     textstyle_buffer[idx].start,
+    //     textstyle_buffer[idx].length,
+    //     textstyle_buffer[idx].r,
+    //     textstyle_buffer[idx].g,
+    //     textstyle_buffer[idx].b);
     idx++;
-    textstyle_buffer[idx].start = 0;
-    textstyle_buffer[idx].length = 0;
   }
+  textstyle_buffer[idx].start = 0;
+  textstyle_buffer[idx].length = 0;
 
   #if 0
   if (strlen(_text) > SKIP_PARSE_THRESHOLD) {

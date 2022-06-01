@@ -73,11 +73,11 @@ class ThemeInfo extends Struct {
 }
 
 class TextSpanStyle extends Struct {
-  @Int32()
+  @Int16()
   external int start;
-  @Int32()
+  @Int16()
   external int length;
-  @Int32()
+  @Int16()
   external int flags;
   @Int16()
   external int r;
