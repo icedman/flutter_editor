@@ -404,6 +404,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     UIProvider ui = Provider.of<UIProvider>(context, listen: false);
     if (doc.softWrap && ui.popups.isEmpty && doc.doc.cursors.length == 1) {
       int curLine = doc.doc.cursor().block?.line ?? 0;
+      Cursor prev = doc.doc.cursor().copy();
       switch (key) {
         case 'Arrow Up':
         case 'Arrow Down':
@@ -411,14 +412,17 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
             RenderObject? obj = context.findRenderObject();
             double move = decor.fontHeight / 2 +
                 ((key == 'Arrow Up' ? -decor.fontHeight : decor.fontHeight));
-            Offset pos =
-                Offset(decor.caretPosition.dx, decor.caretPosition.dy + move);
-            Offset o = screenToCursor(obj, pos);
-            double dy = o.dy - curLine;
-            if (dy * dy == 1) {
-              onTapDown(obj, pos);
-              return;
-            }
+
+              Offset pos =
+                  Offset(decor.caretPosition.dx, decor.caretPosition.dy + move);
+              Offset o = screenToCursor(obj, pos);
+              double dy = o.dy - curLine;
+              if (dy * dy <= 1) {
+                onTapDown(obj, pos);
+                if (prev != doc.doc.cursor()) {
+                  return;
+                }
+              }
           }
       }
     }
