@@ -41,10 +41,10 @@ struct block_data_t {
 };
 
 struct rgba_t {
-  int r;
-  int g;
-  int b;
-  int a;
+  int16_t r;
+  int16_t g;
+  int16_t b;
+  int16_t a;
 };
 
 struct theme_info_t {
@@ -79,9 +79,9 @@ struct theme_info_t {
 };
 
 struct textstyle_t {
-  int16_t start;
-  int16_t length;
-  int16_t flags;
+  int32_t start;
+  int32_t length;
+  int32_t flags;
   int16_t r;
   int16_t g;
   int16_t b;
@@ -113,6 +113,7 @@ public:
   static void initialize(std::string path);
   static int load_theme(std::string path);
   static int load_language(std::string path);
+  static int load_icons(std::string path);
   static language_info_ptr language_info(int id);
   static std::vector<textstyle_t>
   run_highlighter(char *_text, language_info_ptr lang, theme_ptr theme,
@@ -121,6 +122,11 @@ public:
   static theme_info_t theme_info();
   static theme_ptr theme();
   static bool has_running_threads();
+
+  static char* language_definition(int langId);
+  static char* icon_for_filename(char *filename);
 };
+
+rgba_t theme_color_from_scope_fg_bg(char *scope, bool fore = true);
 
 #endif // TEXTMATE_H

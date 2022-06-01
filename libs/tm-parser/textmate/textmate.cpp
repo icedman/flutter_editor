@@ -85,7 +85,7 @@ void Textmate::initialize(std::string path) {
   // }
 }
 
-rgba_t theme_color_from_scope_fg_bg(char *scope, bool fore = true) {
+rgba_t theme_color_from_scope_fg_bg(char *scope, bool fore) {
   rgba_t res = {-1, 0, 0, 0};
   if (current_theme()) {
     style_t scoped = current_theme()->styles_for_scope(scope);
@@ -297,7 +297,7 @@ int Textmate::load_theme(std::string path) {
   return 0;
 }
 
-int load_icons(std::string path) {
+int Textmate::load_icons(std::string path) {
   icons = icon_theme_from_name(path, extensions);
   return 0;
 }
@@ -325,9 +325,6 @@ void dump_tokens(std::map<size_t, scope::scope_t> &scopes) {
   }
 }
 
-std::map<size_t, parse::stack_ptr> parser_states;
-std::map<size_t, std::string> block_texts;
-
 std::vector<textstyle_t>
 Textmate::run_highlighter(char *_text, language_info_ptr lang, theme_ptr theme,
                           block_data_t *block, block_data_t *prev_block,
@@ -339,7 +336,7 @@ Textmate::run_highlighter(char *_text, language_info_ptr lang, theme_ptr theme,
     return textstyle_buffer;
   }
 
-  // printf("hl %d %s\n", block, _text);
+  // printf("hl %x %s\n", block, _text);
 
   parse::grammar_ptr gm = lang->grammar;
   themeInfo = theme_info();
@@ -477,7 +474,7 @@ Textmate::run_highlighter(char *_text, language_info_ptr lang, theme_ptr theme,
   return textstyle_buffer;
 }
 
-char *language_definition(int langId) {
+char* Textmate::language_definition(int langId) {
   language_info_ptr lang = languages[langId];
   std::ostringstream ss;
   ss << lang->definition;
@@ -485,7 +482,7 @@ char *language_definition(int langId) {
   return text_buffer;
 }
 
-char *icon_for_filename(char *filename) {
+char* Textmate::icon_for_filename(char *filename) {
   icon_t icon = icon_for_file(icons, filename, extensions);
   strcpy(text_buffer, icon.path.c_str());
   return text_buffer;

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(editor LANGUAGES CXX C)
 
-#string(APPEND CMAKE_CXX_FLAGS " -Wno-c++11-narrowing")
+string(APPEND CMAKE_CXX_FLAGS " -Wno-c++11-narrowing")
 string(APPEND CMAKE_CXX_FLAGS " -std=gnu++11")
 #string(APPEND CMAKE_CXX_FLAGS " -DDISABLE_ADD_GRAMMAR_THREADS")
 set (CMAKE_CXX_STANDARD 11)
@@ -100,6 +100,7 @@ target_include_directories(onigmolib
 
 add_library(editor_api
   SHARED
+    ./tm-parser/textmate/textmate.cpp
     ./tm-parser/textmate/parser/grammar.cpp
     ./tm-parser/textmate/parser/parser.cpp
     ./tm-parser/textmate/parser/pattern.cpp
@@ -123,6 +124,7 @@ target_include_directories(editor_api
     ./Onigmo
     ./jsoncpp/dist
     ./tinyxml2
+    ./tm-parser/textmate/
     ./tm-parser/textmate/parser
     ./tm-parser/textmate/scopes
     ./tm-parser/textmate/theme
