@@ -94,6 +94,7 @@ class AppProvider extends ChangeNotifier {
   }
 
   Document? open(String path, {bool focus = false, int scrollTo = -1}) {
+    Document? prevFocus = document;
     String p = _path.normalize(Directory(path).absolute.path);
     for (final d in documents) {
       if (d.docPath == p) {
@@ -105,7 +106,7 @@ class AppProvider extends ChangeNotifier {
       }
     }
     Document doc = Document(path: path);
-    doc.scrollTo = scrollTo;
+    doc.scrollToOnLoad = scrollTo;
     documents.add(doc);
     if (focus || documents.length == 1) {
       document = doc;

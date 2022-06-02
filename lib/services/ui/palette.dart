@@ -92,6 +92,7 @@ class _UIPalettePopup extends State<UIPalettePopup> {
         filteredMenu.items = filteredMenu.items.sublist(0, count);
       }
       setState(() {
+        filteredMenu.menuIndex = 0;
         // pulse
       });
     });

@@ -2,11 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-
 import 'package:editor/editor/search.dart';
 import 'package:editor/editor/decorations.dart';
 import 'package:editor/editor/document.dart';
-
+import 'package:editor/editor/controller.dart';
 import 'package:editor/layout/tabs.dart';
 import 'package:editor/layout/statusbar.dart';
 import 'package:editor/layout/explorer.dart';
@@ -285,6 +284,7 @@ class _TheApp extends State<TheApp> with WidgetsBindingObserver {
         bool regex = false,
         bool repeat = false,
         bool searchInFiles = false,
+        String searchPath = '',
         String? replace}) {
       Document? resultDoc = app.open(':search.txt', focus: true);
 
@@ -294,13 +294,17 @@ class _TheApp extends State<TheApp> with WidgetsBindingObserver {
         ..caseSensitive = caseSensitive;
 
       resultDoc?.title = 'Search Results';
-      resultDoc?.hideGutter = true;
+      // resultDoc?.hideGutter = true;
       resultDoc?.clear();
       FileSearchProvider search =
           Provider.of<FileSearchProvider>(context, listen: false);
       search.onResult = (res) {
-        search.onResult = null;
+        // search.onResult = null;
+        // if (res.length == 0) {
+        // resultDoc?.insertText('none found');
+        // }
         for (final r in res) {
+          resultDoc?.moveCursorToEndOfDocument();
           resultDoc?.insertText(r['file']);
           for (final m in r['matches'] ?? []) {
             resultDoc?.insertNewLine();
@@ -314,9 +318,15 @@ class _TheApp extends State<TheApp> with WidgetsBindingObserver {
           resultDoc?.insertNewLine();
           resultDoc?.insertNewLine();
         }
+        app.notifyListeners();
         ui.clearPopups();
       };
-      search.find(text, caseSensitive: caseSensitive, regex: regex);
+      search.onDone = () {
+        search.onResult = null;
+      };
+      search.find(text,
+          caseSensitive: caseSensitive, regex: regex, path: searchPath);
+      ui.clearPopups();
     };
 
     return RawKeyboardListener(
@@ -386,12 +396,14 @@ class _TheApp extends State<TheApp> with WidgetsBindingObserver {
                             bool regex = false,
                             bool repeat = false,
                             bool searchInFiles = false,
+                            String searchPath = '',
                             String? replace}) {
                           onSearchInFiles.call(text,
                               direction: direction,
                               caseSensitive: caseSensitive,
                               regex: regex,
-                              repeat: repeat);
+                              repeat: repeat,
+                              searchPath: searchPath);
                         }),
                     blur: false,
                     shield: false,

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 
 import 'package:editor/editor/cursor.dart';
+import 'package:editor/editor/block.dart';
 import 'package:editor/editor/document.dart';
 import 'package:editor/editor/view.dart';
 import 'package:editor/services/util.dart';
@@ -29,40 +30,6 @@ abstract class HLLanguage {
   List<String> closingBrackets = [];
 }
 
-class LineDecoration {
-  int start = 0;
-  int end = 0;
-  Color color = Colors.white;
-  Color background = Colors.white;
-  bool underline = false;
-  bool italic = false;
-  bool bracket = false;
-  bool open = false;
-  bool tab = false;
-  String tap = '';
-
-  Object toObject() {
-    return {
-      'start': start,
-      'end': end,
-      'color': [color.red, color.green, color.blue]
-    };
-  }
-
-  void fromObject(json) {
-    start = json['start'] ?? 0;
-    end = json['end'] ?? 0;
-    final clr = json['color'] ?? [0, 0, 0];
-    color = Color.fromRGBO(clr[0], clr[1], clr[2], 1);
-  }
-}
-
-class LineDecorator {
-  List<LineDecoration> run(Block? block) {
-    return [];
-  }
-}
-
 class CustomWidgetSpan extends WidgetSpan {
   int line = 0;
   Block? block;
@@ -84,7 +51,7 @@ class Highlighter {
             : (TapGestureRecognizer()
               ..onTap = () {
                 for (final t in (style.fontFamilyFallback ?? [])) {
-                  onTap?.call(':$t');
+                  onTap?.call('$t');
                 }
               }),
         mouseCursor: style.fontFamilyFallback != null
@@ -96,10 +63,19 @@ class Highlighter {
       {Function? onTap, Function? onHover}) {
     HLTheme theme = HLTheme.instance();
 
+    // Paint paint = Paint()
+    // ..color = Colors.blue
+    // ..style = PaintingStyle.stroke
+    // ..strokeCap = StrokeCap.round
+    // ..strokeWidth = 2.0;
+
     TextStyle defaultStyle = TextStyle(
-        fontFamily: theme.fontFamily,
-        fontSize: theme.fontSize,
-        color: theme.foreground);
+      fontFamily: theme.fontFamily,
+      fontSize: theme.fontSize,
+      color: theme.foreground,
+      // background: paint
+    );
+
     List<InlineSpan> res = <InlineSpan>[];
 
     String text = block?.text ?? '';
@@ -128,21 +104,23 @@ class Highlighter {
     }
 
     // tabs << convert to decorator
-    int indentSize = Document.countIndentSize(text);
-    int tabSpaces = (block?.document?.detectedTabSpaces ?? 1);
-    if (tabSpaces == 0) tabSpaces = 2;
-    int tabStops = indentSize ~/ tabSpaces;
-    Color tabStopColor = colorCombine(theme.comment, theme.background, bw: 3);
-    for (int i = 0; i <= tabStops; i++) {
-      int start = i * tabSpaces;
-      int end = start;
-      decors.insert(
-          0,
-          LineDecoration()
-            ..start = start
-            ..end = end
-            ..color = tabStopColor
-            ..tab = true);
+    {
+      int indentSize = Document.countIndentSize(text);
+      int tabSpaces = (block?.document?.detectedTabSpaces ?? 1);
+      if (tabSpaces == 0) tabSpaces = 2;
+      int tabStops = indentSize ~/ tabSpaces;
+      Color tabStopColor = colorCombine(theme.comment, theme.background, bw: 3);
+      for (int i = 0; i <= tabStops; i++) {
+        int start = i * tabSpaces;
+        int end = start;
+        decors.insert(
+            0,
+            LineDecoration()
+              ..start = start
+              ..end = end
+              ..color = tabStopColor
+              ..tab = true);
+      }
     }
 
     text += ' ';
@@ -166,8 +144,8 @@ class Highlighter {
             isTabStop = true;
           }
 
-          if (d.tap != '') {
-            style = style.copyWith(fontFamilyFallback: [d.tap]);
+          if (d.link != '') {
+            style = style.copyWith(fontFamilyFallback: [d.link]);
           }
 
           style = style.copyWith(color: d.color);
@@ -204,7 +182,7 @@ class Highlighter {
           } else {
             style = style.copyWith(
                 backgroundColor: colorCombine(theme.selection, theme.background,
-                    aw: 2, bw: 3));
+                    aw: 3, bw: 1));
             break;
           }
         }
@@ -226,7 +204,9 @@ class Highlighter {
       }
 
       if (ch == '\t') {
-        ch = ' '; // todo! -- properly handle \t ... make files use \t
+        ch = String.fromCharCode(0x02192);
+        style = style.copyWith(color: theme.comment);
+        //' '; // todo! -- properly handle \t ... make files use \t
       }
 
       if (res.length != 0 && !(res[res.length - 1] is WidgetSpan)) {
@@ -242,7 +222,7 @@ class Highlighter {
       prevText = ch;
     }
 
-    if (block?.isFolded() ?? false) {
+    if (block?.isFolded ?? false) {
       TextStyle moreStyle = defaultStyle.copyWith(
           fontSize: theme.fontSize * 0.8,
           color: theme.string,
@@ -252,7 +232,7 @@ class Highlighter {
           style: moreStyle,
           recognizer: TapGestureRecognizer()
             ..onTap = () {
-              onTap?.call(':unfold');
+              onTap?.call('unfold:');
             }));
     }
 

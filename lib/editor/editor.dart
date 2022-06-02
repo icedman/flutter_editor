@@ -8,7 +8,9 @@ import 'package:provider/provider.dart';
 
 import 'package:editor/editor/decorations.dart';
 import 'package:editor/editor/cursor.dart';
+import 'package:editor/editor/block.dart';
 import 'package:editor/editor/document.dart';
+import 'package:editor/editor/controller.dart';
 import 'package:editor/editor/view.dart';
 import 'package:editor/editor/search.dart';
 import 'package:editor/editor/minimap.dart';
@@ -67,9 +69,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     if (widget.document != null) {
       doc.doc = widget.document ?? doc.doc;
     }
-    // if (widget.path.isNotEmpty) {
     doc.openFile(widget.path);
-    // }
 
     if (doc.doc.hideGutter) {
       doc.showGutter = false;
@@ -79,8 +79,8 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     }
 
     doc.doc.langId = highlighter.engine.loadLanguage(widget.path).langId;
-    doc.scrollTo = doc.doc.scrollTo;
-    doc.doc.scrollTo = -1;
+    doc.scrollToLine(doc.doc.scrollToOnLoad);
+    doc.doc.scrollToOnLoad = -1;
 
     Document d = doc.doc;
     lang = highlighter.engine.language(d.langId);
@@ -88,27 +88,29 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     d.blockComment = lang?.blockComment ?? [];
 
     d.addListener('onCreate', (documentId) {
-      FFIBridge.run(() => FFIBridge.create_document(documentId));
+      FFIBridge.run(
+          () => FFIBridge.createDocument(documentId, doc.doc.docPath));
     });
     d.addListener('onDestroy', (documentId) {
       FFIBridge.run(() => FFIBridge.destroy_document(documentId));
-      StatusProvider status =
-          Provider.of<StatusProvider>(context, listen: false);
-      status.setIndexedStatus(0, '');
     });
-    d.addListener('onAddBlock', (documentId, blockId) {
-      FFIBridge.run(() => FFIBridge.add_block(documentId, blockId));
+    d.addListener('onAddBlock', (documentId, blockId, line) {
+      FFIBridge.run(() => FFIBridge.add_block(documentId, blockId, line));
+      doc.touch();
     });
-    d.addListener('onRemoveBlock', (documentId, blockId) {
-      FFIBridge.run(() => FFIBridge.remove_block(documentId, blockId));
+    d.addListener('onRemoveBlock', (documentId, blockId, line) {
+      FFIBridge.run(() => FFIBridge.remove_block(documentId, blockId, line));
+      doc.touch();
     });
-    d.addListener('onInsertText', (text) {
-      // if (text.length == 1) {
-      // d.autoClose(lang?.autoClose ?? {});
-      // }
-    });
-    d.addListener('onInsertNewLine', () {
-      //
+    d.addListener('onInsertText', (text) {});
+    d.addListener('onInsertNewLine', () {});
+    d.addListener('onFocus', (int documentId) {
+      if (documentId == d.documentId) {
+        StatusProvider status =
+            Provider.of<StatusProvider>(context, listen: false);
+        status.setIndexedStatus(1, '$documentId');
+      }
+      print(documentId);
     });
     d.addListener('onReady', () {
       Future.delayed(const Duration(seconds: 3), () {
@@ -150,6 +152,10 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     focusNode = FocusNode();
     textFocusNode = FocusNode();
     WidgetsBinding.instance!.addObserver(this);
+
+    Future.delayed(const Duration(milliseconds: 50), () {
+      focusNode.requestFocus();
+    });
   }
 
   @override
@@ -260,8 +266,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
         }
         d.clearCursors();
         d.cursor().copyFrom(cur, keepAnchor: true);
-        doc.scrollTo = cur.block?.line ?? 0;
-        doc.touch();
+        doc.scrollToLine(cur.block?.line ?? 0);
       }
     };
 
@@ -278,7 +283,6 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       case 'toggle_pinned':
         {
           doc.pinned = !doc.pinned;
-          doc.touch();
           return;
         }
 
@@ -290,6 +294,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
               bool regex = false,
               bool repeat = false,
               bool searchInFiles = false,
+              String searchPath = '',
               String? replace}) {
             onSearchInFile.call(text,
                 direction: direction,
@@ -313,34 +318,58 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
 
     doc.begin();
     doc.command(cmd, params: params, modifiedBlocks: modifiedBlocks);
-
     if (cmd == 'enter') {
       doc.doc.autoIndent();
     }
-
     doc.commit();
 
-    for (final b in modifiedBlocks) {
-      if (!indexingQueue.contains(b)) {
-        indexingQueue.add(b);
+    {
+      for (final b in modifiedBlocks) {
+        if (!indexingQueue.contains(b)) {
+          indexingQueue.add(b);
+        }
+      }
+
+      if (d.cursors.length == 1) {
+        while (indexingQueue.isNotEmpty) {
+          Block l = indexingQueue.last;
+          if (d.cursor().block == l) break;
+          indexingQueue.removeLast();
+          indexer.indexWords(l.text);
+          break;
+        }
+      }
+
+      if (modifiedBlocks.isNotEmpty) {
+        _showAutoCompleteMenu();
+      } else {
+        ui.clearPopups();
       }
     }
 
-    if (d.cursors.length == 1) {
-      while (indexingQueue.isNotEmpty) {
-        Block l = indexingQueue.last;
-        if (d.cursor().block == l) break;
-        indexingQueue.removeLast();
-        indexer.indexWords(l.text);
-        break;
-      }
+    StatusProvider status = Provider.of<StatusProvider>(context, listen: false);
+    status.setIndexedStatus(0,
+        'Ln ${((d.cursor().block?.line ?? 0) + 1)}, Col ${(d.cursor().column + 1)}');
+  }
+
+  Timer? debounceTimer;
+  void _showAutoCompleteMenu() {
+    if (debounceTimer != null) {
+      debounceTimer?.cancel();
     }
 
-    if (modifiedBlocks.isNotEmpty) {
-      // onInputText..
+    debounceTimer = Timer(const Duration(milliseconds: 250), () {
+      Document d = doc.doc;
+      AppProvider app = Provider.of<AppProvider>(context, listen: false);
+      UIProvider ui = Provider.of<UIProvider>(context, listen: false);
+
       UIMenuData? menu = ui.menu('indexer::${d.documentId}');
       ui.setPopup(
-          UIMenuPopup(position: decor.caretPosition, alignY: 1, menu: menu),
+          UIMenuPopup(
+              key: ValueKey('indexer::${d.documentId}'),
+              position: decor.caretPosition,
+              alignY: 1,
+              menu: menu),
           blur: false,
           shield: false);
 
@@ -355,13 +384,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       } else {
         ui.clearPopups();
       }
-    } else {
-      ui.clearPopups();
-    }
-
-    StatusProvider status = Provider.of<StatusProvider>(context, listen: false);
-    status.setIndexedStatus(0,
-        'Ln ${((d.cursor().block?.line ?? 0) + 1)}, Col ${(d.cursor().column + 1)}');
+    });
   }
 
   void onKeyDown(String key,
@@ -385,7 +408,9 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     lastHashCode = code;
 
     UIProvider ui = Provider.of<UIProvider>(context, listen: false);
-    if (doc.softWrap && ui.popups.isEmpty) {
+    if (doc.softWrap && ui.popups.isEmpty && doc.doc.cursors.length == 1) {
+      int curLine = doc.doc.cursor().block?.line ?? 0;
+      Cursor prev = doc.doc.cursor().copy();
       switch (key) {
         case 'Arrow Up':
         case 'Arrow Down':
@@ -393,14 +418,28 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
             RenderObject? obj = context.findRenderObject();
             double move = decor.fontHeight / 2 +
                 ((key == 'Arrow Up' ? -decor.fontHeight : decor.fontHeight));
-            onTapDown(obj,
-                Offset(decor.caretPosition.dx, decor.caretPosition.dy + move));
-            return;
+
+            Offset pos =
+                Offset(decor.caretPosition.dx, decor.caretPosition.dy + move);
+            Offset o = screenToCursor(obj, pos);
+            double dy = o.dy - curLine;
+            if (dy * dy <= 1) {
+              onTapDown(obj, pos);
+              if (prev != doc.doc.cursor()) {
+                return;
+              }
+            }
           }
       }
     }
 
     switch (key) {
+      case '':
+        return;
+      case 'Insert':
+        doc.overwriteMode = !doc.overwriteMode;
+        doc.touch();
+        break;
       case 'Escape':
       case 'Arrow Left':
       case 'Arrow Right':
@@ -423,18 +462,17 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
                   k <= LogicalKeyboardKey.keyZ.keyId) ||
               (k + 32 >= LogicalKeyboardKey.keyA.keyId &&
                   k + 32 <= LogicalKeyboardKey.keyZ.keyId)) {
-            String ch =
-                String.fromCharCode(97 + k - LogicalKeyboardKey.keyA.keyId);
             if (control || alt) {
-              onShortcut(buildKeys(ch,
+              onShortcut(buildKeys(key,
                   control: controlling, shift: shifting, alt: alting));
               break;
             }
-            _commandInsert(ch);
+            _commandInsert(key);
             break;
           }
         }
         if (key.length == 1 || softKeyboard) {
+          // print('$controlling $key');
           if (controlling || alting) {
             onShortcut(buildKeys(key,
                 control: controlling, shift: shifting, alt: alting));
@@ -450,7 +488,11 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     Document d = doc.doc;
     command('insert', params: text);
     if (text.length == 1) {
-      d.autoClose(lang?.autoClose ?? {});
+      if (doc.overwriteMode) {
+        d.deleteText();
+      } else {
+        d.autoClose(lang?.autoClose ?? {});
+      }
     }
     if ((lang?.closingBrackets ?? []).indexOf(text) != -1) {
       d.eraseDuplicateClose(text);
@@ -615,7 +657,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
                             onDoubleTapDown: onDoubleTapDown,
                             onPanUpdate: onPanUpdate,
                             showKeyboard: app.showKeyboard)),
-                    Minimap()
+                    if (doc.showMinimap) ...[Minimap()]
                   ]),
                 ])),
 

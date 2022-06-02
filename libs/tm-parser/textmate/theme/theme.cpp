@@ -10,7 +10,7 @@ static std::map<int, color_info_t> trueColors;
 static int termColorCount = 256;
 static color_t* termColors = (color_t*)termColors256;
 
-int nearest_color(int r, int g, int b, bool trueColor = false)
+int nearest_color(int r, int g, int b)
 {
     color_info_t c(r, g, b, 255);
 
@@ -40,7 +40,7 @@ int color_info_t::set_term_color_count(int count)
 
 int color_info_t::nearest_color_index(int red, int green, int blue)
 {
-    return nearest_color(red * 255, green * 255, blue * 255);
+    return nearest_color(red, green, blue);
 }
 
 /*

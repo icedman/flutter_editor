@@ -1,3 +1,6 @@
-<xml>
-<xx a="123" b="456">a</xx>
-</xml>
+<note>
+<to>Tove</to>
+<from>Jani</from>
+<heading>Reminder</heading>
+<body>Don't forget me this weekend!</body>
+</note>

@@ -4,6 +4,7 @@ import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/material.dart';
 
+import 'package:editor/editor/block.dart';
 import 'package:editor/editor/document.dart';
 import 'package:editor/services/ffi/bridge.dart';
 import 'package:editor/services/ffi/highlighter.dart';
@@ -75,16 +76,17 @@ class TMParser extends HLEngine {
     b.scopes = {};
 
     String text = b.text;
-    text += ' ';
-
     final nspans = FFIBridge.runHighlighter(
         text,
         document.langId,
         themeId,
         b.document?.documentId ?? 0,
         b.blockId,
+        b.line,
         prevBlock?.blockId ?? 0,
         nextBlock?.blockId ?? 0);
+
+    text += ' ';
 
     bool comment = false;
     bool string = false;

@@ -15,18 +15,21 @@ class LocalFs extends ExplorerBackend {
 
   void setRootPath(String path) {
     rootPath = _path.normalize(path);
-    loadPath(path, recursive: true);
   }
 
-  void loadPath(String path, {bool recursive = false}) {
+  int _depth(String path) {
+    String ll = path.replaceAll('/', '');
+    ll = ll.replaceAll('\\', '');
+    return (path.length - ll.length);
+  }
+
+  void _loadPath(String path, {bool recursive: false}) {
     files = <FileSystemEntity>[];
     Directory dir = Directory(path);
-    var lister = dir.list(recursive: recursive);
-    lister.listen((file) => files.add(file), onError: (err) {
-      listeners.forEach((l) {
-        l.onError(jsonEncode({'path': path, 'operation': 'load'}));
-      });
-    }, onDone: () {
+    int depthRoot = _depth(dir.absolute.path);
+    var lister = dir.list(recursive: recursive, followLinks: false);
+
+    final _sendTheFiles = () {
       Map<String, dynamic> dirs = {};
       dirs[_path.normalize(dir.absolute.path)] = {
         'path': _path.normalize(dir.absolute.path),
@@ -48,16 +51,35 @@ class LocalFs extends ExplorerBackend {
         d['items']?.add({'path': p, 'isDirectory': (i is Directory)});
       }
 
-      int delay = 0;
+      files.clear();
+
       listeners.forEach((l) {
         for (final k in dirs.keys) {
           final json = jsonEncode(dirs[k]);
-          Future.delayed(Duration(milliseconds: 50 * delay++), () {
+          Future.delayed(Duration(milliseconds: 0), () {
             l.onLoad(json);
           });
         }
       });
+    };
+
+    lister.listen((file) {
+      files.add(file);
+    }, onError: (err) {
+      listeners.forEach((l) {
+        l.onError(jsonEncode({'path': path, 'operation': 'load'}));
+      });
+    }, onDone: () {
+      _sendTheFiles();
     });
+  }
+
+  void loadPath(String path) {
+    _loadPath(path);
+  }
+
+  void preload() {
+    _loadPath(rootPath, recursive: true);
   }
 
   void openFile(String path) {}
