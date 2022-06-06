@@ -3,33 +3,9 @@ project(editor LANGUAGES CXX C)
 
 #string(APPEND CMAKE_CXX_FLAGS " -Wno-c++11-narrowing")
 string(APPEND CMAKE_CXX_FLAGS " -std=gnu++11")
-#string(APPEND CMAKE_CXX_FLAGS " -DDISABLE_ADD_GRAMMAR_THREADS")
 set (CMAKE_CXX_STANDARD 11)
 
 ADD_DEFINITIONS(-fPIC)
-
-add_library(treesitter
-  SHARED
-  ./tree-sitter/lib/src/alloc.c
-  ./tree-sitter/lib/src/get_changed_ranges.c
-  ./tree-sitter/lib/src/language.c
-  ./tree-sitter/lib/src/lexer.c
-  ./tree-sitter/lib/src/node.c
-  ./tree-sitter/lib/src/parser.c
-  ./tree-sitter/lib/src/query.c
-  ./tree-sitter/lib/src/stack.c
-  ./tree-sitter/lib/src/subtree.c
-  ./tree-sitter/lib/src/tree.c
-  ./tree-sitter/lib/src/tree_cursor.c
-  ./tree-sitter-grammars/tree-sitter-javascript/src/parser.c
-  ./tree-sitter-grammars/tree-sitter-javascript/src/scanner.c
-  ./tree-sitter-grammars/tree-sitter-c/src/parser.c
-)
-
-target_include_directories(treesitter 
-    PRIVATE
-    ./tree-sitter/lib/include
-)
 
 add_library(onigmolib
   SHARED 
@@ -117,6 +93,8 @@ add_library(editor_api
     ./tinyxml2/tinyxml2.cpp
     ./jsoncpp/dist/jsoncpp.cpp
     ./highlighter/api.cpp
+    ./highlighter/highlighter.cpp
+    ./highlighter/treesitter.cpp
 )
 
 target_include_directories(editor_api 
@@ -133,7 +111,79 @@ target_include_directories(editor_api
     ./highlighter
 )
 
+#########################
+# libgit2 libssh2
+#########################
+
+add_library(treesitter
+  SHARED
+  ./tree-sitter/lib/src/alloc.c
+  ./tree-sitter/lib/src/get_changed_ranges.c
+  ./tree-sitter/lib/src/language.c
+  ./tree-sitter/lib/src/lexer.c
+  ./tree-sitter/lib/src/node.c
+  ./tree-sitter/lib/src/parser.c
+  ./tree-sitter/lib/src/query.c
+  ./tree-sitter/lib/src/stack.c
+  ./tree-sitter/lib/src/subtree.c
+  ./tree-sitter/lib/src/tree.c
+  ./tree-sitter/lib/src/tree_cursor.c
+  ./tree-sitter-grammars/tree-sitter-javascript/src/parser.c
+  ./tree-sitter-grammars/tree-sitter-javascript/src/scanner.c
+  ./tree-sitter-grammars/tree-sitter-c/src/parser.c
+)
+
+target_include_directories(treesitter 
+    PRIVATE
+    ./tree-sitter/lib/include
+    ./tree-sitter/lib/src
+)
+
+#########################
+# libgit2 libssh2
+#########################
+
+if (CMAKE_SYSTEM_NAME STREQUAL "Android")
+string(APPEND PRECOMPILED ${CMAKE_SOURCE_DIR}/../precompiled/android/${ANDROID_ABI})
+else()
+string(APPEND PRECOMPILED ${CMAKE_SOURCE_DIR}/../precompiled/linux)
+endif()
+
+add_library(ssl
+        STATIC
+        IMPORTED)
+
+set_target_properties(ssl
+        PROPERTIES IMPORTED_LOCATION
+        ${PRECOMPILED}/openssl/ssl/libssl.a)
+
+add_library(crypto
+        STATIC
+        IMPORTED)
+
+set_target_properties(crypto
+        PROPERTIES IMPORTED_LOCATION
+        ${PRECOMPILED}/openssl/crypto/libcrypto.a)
+
+add_library(ssh2
+        STATIC
+        IMPORTED)
+
+set_target_properties(ssh2
+        PROPERTIES IMPORTED_LOCATION
+        ${PRECOMPILED}/libssh2/libssh2.a)
+
+add_library(git2
+        STATIC
+        IMPORTED)
+
+set_target_properties(git2
+        PROPERTIES IMPORTED_LOCATION
+        ${CMAKE_SOURCE_DIR}/../precompiled/linux/libgit2/libgit2.a)
+
 set_target_properties(editor_api PROPERTIES
   BUILD_WITH_INSTALL_RPATH 1 INSTALL_RPATH "$ORIGIN")
 
-target_link_libraries(editor_api PRIVATE onigmolib treesitter)
+target_link_libraries(editor_api PRIVATE onigmolib)
+target_link_libraries(editor_api PRIVATE treesitter)
+target_link_libraries(editor_api PRIVATE ssl crypto ssh2 git2)

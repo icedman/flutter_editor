@@ -199,7 +199,6 @@ class History {
             if (a.insertedText.length > 0) {
               cur.clearSelection();
               cur.deleteText(numberOfCharacters: a.insertedText.length);
-              // print('${cur.column} ${a.insertedText}');
             } else if (a.deletedText.length > 0) {
               cur.insertText(a.deletedText);
             }

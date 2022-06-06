@@ -1,17 +1,21 @@
 LIBRARY   editor_api
 EXPORTS
     initialize
+    theme_color
+    theme_info
     load_theme
+    load_icons
     load_language
     run_highlighter
+    language_definition
+    icon_for_filename
     create_document
     destroy_document
     add_block
     remove_block
     set_block
-    theme_color
-    theme_info
-    load_icons
-    icon_for_filename
-    language_definition
     run_tree_sitter
+    has_running_threads
+    send_message
+    receive_message
+    poll_messages
