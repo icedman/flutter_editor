@@ -26,6 +26,9 @@ class FFIBridge {
   static late Function run_tree_sitter;
   static late Function has_running_threads;
 
+  static late Function git_init;
+  static late Function git_shutdown;
+
   static bool initialized = false;
 
   static void load() {
@@ -108,6 +111,14 @@ class FFIBridge {
     final _has_running_threads = nativeEditorApiLib
         .lookup<NativeFunction<Int32 Function()>>('has_running_threads');
     has_running_threads = _has_running_threads.asFunction<int Function()>();
+
+    final _git_init = nativeEditorApiLib
+        .lookup<NativeFunction<Void Function()>>('git_init');
+    git_init = _git_init.asFunction<void Function()>();
+
+    final _git_shutdown = nativeEditorApiLib
+        .lookup<NativeFunction<Void Function()>>('git_shutdown');
+    git_shutdown = _has_running_threads.asFunction<void Function()>();
 
     initialized = true;
   }

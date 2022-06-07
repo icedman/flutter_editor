@@ -36,6 +36,7 @@ void main(List<String> args) async {
   }
 
   FFIBridge.initialize(app.extensionsPath);
+  FFIBridge.git_init();
 
   HLTheme theme = HLTheme.instance();
   TMParser()

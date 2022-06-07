@@ -5,7 +5,13 @@ project(editor LANGUAGES CXX C)
 string(APPEND CMAKE_CXX_FLAGS " -std=gnu++11")
 set (CMAKE_CXX_STANDARD 11)
 
-ADD_DEFINITIONS(-fPIC)
+if (CMAKE_SYSTEM_NAME STREQUAL "Android")
+string(APPEND PRECOMPILED ${CMAKE_SOURCE_DIR}/../precompiled/android/${ANDROID_ABI})
+else()
+string(APPEND PRECOMPILED ${CMAKE_SOURCE_DIR}/../precompiled/linux)
+endif()
+
+add_definitions(-fPIC)
 
 add_library(onigmolib
   SHARED 
@@ -95,6 +101,8 @@ add_library(editor_api
     ./highlighter/api.cpp
     ./highlighter/highlighter.cpp
     ./highlighter/treesitter.cpp
+    ./highlighter/git.cpp
+    ./highlighter/ssh.cpp
 )
 
 target_include_directories(editor_api 
@@ -109,6 +117,8 @@ target_include_directories(editor_api
     ./tm-parser/textmate/extensions
     ./tree-sitter/lib/include
     ./highlighter
+    ${PRECOMPILED}/libgit2/include
+    ${PRECOMPILED}/libssh2/include
 )
 
 #########################
@@ -143,12 +153,6 @@ target_include_directories(treesitter
 # libgit2 libssh2
 #########################
 
-if (CMAKE_SYSTEM_NAME STREQUAL "Android")
-string(APPEND PRECOMPILED ${CMAKE_SOURCE_DIR}/../precompiled/android/${ANDROID_ABI})
-else()
-string(APPEND PRECOMPILED ${CMAKE_SOURCE_DIR}/../precompiled/linux)
-endif()
-
 add_library(ssl
         STATIC
         IMPORTED)
@@ -179,11 +183,11 @@ add_library(git2
 
 set_target_properties(git2
         PROPERTIES IMPORTED_LOCATION
-        ${CMAKE_SOURCE_DIR}/../precompiled/linux/libgit2/libgit2.a)
+        ${PRECOMPILED}/libgit2/libgit2.a)
 
 set_target_properties(editor_api PROPERTIES
   BUILD_WITH_INSTALL_RPATH 1 INSTALL_RPATH "$ORIGIN")
 
 target_link_libraries(editor_api PRIVATE onigmolib)
 target_link_libraries(editor_api PRIVATE treesitter)
-target_link_libraries(editor_api PRIVATE ssl crypto ssh2 git2)
+target_link_libraries(editor_api PRIVATE git2 ssl crypto ssh2)

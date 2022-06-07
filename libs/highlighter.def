@@ -19,3 +19,5 @@ EXPORTS
     send_message
     receive_message
     poll_messages
+    git_init
+    git_shutdown
