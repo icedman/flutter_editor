@@ -50,3 +50,4 @@ flutter_*.png
 
 precompiled
 
+libs/tree-sitter-grammars/*
