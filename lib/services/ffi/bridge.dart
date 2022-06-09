@@ -23,11 +23,14 @@ class FFIBridge {
   static late Function theme_info;
   static late Function load_icons;
   static late Function icon_for_filename;
-  static late Function run_tree_sitter;
+  // static late Function run_tree_sitter;
   static late Function has_running_threads;
+  static late Function send_message;
+  static late Function receive_message;
+  static late Function poll_messages;
 
-  static late Function git_init;
-  static late Function git_shutdown;
+  // static late Function git_init;
+  // static late Function git_shutdown;
 
   static bool initialized = false;
 
@@ -80,10 +83,10 @@ class FFIBridge {
     create_document =
         _create_document.asFunction<void Function(int, Pointer<Utf8>)>();
 
-    final _run_tree_sitter = nativeEditorApiLib.lookup<
-        NativeFunction<Void Function(Int32, Pointer<Utf8>)>>('run_tree_sitter');
-    run_tree_sitter =
-        _run_tree_sitter.asFunction<void Function(int, Pointer<Utf8>)>();
+    // final _run_tree_sitter = nativeEditorApiLib.lookup<
+    //     NativeFunction<Void Function(Int32, Pointer<Utf8>)>>('run_tree_sitter');
+    // run_tree_sitter =
+    //     _run_tree_sitter.asFunction<void Function(int, Pointer<Utf8>)>();
 
     final _destroy_document = nativeEditorApiLib
         .lookup<NativeFunction<Void Function(Int32)>>('destroy_document');
@@ -112,13 +115,25 @@ class FFIBridge {
         .lookup<NativeFunction<Int32 Function()>>('has_running_threads');
     has_running_threads = _has_running_threads.asFunction<int Function()>();
 
-    final _git_init = nativeEditorApiLib
-        .lookup<NativeFunction<Void Function()>>('git_init');
-    git_init = _git_init.asFunction<void Function()>();
+    // final _git_init = nativeEditorApiLib
+    //     .lookup<NativeFunction<Void Function()>>('git_init');
+    // git_init = _git_init.asFunction<void Function()>();
 
-    final _git_shutdown = nativeEditorApiLib
-        .lookup<NativeFunction<Void Function()>>('git_shutdown');
-    git_shutdown = _has_running_threads.asFunction<void Function()>();
+    // final _git_shutdown = nativeEditorApiLib
+    //     .lookup<NativeFunction<Void Function()>>('git_shutdown');
+    // git_shutdown = _has_running_threads.asFunction<void Function()>();
+
+    final _send_message = nativeEditorApiLib
+        .lookup<NativeFunction<Void Function(Pointer<Utf8>)>>('send_message');
+    send_message = _send_message.asFunction<void Function(Pointer<Utf8>)>();
+
+    final _receive_message = nativeEditorApiLib
+        .lookup<NativeFunction<Pointer<Utf8> Function()>>('receive_message');
+    receive_message = _receive_message.asFunction<Pointer<Utf8> Function()>();
+
+    final _poll_messages = nativeEditorApiLib
+        .lookup<NativeFunction<Int32 Function()>>('poll_messages');
+    poll_messages = _poll_messages.asFunction<int Function()>();
 
     initialized = true;
   }
@@ -135,11 +150,11 @@ class FFIBridge {
     calloc.free(_path);
   }
 
-  static void runTreeSitter(int id, String path) {
-    final _path = path.toNativeUtf8();
-    run_tree_sitter(id, _path);
-    calloc.free(_path);
-  }
+  // static void runTreeSitter(int id, String path) {
+  //   final _path = path.toNativeUtf8();
+  //   run_tree_sitter(id, _path);
+  //   calloc.free(_path);
+  // }
 
   static int loadTheme(String path) {
     final _path = path.toNativeUtf8();
@@ -220,5 +235,98 @@ class FFIBridge {
   static void run(Function f) {
     if (!initialized) return;
     f.call();
+  }
+  
+  static void sendMessage(String msg) {
+  print(msg);
+    final _msg = msg.toNativeUtf8();
+    send_message(_msg);
+    calloc.free(_msg);
+  }
+
+  static void sendMessageObj(Object obj) {
+    sendMessage(json.encode(obj));
+  }
+    
+  static String receiveMessage() {
+    Pointer<Utf8> res = receive_message();
+    return res.toDartString();
+  }
+
+}
+
+class FFIListener {
+  FFIListener(this.listener, this.channel, this.callback);
+  String listener = '';
+  String channel = '';
+  Function? callback;
+  int listenerId = 0;
+}
+
+FFIMessaging _messaging = FFIMessaging();
+
+class FFIMessaging {
+    static FFIMessaging instance() {
+       return _messaging;
+    }
+
+  static int _listenerId = 0xff00;
+  static int _requestId = 0xff00;
+
+  List<FFIListener> listeners = [];
+  Map<int, Completer<dynamic>> requests = {};
+
+  late Timer periodic;
+
+  FFIMessaging() {
+    periodic = Timer.periodic(Duration(milliseconds: 100), (Timer t) {
+      int messages = FFIBridge.poll_messages();
+      if (messages == 0) return;
+
+      String res = FFIBridge.receiveMessage();
+      final m = json.decode(res);
+
+      int requestId = m['requestId'] ?? 0;
+      // send to completers
+      if (requestId > 0) {
+        if (requests.containsKey(requestId)) {
+            requests[requestId]?.complete(m);
+            requests.remove(requestId);
+        }
+      }
+
+      // send to listeners
+      for (final l in listeners) {
+        if ((m.containsKey('to') && m['to'] != '' && m['to'] != l.listener) ||
+            (m.containsKey('channel') &&
+                m['channel'] != '' &&
+                m['channel'] != l.channel)) {
+          continue;
+        }
+        l.callback?.call(m, l);
+      }
+    });
+  }
+
+  int addListener(FFIListener listener) {
+    _listenerId++;
+    listener.listenerId = _listenerId;
+    listeners.add(listener);
+    return _listenerId;
+  }
+
+  void removeListener(int id) {
+    listeners.removeWhere((element) => element.listenerId == id);
+  }
+
+  Future<dynamic> sendMessage(dynamic obj) {
+    obj['requestId'] = _requestId++;
+    Completer<dynamic> completer = Completer<dynamic>();
+    requests[obj['requestId']] = completer;
+
+    // build completer
+    FFIBridge.sendMessageObj(obj);
+
+    return completer.future;
   }
 }

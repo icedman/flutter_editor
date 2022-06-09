@@ -2,6 +2,15 @@
 
 std::map<size_t, DocumentPtr> documents;
 
+void delay(int ms) {
+  struct timespec waittime;
+  waittime.tv_sec = (ms / 1000);
+  ms = ms % 1000;
+  waittime.tv_nsec = ms * 1000 * 1000;
+  nanosleep(&waittime, NULL);
+}
+
+
 DocumentPtr get_document(int id)
 {
   return documents[id];
@@ -58,7 +67,7 @@ void set_block(int documentId, int blockId, int line, char *text) {
   }
 }
 
-#define BUFF_LEN 2048
+#define BUFF_LEN (1024 * 8)
 
 static char _result[BUFF_LEN];
 static int _listenerId = 0xff00;
@@ -93,8 +102,8 @@ void cb2(message_t m, listener_t l) {
 EXPORT void test()
 {
     listeners.clear();
-    add_listener("me", "lobby", &cb1);
-    add_listener("me2", "lobby", &cb2);
+    add_listener("me", "lobby", &cb1, NULL);
+    add_listener("me2", "lobby", &cb2, NULL);
     printf("listening...\n");
 }
 */
@@ -117,7 +126,7 @@ EXPORT void send_message(char* message)
 
     incoming.emplace_back(m);
 
-    printf(">%zu [%s] [%s]\n", incoming.size(), m.receiver.c_str(), m.sender.c_str());
+    // printf(">%zu [%s] [%s]\n", incoming.size(), m.receiver.c_str(), m.sender.c_str());
 }
 
 EXPORT char* receive_message()
@@ -128,13 +137,13 @@ EXPORT char* receive_message()
 
     message_t m = outgoing[0];
     outgoing.erase(outgoing.begin());
-    printf("...%zu\n", outgoing.size());
+    // printf("...%zu\n", outgoing.size());
 
-    Json::Value json;
+    Json::Value json = m.message;
     json["to"] = m.receiver;
     json["from"] = m.sender;
-    json["channel"] = m.channel;
-    json["message"] = m.message;
+    // json["channel"] = m.channel;
+    // json["message"] = m.message;
 
     std::string res = json.toStyledString();
     if (res.length() >= BUFF_LEN) {
@@ -152,14 +161,17 @@ EXPORT int poll_messages()
     return outgoing.size();
 }
 
-int add_listener(std::string listener, std::string channel, std::function<void(message_t, listener_t)> callback)
+int add_listener(std::string listener, std::string channel,
+        std::function<void(message_t, listener_t)> message_callback,
+        std::function<void(listener_t)> poll_callback)
 {
     _listenerId++;
     listener_t l = {
         .listenerId = _listenerId,
         .listener = listener,
         .channel = channel,
-        .callback = callback
+        .callback = message_callback,
+        .poll = poll_callback
     };
     listeners.emplace_back(l);
     return _listenerId;
@@ -183,15 +195,20 @@ void post_message(message_t msg)
 }
 
 void dispatch_messages()
-{
+{ 
+    // printf("dispatch_messages %d %d!\n", incoming.size(), listeners.size());
     // read incoming and dispatch
+
+    int idx = 0;
     for (auto m : incoming) {
         for (auto l : listeners) {
             if ((m.receiver != "" && m.receiver != l.listener) ||
                 (m.channel != "" && m.channel != l.channel)) {
                 continue;
             }
-            l.callback(m, l);
+            if (l.callback) {
+                l.callback(m, l);
+            }
         }
     }
     incoming.clear();
@@ -202,4 +219,30 @@ void dispatch_messages()
         }
     }
 
+}
+
+void poll_requests(request_list& requests) {
+    std::vector<request_ptr> disposables;
+    for(auto r : requests) {
+        if (r->state < request_t::state_e::Ready) {
+            continue;
+        }
+        for(auto res : r->response) {
+            printf(">%s\n", res.c_str());
+        }
+        r->state = request_t::state_e::Consumed;
+        disposables.push_back(r);
+    }
+
+    for(request_ptr d : disposables) {
+        auto it = std::find(requests.begin(), requests.end(), d);
+        if (it != requests.end()) {
+            d->message.message["message"] =  Json::arrayValue;
+            for(auto r : d->response) {
+                d->message.message["message"].append(r);
+            }
+            post_message(d->message);
+            requests.erase(it);
+        }
+    }
 }

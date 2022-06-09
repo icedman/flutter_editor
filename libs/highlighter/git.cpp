@@ -5,11 +5,7 @@ extern "C" {
 #include "git2.h"
 }
 
-#include <json/json.h>
 #include <pthread.h>
-
-#include <string>
-#include <iostream>
 
 char default_name[64] = { 0 };
 char default_remote[64] = { 0 };
@@ -22,10 +18,10 @@ char default_branch[64] = { 0 };
 #define PUSH_PRINTLN(msg) ss << msg;
 
 #define END_PRINTLN                    \
-    printf("%s\n", ss.str().c_str()); \
+        req->response.push_back(ss.str()); \
     }
 
-#define PRINTLN_LN printf("\n");
+#define PRINTLN_LN req->response.push_back("");
 #define PRINTF(a, b) { char tmp[250]; sprintf(tmp, a, b); PUSH_PRINTLN(tmp); }
 #define PUSH_PRINTLN_TAB ss << "\t";
 
@@ -36,11 +32,11 @@ char default_branch[64] = { 0 };
         ss << error;                       \
         ss << " : ";                       \
         ss << git_error_last()->message;   \
-        printf("%s\n", ss.str().c_str()); \
+        req->response.push_back(ss.str()); \
         goto cleanup;                      \
     }
 
-static int show_branch(git_repository* repo, int group)
+static int show_branch(git_repository* repo, request_t* req)
 {
     int error = 0;
     const char* branch = NULL;
@@ -81,20 +77,48 @@ cleanup:
 
 #include "git/git_status.inc.cpp"
 
-EXPORT
+static request_list git_requests;
+
+void *git_thread(void *arg) {
+    request_t *req = (request_t*)arg;
+
+    Json::Value message = req->message.message["message"];
+    std::string cmd = message["command"].asString();
+    if (cmd == "status") {
+        _git_status(message, req);
+    }
+    if (cmd == "log") {
+        _git_log(message, req);
+    }
+    
+    // printf(">%s\n", request->message
+    // printf(">>>callback 1! %s\n", message.toStyledString().c_str());;
+
+    req->state = request_t::state_e::Ready;
+    return NULL;
+}
+
+void git_command_callback(message_t m, listener_t l) {
+    request_ptr request = std::make_shared<request_t>();
+    request->message = m;
+    git_requests.push_back(request);
+    pthread_create((pthread_t *)&(request->thread_id), NULL,
+                 &git_thread, (void *)(request.get()));
+}
+
+void git_poll_callback(listener_t l) {
+    poll_requests(git_requests);
+}
+
 void git_init()
 {
-    printf(">git init\n");
+    printf("git enabled\n");
     strcpy(default_remote, "origin");
     git_libgit2_init();
 
-    Json::Value obj;
-    obj["path"] = "./";
-    // _git_log(obj, 0);
-    _git_status(obj, 0);
+    add_listener("git_global", "git", &git_command_callback, &git_poll_callback);
 }
 
-EXPORT
 void git_shutdown()
 {
     git_libgit2_shutdown();

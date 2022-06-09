@@ -29,14 +29,31 @@ void main(List<String> args) async {
   await app.loadSettings();
 
   FFIBridge.load();
-
+  
+  // FFIMessaging.instance().addListener(FFIListener('whoever', '', (m, l) {
+  //   print('heya!');
+  //   print(l);
+  //   print(m);
+  // }));
+  
   String path = './';
   if (args.isNotEmpty) {
     path = args[0];
   }
 
   FFIBridge.initialize(app.extensionsPath);
-  FFIBridge.git_init();
+  // FFIBridge.git_init();
+
+  FFIMessaging.instance().sendMessage({
+     'channel': 'git',
+     'message': {
+        'command': 'status',
+        'path': './'
+     }
+  }).then((res) {
+    print(res);
+    });
+
 
   HLTheme theme = HLTheme.instance();
   TMParser()

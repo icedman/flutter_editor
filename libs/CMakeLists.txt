@@ -125,6 +125,7 @@ target_include_directories(editor_api
 # libgit2 libssh2
 #########################
 
+if (DEFINED ENV{ENABLE_TREESITTER})
 add_library(treesitter
   SHARED
   ./tree-sitter/lib/src/alloc.c
@@ -148,6 +149,7 @@ target_include_directories(treesitter
     ./tree-sitter/lib/include
     ./tree-sitter/lib/src
 )
+endif()
 
 #########################
 # libgit2 libssh2
@@ -189,5 +191,19 @@ set_target_properties(editor_api PROPERTIES
   BUILD_WITH_INSTALL_RPATH 1 INSTALL_RPATH "$ORIGIN")
 
 target_link_libraries(editor_api PRIVATE onigmolib)
+
+if (DEFINED ENV{ENABLE_TREESITTER})
 target_link_libraries(editor_api PRIVATE treesitter)
+endif()
+
+if (DEFINED ENV{ENABLE_GIT})
+add_definitions(-DENABLE_GIT=1)
+endif()
+
+if (DEFINED ENV{ENABLE_SSH})
+add_definitions(-DENABLE_SSH=1)
+endif()
+
+if (DEFINED ENV{ENABLE_GIT} OR DEFINED ENV{ENABLE_SSH})
 target_link_libraries(editor_api PRIVATE git2 ssl crypto ssh2)
+endif()

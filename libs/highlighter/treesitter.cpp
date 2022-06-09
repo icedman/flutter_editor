@@ -2,7 +2,34 @@
 
 #include <fstream>
 #include <iostream>
-#include <string>
+#include <pthread.h>
+
+static request_list treesitter_requests;
+
+void *treesitter_thread(void *arg) {
+    request_t *req = (request_t*)arg;
+
+    Json::Value message = req->message.message["message"];
+    std::string cmd = message["command"].asString();
+    
+    // printf(">%s\n", request->message
+    // printf(">>>callback 1! %s\n", message.toStyledString().c_str());;
+
+    req->state = request_t::state_e::Ready;
+    return NULL;
+}
+
+void treesitter_command_callback(message_t m, listener_t l) {
+    request_ptr request = std::make_shared<request_t>();
+    request->message = m;
+    treesitter_requests.push_back(request);
+    pthread_create((pthread_t *)&(request->thread_id), NULL,
+                 &treesitter_thread, (void *)(request.get()));
+}
+
+void treesitter_poll_callback(listener_t l) {
+    poll_requests(treesitter_requests);
+}
 
 void walk_tree(TSTreeCursor *cursor, int depth, int line,
                std::vector<TSNode> *nodes) {
@@ -104,4 +131,14 @@ void run_tree_sitter(int documentId, char *path) {
                doc.get());
     doc->rebuild = false;
   }
+}
+
+void treesitter_init()
+{
+    printf("treesitter enabled\n");
+    add_listener("treesitter_global", "treesitter", &treesitter_command_callback, &treesitter_poll_callback);
+}
+
+void treesitter_shutdown()
+{
 }

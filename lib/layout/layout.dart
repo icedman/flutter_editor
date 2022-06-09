@@ -84,19 +84,19 @@ class AppLayout extends StatefulWidget {
 
 class _AppLayout extends State<AppLayout> with WidgetsBindingObserver {
   bool _isKeyboardVisible =
-      WidgetsBinding.instance!.window.viewInsets.bottom > 0.0;
+      WidgetsBinding.instance.window.viewInsets.bottom > 0.0;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance!.addObserver(this);
+    WidgetsBinding.instance.addObserver(this);
 
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance!.removeObserver(this);
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -104,7 +104,7 @@ class _AppLayout extends State<AppLayout> with WidgetsBindingObserver {
   void didChangeMetrics() {
     AppProvider app = Provider.of<AppProvider>(context, listen: false);
     UIProvider ui = Provider.of<UIProvider>(context, listen: false);
-    final bottomInset = WidgetsBinding.instance!.window.viewInsets.bottom;
+    final bottomInset = WidgetsBinding.instance.window.viewInsets.bottom;
     final newValue = bottomInset > 0.0;
     if (newValue != _isKeyboardVisible) {
       setState(() {

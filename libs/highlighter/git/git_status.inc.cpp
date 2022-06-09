@@ -1,12 +1,12 @@
-static int print_long(git_status_list* status, int group);
-static int print_short(git_repository* repo, git_status_list* status, int group);
-static int print_submod(git_submodule* sm, const char* name, void* payload, int group);
+static int print_long(git_status_list* status, request_t* req);
+static int print_short(git_repository* repo, git_status_list* status, request_t* req);
+static int print_submod(git_submodule* sm, const char* name, void* payload, request_t* req);
 
 /**
  * This function print out an output similar to git's status command
  * in long form, including the command-line hints.
  */
-static int print_long(git_status_list* status, int group)
+static int print_long(git_status_list* status, request_t* req)
 {
     size_t i, maxi = git_status_list_entrycount(status);
     const git_status_entry* s;
@@ -45,7 +45,7 @@ static int print_long(git_status_list* status, int group)
             // printf("# Changes to be committed:\n");
             // printf("#   (use \"git reset HEAD <file>...\" to unstage)\n");
             // printf("#\n");
-            printf("Changes to be committed: %d\n", group);
+            req->response.push_back("# Changes to be commited:");
             header = 1;
         }
 
@@ -113,8 +113,8 @@ static int print_long(git_status_list* status, int group)
             continue;
 
         if (!header) {
-            printf("Changes not staged for commit: %d\n", group);
-            printf("# Changes not staged for commit:\n");
+            req->response.push_back("# Changes not staged for commit:");
+            // printf("# Changes not staged for commit:\n");
             // printf("#   (use \"git add%s <file>...\" to update what will be committed)\n", rm_in_workdir ? "/rm" : "");
             // printf("#   (use \"git checkout -- <file>...\" to discard changes in working directory)\n");
             // printf("#\n");
@@ -146,13 +146,13 @@ static int print_long(git_status_list* status, int group)
             }
             END_PRINTLN
 
-            printf("#\t%s %s\n", wstatus.c_str(), old_path ? old_path : new_path);
+            // printf("#\t%s %s\n", wstatus.c_str(), old_path ? old_path : new_path);
         }
     }
 
     if (header) {
         changed_in_workdir = 1;
-        printf("#\n");
+        // printf("#\n");
         PRINTLN_LN
     }
 
@@ -166,14 +166,14 @@ static int print_long(git_status_list* status, int group)
         if (s->status == GIT_STATUS_WT_NEW) {
 
             if (!header) {
-                printf("Untracked files: %d\n", group);
-                printf("# Untracked files:\n");
+                req->response.push_back("# Untracked files:");
+                // printf("# Untracked files:\n");
                 // printf("#   (use \"git add <file>...\" to include in what will be committed)\n");
                 // printf("#\n");
                 header = 1;
             }
 
-            printf("\t%s\n", s->index_to_workdir->old_file.path);
+            // printf("\t%s\n", s->index_to_workdir->old_file.path);
             BEGIN_PRINTLN
             PUSH_PRINTLN_TAB
             PUSH_PRINTLN(s->index_to_workdir->old_file.path);
@@ -190,18 +190,24 @@ static int print_long(git_status_list* status, int group)
         if (s->status == GIT_STATUS_IGNORED) {
 
             if (!header) {
-                printf("# Ignored files:\n");
-                printf("#   (use \"git add -f <file>...\" to include in what will be committed)\n");
-                printf("#\n");
+                req->response.push_back("# Ignored files:");
+                // printf("#   (use \"git add -f <file>...\" to include in what will be committed)\n");
+                // printf("#\n");
                 header = 1;
             }
 
             // printf("#\t%s\n", s->index_to_workdir->old_file.path);
+            BEGIN_PRINTLN
+            PUSH_PRINTLN_TAB
+            PUSH_PRINTLN(s->index_to_workdir->old_file.path);
+            END_PRINTLN
+
         }
     }
 
     if (!changes_in_index && changed_in_workdir) {
-        printf("# no changes added to commit (use \"git add\" and/or \"git commit -a\")\n");
+        // printf("# no changes added to commit (use \"git add\" and/or \"git commit -a\")\n");
+        req->response.push_back("# no changes added to commit (use \"git add\" and/or \"git commit -a\")");
     }
 
     return 0;
@@ -211,7 +217,7 @@ static int print_long(git_status_list* status, int group)
  * This version of the output prefixes each path with two status
  * columns and shows submodule status information.
  */
-static int print_short(git_repository* repo, git_status_list* status, int group)
+static int print_short(git_repository* repo, git_status_list* status, request_t* req)
 {
     size_t i, maxi = git_status_list_entrycount(status);
     const git_status_entry* s;
@@ -320,7 +326,7 @@ static int print_short(git_repository* repo, git_status_list* status, int group)
     return 0;
 }
 
-static int print_submod(git_submodule* sm, const char* name, void* payload, int group)
+static int print_submod(git_submodule* sm, const char* name, void* payload, request_t* req)
 {
 #if 0
     int *count = payload;
@@ -336,7 +342,7 @@ static int print_submod(git_submodule* sm, const char* name, void* payload, int 
     return 0;
 }
 
-int _git_status(Json::Value json, int group)
+int _git_status(Json::Value json, request_t* req)
 {
     std::string localPath = json["path"].asString().c_str();
     git_status_list* status = NULL;
@@ -352,11 +358,11 @@ int _git_status(Json::Value json, int group)
     }
 
     if (git_repository_is_bare(repo)) {
-        printf("error : repository is bare %d\n", group);
+        req->response.push_back("error : repository is bare");
         goto cleanup;
     }
 
-    error = show_branch(repo, group);
+    error = show_branch(repo, req);
     if (error < 0) {
         GOTO_CLEANUP_ON_ERROR
     }
@@ -367,21 +373,21 @@ int _git_status(Json::Value json, int group)
         GOTO_CLEANUP_ON_ERROR
     }
 
-    error = print_long(status, group);
+    error = print_long(status, req);
 
 cleanup:
     git_status_list_free(status);
     git_repository_free(repo);
 
     if (error >= 0) {
-        printf("done %d\n", group);
+        req->response.push_back("done");
     }
     return error;
 }
 
-int _git_log(Json::Value json, int group)
+int _git_log(Json::Value json, request_t* req)
 {
-    printf("walk %d\n", group);
+    req->response.push_back("walk");
 
     std::string localPath = json["path"].asString().c_str();
 
@@ -390,7 +396,7 @@ int _git_log(Json::Value json, int group)
     {
         std::ostringstream ss;
         ss << localPath;
-        printf("%s %d\n", ss.str().c_str(), group);
+        req->response.push_back(ss.str());
     }
 
     git_repository* repo = nullptr;
@@ -414,7 +420,7 @@ int _git_log(Json::Value json, int group)
            << git_commit_summary(commit)
            << std::endl;
 
-        printf("%s %d\n", ss.str().c_str(), group);
+        req->response.push_back(ss.str());
         git_commit_free(commit);
     }
 
@@ -423,7 +429,7 @@ cleanup:
     git_repository_free(repo);
 
     if (error >= 0) {
-        printf("done %d\n", group);
+        req->response.push_back("done");
     }
     return error;
 }

@@ -30,9 +30,22 @@ Document::~Document() {
     }
   }
 
+// subsystems
+void git_init();
+void ssh_init();
+void treesitter_init();
 
 EXPORT void initialize(char *extensionsPath) {
   Textmate::initialize(extensionsPath);
+  #ifdef ENABLE_GIT
+    git_init();
+  #endif
+  #ifdef ENABLE_SSH
+    ssh_init();
+  #endif
+  #ifdef ENABLE_TREESITTER
+    treesitter_init();
+  #endif
 }
 
 EXPORT
@@ -64,7 +77,6 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int documentI
   // end marker
   textstyle_buffer[0].start = 0;
   textstyle_buffer[0].length = 0;
-
   set_block(documentId, blockId, line, _text);
 
   block_data_t *block = get_document(documentId)->blocks[blockId].get();

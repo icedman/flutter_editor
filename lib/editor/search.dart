@@ -62,7 +62,7 @@ class _SearchPopup extends State<SearchPopup> {
     searchDirection = widget.searchDirection;
     searchFiles = widget.searchFiles;
 
-    WidgetsBinding.instance?.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       focusNode1.requestFocus();
     });
   }
@@ -315,7 +315,7 @@ class _GotoPopup extends State<GotoPopup> {
     focusNode = FocusNode();
     inputEditController = TextEditingController();
 
-    WidgetsBinding.instance?.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       focusNode.requestFocus();
     });
   }
