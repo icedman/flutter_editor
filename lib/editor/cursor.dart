@@ -333,7 +333,7 @@ class Cursor {
     }
 
     String newText = left + right;
-    document?.history.update(cur.block, newText: newText);
+    document?.history.update(cur.block, newText: newText, column: left.length);
     cur.block?.text = left + right;
     cur.column = left.length;
     cur.clearSelection();
@@ -496,7 +496,7 @@ class Cursor {
     String ln = next.text;
     document?.removeBlockAtLine(next.line);
     String newText = l + ln;
-    document?.history.update(block, newText: newText);
+    document?.history.update(block, newText: newText, column: l.length);
     block?.text = newText;
     block?.makeDirty(highlight: true);
 
@@ -527,7 +527,7 @@ class Cursor {
     String left = l.substring(0, column);
     String right = l.substring(column + numberOfCharacters);
     String newText = left + right;
-    document?.history.update(block, newText: newText);
+    document?.history.update(block, newText: newText, column: left.length);
     block?.text = newText;
     block?.makeDirty(highlight: true);
     advanceBlockCursors(-numberOfCharacters);
@@ -550,12 +550,12 @@ class Cursor {
 
     // handle new line
     String newText = left;
-    document?.history.update(block, newText: newText);
+    document?.history.update(block, newText: newText, column: left.length);
     block?.text = newText;
     block?.makeDirty(highlight: true);
     Block? newBlock = document?.addBlockAtLine(line + 1);
     newText = right;
-    document?.history.update(newBlock, newText: newText);
+    document?.history.update(newBlock, newText: newText, column: 0);
     newBlock?.text = newText;
     newBlock?.makeDirty(highlight: true);
     moveCursorNextLine();
@@ -587,7 +587,7 @@ class Cursor {
     String left = l.substring(0, column);
     String right = l.substring(column);
     String newText = left + text + right;
-    document?.history.update(block, newText: newText);
+    document?.history.update(block, newText: newText, column: left.length);
     block?.text = newText;
     block?.makeDirty(highlight: true);
     moveCursorRight(count: text.length);

@@ -10,20 +10,17 @@
 
 extern "C" {
 #include <tree_sitter/api.h>
-const TSLanguage *tree_sitter_javascript(void);
-const TSLanguage *tree_sitter_c(void);
-#define LANGUAGE tree_sitter_c
 }
 
-#include <functional>
-#include <algorithm>
-#include <memory>
-#include <map>
-#include <string>
-#include <vector>
-#include <json/json.h>
-#include <time.h>
 #include "textmate.h"
+#include <algorithm>
+#include <functional>
+#include <json/json.h>
+#include <map>
+#include <memory>
+#include <string>
+#include <time.h>
+#include <vector>
 
 #define TIMER_BEGIN                                                            \
   clock_t start, end;                                                          \
@@ -40,8 +37,7 @@ void delay(int ms);
 
 class Block : public block_data_t {
 public:
-  Block() : block_data_t(), blockId(0), nextId(0)
-  {}
+  Block() : block_data_t(), blockId(0), nextId(0) {}
 
   std::string text;
   int blockId;
@@ -70,19 +66,19 @@ typedef std::shared_ptr<Document> DocumentPtr;
 DocumentPtr get_document(int id);
 
 struct message_t {
-    int messageId;
-    std::string receiver;
-    std::string sender;
-    std::string channel;
-    Json::Value message;
+  int messageId;
+  std::string receiver;
+  std::string sender;
+  std::string channel;
+  Json::Value message;
 };
 
 struct listener_t {
-    int listenerId;
-    std::string listener;
-    std::string channel;
-    std::function<void(message_t, listener_t)> callback;
-    std::function<void(listener_t)> poll;
+  int listenerId;
+  std::string listener;
+  std::string channel;
+  std::function<void(message_t, listener_t)> callback;
+  std::function<void(listener_t)> poll;
 };
 
 #define REQUEST_TTL 30
@@ -99,7 +95,7 @@ public:
 
   message_t message;
   std::vector<std::string> response;
-  
+
   void set_ready() { state = state_e::Ready; }
   void set_consumed() { state = state_e::Consumed; }
   void keep_alive() { ttl = REQUEST_TTL; }
@@ -118,11 +114,11 @@ typedef std::vector<message_t> message_list;
 typedef std::vector<listener_t> listener_list;
 
 int add_listener(std::string listener, std::string channel,
-  std::function<void(message_t, listener_t)> message_callback,
-  std::function<void(listener_t)> poll_callback);
+                 std::function<void(message_t, listener_t)> message_callback,
+                 std::function<void(listener_t)> poll_callback);
 void remove_listener(int id);
 void post_message(message_t msg);
 void dispatch_messages();
-void poll_requests(request_list requests);
+void poll_requests(request_list &requests);
 
 #endif // API_H

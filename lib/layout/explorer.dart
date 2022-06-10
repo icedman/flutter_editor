@@ -71,6 +71,8 @@ class ExplorerProvider extends ChangeNotifier implements ExplorerListener {
   }
 
   void rebuild() {
+    update_git_status();
+
     List<ExplorerItem?> _previous = [...tree];
     tree = explorer.tree();
 
@@ -123,6 +125,17 @@ class ExplorerProvider extends ChangeNotifier implements ExplorerListener {
     }
 
     notifyListeners();
+  }
+
+  void update_git_status() {
+    if (tree.length == 0) return;
+
+    FFIMessaging.instance().sendMessage({
+      'channel': 'git',
+      'message': {'command': 'status', 'path': '${(tree[0]?.fullPath ?? '')}/'}
+    }).then((res) {
+      print(res);
+    });
   }
 }
 

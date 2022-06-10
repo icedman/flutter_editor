@@ -1,5 +1,12 @@
 #include "api.h"
 
+extern "C" {
+#include <tree_sitter/api.h>
+const TSLanguage *tree_sitter_javascript(void);
+const TSLanguage *tree_sitter_c(void);
+#define LANGUAGE tree_sitter_c
+}
+
 #include <fstream>
 #include <iostream>
 #include <pthread.h>
@@ -7,28 +14,28 @@
 static request_list treesitter_requests;
 
 void *treesitter_thread(void *arg) {
-    request_t *req = (request_t*)arg;
+  request_t *req = (request_t *)arg;
 
-    Json::Value message = req->message.message["message"];
-    std::string cmd = message["command"].asString();
-    
-    // printf(">%s\n", request->message
-    // printf(">>>callback 1! %s\n", message.toStyledString().c_str());;
+  Json::Value message = req->message.message["message"];
+  std::string cmd = message["command"].asString();
 
-    req->state = request_t::state_e::Ready;
-    return NULL;
+  // printf(">%s\n", request->message
+  // printf(">>>callback 1! %s\n", message.toStyledString().c_str());;
+
+  req->state = request_t::state_e::Ready;
+  return NULL;
 }
 
 void treesitter_command_callback(message_t m, listener_t l) {
-    request_ptr request = std::make_shared<request_t>();
-    request->message = m;
-    treesitter_requests.push_back(request);
-    pthread_create((pthread_t *)&(request->thread_id), NULL,
-                 &treesitter_thread, (void *)(request.get()));
+  request_ptr request = std::make_shared<request_t>();
+  request->message = m;
+  treesitter_requests.push_back(request);
+  pthread_create((pthread_t *)&(request->thread_id), NULL, &treesitter_thread,
+                 (void *)(request.get()));
 }
 
 void treesitter_poll_callback(listener_t l) {
-    poll_requests(treesitter_requests);
+  poll_requests(treesitter_requests);
 }
 
 void walk_tree(TSTreeCursor *cursor, int depth, int line,
@@ -48,7 +55,8 @@ void walk_tree(TSTreeCursor *cursor, int depth, int line,
     // for(int i=0; i<depth; i++) {
     //   printf(" ");
     // }
-    printf("(%d,%d) (%d,%d) [ %s ]\n", startPoint.row, startPoint.column, endPoint.row, endPoint.column, type);
+    printf("(%d,%d) (%d,%d) [ %s ]\n", startPoint.row, startPoint.column,
+           endPoint.row, endPoint.column, type);
     if (nodes != NULL) {
       nodes->push_back(node);
     }
@@ -101,8 +109,8 @@ void rebuild_tree(Document *doc) {
     ts_tree_delete(doc->tree);
   }
 
-  TSTree *tree =
-      ts_parser_parse_string(parser, NULL, doc->contents.c_str(), doc->contents.size());
+  TSTree *tree = ts_parser_parse_string(parser, NULL, doc->contents.c_str(),
+                                        doc->contents.size());
   doc->contents = "";
 
   TSNode root_node = ts_tree_root_node(tree);
@@ -118,7 +126,7 @@ void rebuild_tree(Document *doc) {
 
 EXPORT
 void run_tree_sitter(int documentId, char *path) {
-    DocumentPtr doc = get_document(documentId);
+  DocumentPtr doc = get_document(documentId);
   if (doc == NULL) {
     doc = std::make_shared<Document>();
   }
@@ -127,18 +135,15 @@ void run_tree_sitter(int documentId, char *path) {
     std::ifstream t(path);
     std::stringstream buffer;
     buffer << t.rdbuf();
-    build_tree(buffer.str().c_str(), buffer.str().length(),
-               doc.get());
+    build_tree(buffer.str().c_str(), buffer.str().length(), doc.get());
     doc->rebuild = false;
   }
 }
 
-void treesitter_init()
-{
-    printf("treesitter enabled\n");
-    add_listener("treesitter_global", "treesitter", &treesitter_command_callback, &treesitter_poll_callback);
+void treesitter_init() {
+  printf("treesitter enabled\n");
+  add_listener("treesitter_global", "treesitter", &treesitter_command_callback,
+               &treesitter_poll_callback);
 }
 
-void treesitter_shutdown()
-{
-}
+void treesitter_shutdown() {}

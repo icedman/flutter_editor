@@ -1,13 +1,9 @@
 import 'package:editor/editor/cursor.dart';
 import 'package:editor/editor/block.dart';
 import 'package:editor/editor/document.dart';
-import 'package:diff_match_patch/diff_match_patch.dart';
+// import 'package:diff_match_patch/diff_match_patch.dart';
 
-enum ActionType {
-  update,
-  add,
-  remove
-}
+enum ActionType { update, add, remove }
 
 class Action {
   ActionType type = ActionType.update;
@@ -47,10 +43,11 @@ class History {
         if (prev.actions.length == 1) {
           if (entry.actions[0].type == ActionType.update &&
               prev.actions[0].type == entry.actions[0].type &&
-              (prev.actions[0].column + prev.actions[0].insertedText.length) == entry.actions[0].column &&
+              (prev.actions[0].column + prev.actions[0].insertedText.length) ==
+                  entry.actions[0].column &&
               prev.actions[0].block == entry.actions[0].block) {
             if (entry.actions[0].insertedText != '' &&
-              entry.actions[0].insertedText != ' ') {
+                entry.actions[0].insertedText != ' ') {
               prev.actions[0].insertedText += entry.actions[0].insertedText;
               return;
             }
@@ -86,33 +83,52 @@ class History {
   }
 
   // todo make this simple.. remove diffmatchpatch and simply use cursor info
-  void diff(Action action, String t1, String t2) {
-    DiffMatchPatch p = DiffMatchPatch();
-    List<Diff> diffs = p.diff(t1, t2);
-    action.column = 0;
-    int idx = 0;
-    if (diffs.length > 0) {
-      if (diffs[0].operation == 0) {
-        action.column = diffs[0].text.length;
-        idx++;
-      }
+  void diff(Action action, String t1, String t2, {int column = 0}) {
+    String insertedText = '';
+    String deletedText = '';
+
+    int l = t2.length - t1.length;
+    if (l > 0) {
+      insertedText = t2.substring(column, column + l);
+    } else if (l < 0) {
+      deletedText = t1.substring(column, column - l);
     }
-    if (diffs.length > idx) {
-      if (diffs[idx].operation == 1) {
-        action.insertedText = diffs[idx].text;
-      }
-      if (diffs[idx].operation == -1) {
-        action.deletedText = diffs[idx].text;
-      }
-    }
+
+    // DiffMatchPatch p = DiffMatchPatch();
+    // List<Diff> diffs = p.diff(t1, t2);
+    // action.column = 0;
+    // int idx = 0;
+    // if (diffs.length > 0) {
+    //   if (diffs[0].operation == 0) {
+    //     action.column = diffs[0].text.length;
+    //     idx++;
+    //   }
+    // }
+    // if (diffs.length > idx) {
+    //   if (diffs[idx].operation == 1) {
+    //     action.insertedText = diffs[idx].text;
+    //   }
+    //   if (diffs[idx].operation == -1) {
+    //     action.deletedText = diffs[idx].text;
+    //   }
+    // }
+
+    // if (action.column != column || action.insertedText != insertedText || action.deletedText != deletedText) {
+    //   print('diff error!!!');
+    //   print('>>${action.column}[$column] +${action.insertedText}[$insertedText] -${action.deletedText}[$deletedText]');
+    // }
+
+    action.column = column;
+    action.insertedText = insertedText;
+    action.deletedText = deletedText;
   }
 
-  void update(Block? block, {String newText = ''}) {
+  void update(Block? block, {String newText = '', int column = 0}) {
     // print('update ${block?.text} [$newText]');
     Action action = Action();
     action.type = ActionType.update;
     action.block = block;
-    diff(action, block?.text ?? '', newText);
+    diff(action, block?.text ?? '', newText, column: column);
     actions.add(action);
   }
 
