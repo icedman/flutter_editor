@@ -3,7 +3,33 @@ project(editor LANGUAGES CXX C)
 
 #string(APPEND CMAKE_CXX_FLAGS " -Wno-c++11-narrowing")
 string(APPEND CMAKE_CXX_FLAGS " -std=gnu++11")
+#string(APPEND CMAKE_CXX_FLAGS " -DDISABLE_ADD_GRAMMAR_THREADS")
 set (CMAKE_CXX_STANDARD 11)
+
+ADD_DEFINITIONS(-fPIC)
+
+add_library(treesitter
+  SHARED
+  ./tree-sitter/lib/src/alloc.c
+  ./tree-sitter/lib/src/get_changed_ranges.c
+  ./tree-sitter/lib/src/language.c
+  ./tree-sitter/lib/src/lexer.c
+  ./tree-sitter/lib/src/node.c
+  ./tree-sitter/lib/src/parser.c
+  ./tree-sitter/lib/src/query.c
+  ./tree-sitter/lib/src/stack.c
+  ./tree-sitter/lib/src/subtree.c
+  ./tree-sitter/lib/src/tree.c
+  ./tree-sitter/lib/src/tree_cursor.c
+  ./tree-sitter-grammars/tree-sitter-javascript/src/parser.c
+  ./tree-sitter-grammars/tree-sitter-javascript/src/scanner.c
+  ./tree-sitter-grammars/tree-sitter-c/src/parser.c
+)
+
+target_include_directories(treesitter 
+    PRIVATE
+    ./tree-sitter/lib/include
+)
 
 add_library(onigmolib
   SHARED 
@@ -74,6 +100,7 @@ target_include_directories(onigmolib
 
 add_library(editor_api
   SHARED
+    ./tm-parser/textmate/textmate.cpp
     ./tm-parser/textmate/parser/grammar.cpp
     ./tm-parser/textmate/parser/parser.cpp
     ./tm-parser/textmate/parser/pattern.cpp
@@ -97,14 +124,16 @@ target_include_directories(editor_api
     ./Onigmo
     ./jsoncpp/dist
     ./tinyxml2
+    ./tm-parser/textmate/
     ./tm-parser/textmate/parser
     ./tm-parser/textmate/scopes
     ./tm-parser/textmate/theme
     ./tm-parser/textmate/extensions
+    ./tree-sitter/lib/include
     ./highlighter
 )
 
 set_target_properties(editor_api PROPERTIES
   BUILD_WITH_INSTALL_RPATH 1 INSTALL_RPATH "$ORIGIN")
 
-target_link_libraries(editor_api PRIVATE onigmolib)
+target_link_libraries(editor_api PRIVATE onigmolib treesitter)

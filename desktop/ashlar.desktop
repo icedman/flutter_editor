@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Ashlar
+Exec=ashlar
+Icon=/home/iceman/Developer/Projects/flutter/flutter_tm_code/assets/ashlar-icon-512x512.png
+Comment=Edit source codes
+Categories=Utility;TextEditor;Development
+Terminal=false
+StartupNotify=true;

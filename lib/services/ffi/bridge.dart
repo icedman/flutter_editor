@@ -17,11 +17,14 @@ class FFIBridge {
   static late Function destroy_document;
   static late Function add_block;
   static late Function remove_block;
+  static late Function set_block;
   static late Function language_definition;
   static late Function theme_color;
   static late Function theme_info;
   static late Function load_icons;
   static late Function icon_for_filename;
+  static late Function run_tree_sitter;
+  static late Function has_running_threads;
 
   static bool initialized = false;
 
@@ -65,31 +68,47 @@ class FFIBridge {
     final _run_highlighter = nativeEditorApiLib.lookup<
         NativeFunction<
             Pointer<TextSpanStyle> Function(Pointer<Utf8>, Int32, Int32, Int32,
-                Int32, Int32, Int32)>>('run_highlighter');
+                Int32, Int32, Int32, Int32)>>('run_highlighter');
     run_highlighter = _run_highlighter.asFunction<
         Pointer<TextSpanStyle> Function(
-            Pointer<Utf8>, int, int, int, int, int, int)>();
+            Pointer<Utf8>, int, int, int, int, int, int, int)>();
 
-    final _create_document = nativeEditorApiLib
-        .lookup<NativeFunction<Void Function(Int32)>>('create_document');
-    create_document = _create_document.asFunction<void Function(int)>();
+    final _create_document = nativeEditorApiLib.lookup<
+        NativeFunction<Void Function(Int32, Pointer<Utf8>)>>('create_document');
+    create_document =
+        _create_document.asFunction<void Function(int, Pointer<Utf8>)>();
+
+    final _run_tree_sitter = nativeEditorApiLib.lookup<
+        NativeFunction<Void Function(Int32, Pointer<Utf8>)>>('run_tree_sitter');
+    run_tree_sitter =
+        _run_tree_sitter.asFunction<void Function(int, Pointer<Utf8>)>();
 
     final _destroy_document = nativeEditorApiLib
         .lookup<NativeFunction<Void Function(Int32)>>('destroy_document');
     destroy_document = _destroy_document.asFunction<void Function(int)>();
 
-    final _add_block = nativeEditorApiLib
-        .lookup<NativeFunction<Void Function(Int32, Int32)>>('add_block');
-    add_block = _add_block.asFunction<void Function(int, int)>();
+    final _add_block = nativeEditorApiLib.lookup<
+        NativeFunction<Void Function(Int32, Int32, Int32)>>('add_block');
+    add_block = _add_block.asFunction<void Function(int, int, int)>();
 
-    final _remove_block = nativeEditorApiLib
-        .lookup<NativeFunction<Void Function(Int32, Int32)>>('remove_block');
-    remove_block = _remove_block.asFunction<void Function(int, int)>();
+    final _remove_block = nativeEditorApiLib.lookup<
+        NativeFunction<Void Function(Int32, Int32, Int32)>>('remove_block');
+    remove_block = _remove_block.asFunction<void Function(int, int, int)>();
+
+    final _set_block = nativeEditorApiLib.lookup<
+            NativeFunction<Void Function(Int32, Int32, Int32, Pointer<Utf8>)>>(
+        'set_block');
+    set_block =
+        _set_block.asFunction<void Function(int, int, int, Pointer<Utf8>)>();
 
     final _language_definition = nativeEditorApiLib.lookup<
         NativeFunction<Pointer<Utf8> Function(Int32)>>('language_definition');
     language_definition =
         _language_definition.asFunction<Pointer<Utf8> Function(int)>();
+
+    final _has_running_threads = nativeEditorApiLib
+        .lookup<NativeFunction<Int32 Function()>>('has_running_threads');
+    has_running_threads = _has_running_threads.asFunction<int Function()>();
 
     initialized = true;
   }
@@ -97,6 +116,18 @@ class FFIBridge {
   static void initialize(String path) {
     final _path = path.toNativeUtf8();
     _initialize(_path);
+    calloc.free(_path);
+  }
+
+  static void createDocument(int id, String path) {
+    final _path = path.toNativeUtf8();
+    create_document(id, _path);
+    calloc.free(_path);
+  }
+
+  static void runTreeSitter(int id, String path) {
+    final _path = path.toNativeUtf8();
+    run_tree_sitter(id, _path);
     calloc.free(_path);
   }
 
@@ -136,9 +167,10 @@ class FFIBridge {
   // re-use pointers
   static Pointer<Uint8> result = malloc<Uint8>(1024);
   static Pointer<TextSpanStyle> runHighlighter(String text, int lang, int theme,
-      int document, int block, int prev, int next) {
+      int document, int block, int line, int prev, int next) {
     if (text.length > 1024 - 32) {
-      return _runHighlighter(text, lang, theme, document, block, prev, next);
+      return _runHighlighter(
+          text, lang, theme, document, block, line, prev, next);
     }
 
     final units = utf8.encode(text);
@@ -148,18 +180,24 @@ class FFIBridge {
     nativeString[units.length] = 0;
 
     Pointer<TextSpanStyle> res = run_highlighter(
-        result.cast<Utf8>(), lang, theme, document, block, prev, next);
+        result.cast<Utf8>(), lang, theme, document, block, line, prev, next);
 
     return res;
   }
 
   static Pointer<TextSpanStyle> _runHighlighter(String text, int lang,
-      int theme, int document, int block, int prev, int next) {
+      int theme, int document, int block, int line, int prev, int next) {
     Pointer<Utf8> _t = text.toNativeUtf8();
     Pointer<TextSpanStyle> res =
-        run_highlighter(_t, lang, theme, document, block, prev, next);
+        run_highlighter(_t, lang, theme, document, block, line, prev, next);
     calloc.free(_t);
     return res;
+  }
+
+  static void setBlock(int document, int block, int line, String text) {
+    Pointer<Utf8> _t = text.toNativeUtf8();
+    set_block(document, block, line, _t);
+    calloc.free(_t);
   }
 
   static ThemeColor themeColor(String scope) {

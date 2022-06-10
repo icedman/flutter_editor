@@ -21,6 +21,8 @@ class ExplorerItem {
   bool isBinary = false;
   bool isExpanded = false;
 
+  bool canLoadMore = false;
+
   double height = 0;
   int duration = 0;
 
@@ -134,16 +136,17 @@ class Explorer implements ExplorerListener {
   Future<bool> setRootPath(String path) {
     String p = _path.normalize(Directory(path).absolute.path);
     root = ExplorerItem(p);
-    return loadPath(p, recursive: true);
+    backend?.setRootPath(p);
+    return loadPath(p);
   }
 
-  Future<bool> loadPath(String path, {bool recursive: false}) {
+  Future<bool> loadPath(String path) {
     String p = _path.normalize(Directory(path).absolute.path);
     if (isLoading(p)) {
       _busy();
       return Future.value(false);
     }
-    backend?.loadPath(path, recursive: recursive);
+    backend?.loadPath(path);
 
     Completer<bool> completer = Completer<bool>();
     requests[p] = completer;
@@ -231,6 +234,7 @@ class Explorer implements ExplorerListener {
     dynamic json = jsonDecode(items);
     String p = _path.normalize(Directory(json['path']).absolute.path);
     ExplorerItem? item = itemFromPath(p);
+
     item?.setData(json);
     item?.isDirectory = true;
     if (requests.containsKey(p)) {
@@ -280,7 +284,7 @@ abstract class ExplorerListener {
 abstract class ExplorerBackend {
   void addListener(ExplorerListener listener);
   void setRootPath(String path);
-  void loadPath(String path, {bool recursive = false});
+  void loadPath(String path);
   void openFile(String path);
   void createDirectory(String path);
   void createFile(String path);
@@ -289,4 +293,5 @@ abstract class ExplorerBackend {
   void renameDirectory(String path, String newPath);
   void renameFile(String path, String newPath);
   void search(String fileName);
+  void preload();
 }

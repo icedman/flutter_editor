@@ -5,12 +5,15 @@ import 'package:provider/provider.dart';
 
 import 'package:editor/editor/decorations.dart';
 import 'package:editor/editor/cursor.dart';
+import 'package:editor/editor/block.dart';
 import 'package:editor/editor/document.dart';
+import 'package:editor/editor/controller.dart';
 import 'package:editor/services/app.dart';
 import 'package:editor/services/util.dart';
 import 'package:editor/services/timer.dart';
 import 'package:editor/services/input.dart';
 import 'package:editor/services/ui/ui.dart';
+import 'package:editor/services/ffi/bridge.dart';
 import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 
@@ -170,24 +173,72 @@ class ViewLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    int lineNumber = block?.line ?? 0;
+
+    // print('rebuild $lineNumber');
+    return ValueListenableBuilder(
+      key: key,
+      valueListenable: (block ?? Block.empty).notifier.listenable(),
+      builder: (context, value, child) {
+        return _ViewLine(
+            line: line,
+            block: block,
+            width: width,
+            height: height,
+            gutterWidth: gutterWidth,
+            gutterStyle: gutterStyle);
+      },
+    );
+  }
+}
+
+class _ViewLine extends StatelessWidget {
+  _ViewLine({
+    Key? key,
+    Key? this.caretKey,
+    Block? this.block,
+    int this.line = 0,
+    double this.gutterWidth = 0,
+    TextStyle? this.gutterStyle,
+    double this.width = 0,
+    double this.height = 0,
+  }) : super(key: key);
+
+  Key? caretKey;
+  Block? block;
+  int line = 0;
+  double width = 0;
+  double height = 0;
+  double gutterWidth = 0;
+  TextStyle? gutterStyle;
+
+  @override
+  Widget build(BuildContext context) {
     DocumentProvider doc = Provider.of<DocumentProvider>(context);
     Highlighter hl = Provider.of<Highlighter>(context);
     DecorInfo decor = Provider.of<DecorInfo>(context, listen: false);
 
-    int lineNumber = block?.line ?? 0;
-
     Block b = block ?? Block('', document: doc.doc);
-    if (b.spans == null) {
-      Highlighter hl = Provider.of<Highlighter>(context, listen: false);
-      hl.run(b, b.line, b.document ?? Document(), onTap: (command) {
-        switch (command) {
-          case ':unfold':
-            doc.doc.unfold(b);
-            b.makeDirty();
-            doc.touch();
-            break;
-          case ':open_search_result':
-            {
+    int lineNumber = block?.line ?? 0;
+    // print('rebuild renderer $lineNumber');
+
+    final _onLink = (command) {
+      String cmd = '';
+      String params = '';
+      int idx = command.indexOf(':');
+      if (idx != -1) {
+        cmd = command.substring(0, idx);
+        params = command.substring(idx);
+      }
+      switch (cmd) {
+        case 'unfold':
+          doc.doc.unfold(b);
+          b.makeDirty();
+          doc.touch();
+          break;
+        case 'file':
+          {
+            if (params == '://...') {
               Cursor cur = doc.doc.cursor();
               cur.block = b;
               cur.moveCursorToStartOfLine();
@@ -201,12 +252,18 @@ class ViewLine extends StatelessWidget {
               }
               AppProvider.instance()
                   .open(cur.block?.text ?? '', focus: true, scrollTo: ln);
-              break;
             }
-          default:
             break;
-        }
-      });
+          }
+        default:
+          break;
+      }
+    };
+
+    if (b.spans == null) {
+      Highlighter hl = Provider.of<Highlighter>(context, listen: false);
+      // todo > create link decoration
+      hl.run(b, b.line, b.document ?? Document(), onTap: _onLink);
     }
 
     List<InlineSpan> spans = block?.spans ?? [];
@@ -247,6 +304,7 @@ class ViewLine extends StatelessWidget {
 
     // render carets
     List<Widget> carets = [];
+    // move to separate widget
     if ((block?.carets ?? []).isNotEmpty) {
       if (textPainter == null) {
         textPainter = painter();
@@ -259,11 +317,19 @@ class ViewLine extends StatelessWidget {
 
           double left = gutterWidth + offsetForCaret.dx;
           double top = offsetForCaret.dy;
+
+          double w = extents.width;
+          double h = extents.height;
+          if (doc.overwriteMode) {
+            h = 1.75;
+            top += extents.height - 2;
+          } else {
+            w = 2;
+          }
           carets.add(Positioned(
               left: left,
               top: top,
-              child: AnimatedCaret(
-                  width: 2, height: extents.height, color: col.color)));
+              child: AnimatedCaret(width: w, height: h, color: col.color)));
 
           Offset cursorOffset =
               box?.localToGlobal(Offset(left, top)) ?? Offset.zero;
@@ -277,6 +343,7 @@ class ViewLine extends StatelessWidget {
     }
 
     List<Cursor> extras = [...doc.doc.extraCursors, ...doc.doc.sectionCursors];
+    // move to separate widget
     if (extras.isNotEmpty) {
       for (final e in extras) {
         if (e.block != block) continue;
@@ -327,24 +394,19 @@ class _View extends State<View> {
   int visibleStart = -1;
   int visibleEnd = -1;
   bool largeDoc = false;
+  bool customListView = false;
 
   int visibleLine = 0;
   double fontWidth = 0;
   double fontHeight = 0;
   double gutterWidth = 0;
+  int scrollingTo = -1;
 
   @override
   void initState() {
     scroller = ScrollController();
     hscroller = ScrollController();
     scrollTo = PeriodicTimer();
-
-    // hack - to recalculate layout on tab change
-    Future.delayed(const Duration(milliseconds: 0), () {
-      DocumentProvider doc =
-          Provider.of<DocumentProvider>(context, listen: false);
-      doc.touch();
-    });
 
     scroller.addListener(() {
       DocumentProvider doc =
@@ -353,14 +415,22 @@ class _View extends State<View> {
       int docSize = doc.doc.blocks.length;
       double totalHeight = docSize * fontHeight;
 
-      if (scroller.positions.isNotEmpty) {
-        double p = scroller.position.pixels / scroller.position.maxScrollExtent;
-        int line = (p * docSize).toInt();
+      if (scroller.positions.isNotEmpty &&
+          scroller.position.maxScrollExtent > 0) {
         updateVisibleRange(context);
-        if (visibleLine != line) {
-          setState(() {
-            visibleLine = line;
-          });
+        double p = 0;
+        if (scroller.position.maxScrollExtent > 0) {
+          p = scroller.position.pixels / scroller.position.maxScrollExtent;
+        }
+        int vl = (p * docSize).toInt();
+        if (vl != visibleLine) {
+          // todo... costly
+          if (customListView) {
+            setState(() {
+              visibleLine = vl;
+            });
+          }
+          visibleLine = vl;
         }
 
         Offset scroll = Offset(0, scroller.position.pixels);
@@ -433,17 +503,19 @@ class _View extends State<View> {
       }
     }
 
+    DocumentProvider doc =
+        Provider.of<DocumentProvider>(context, listen: false);
+    doc.visibleStart = visibleStart;
+    doc.visibleEnd = visibleEnd;
     // print('$visibleStart $visibleEnd');
   }
 
   bool isLineVisible(int line) {
     bool res = (line >= visibleStart && line <= visibleEnd);
-
     if (visibleStart == -1 || visibleEnd == -1) {
       print('visible range error: $visibleStart $visibleEnd');
       return true;
     }
-
     return res;
   }
 
@@ -554,6 +626,14 @@ class _View extends State<View> {
 
     if (!doc.ready) return Container();
 
+    // todo move to tmparser
+    if (!doc.doc.languageReady) {
+      doc.doc.languageReady = FFIBridge.has_running_threads() == 0;
+      Future.delayed(const Duration(milliseconds: 100), () {
+        doc.doc.makeDirty(highlight: true, notify: true);
+      });
+    }
+
     final TextStyle style = TextStyle(
         fontFamily: theme.fontFamily,
         fontSize: theme.fontSize,
@@ -582,7 +662,7 @@ class _View extends State<View> {
     bool softWrap = doc.softWrap;
 
     double? extent;
-    largeDoc = (doc.doc.blocks.length > 10000);
+    largeDoc = doc.doc.largeDoc;
     if (!softWrap) {
       extent = fontHeight;
     } else {
@@ -591,13 +671,12 @@ class _View extends State<View> {
       }
     }
 
-    if (doc.scrollTo != -1) {
-      int jumpTo = doc.scrollTo;
+    if (doc.scrollTo != -1 && doc.scrollTo != scrollingTo) {
+      scrollingTo = doc.scrollTo;
       Future.delayed(const Duration(milliseconds: 0), () {
-        scrollToLine(jumpTo);
+        scrollToLine(scrollingTo);
       });
       Future.delayed(const Duration(milliseconds: 0), scrollToCursor);
-      doc.scrollTo = -1;
     }
 
     RenderObject? obj = context.findRenderObject();
@@ -613,8 +692,10 @@ class _View extends State<View> {
     }
 
     int docSize = doc.doc.computedSize();
+    customListView = true;
 
     if ((!largeDoc && softWrap)) {
+      customListView = false;
       return ListView.builder(
           controller: scroller,
           itemCount: docSize,

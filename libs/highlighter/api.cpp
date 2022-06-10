@@ -3,8 +3,13 @@
 #include "parse.h"
 #include "reader.h"
 #include "theme.h"
+#include "textmate.h"
 
+#include <fstream>
+#include <iostream>
+#include <string>
 #include <time.h>
+#include <pthread.h>
 
 #define SKIP_PARSE_THRESHOLD 500
 
@@ -15,365 +20,195 @@
   extern "C" __attribute__((visibility("default"))) __attribute__((used))
 #endif
 
+extern "C" {
+#include <tree_sitter/api.h>
+const TSLanguage *tree_sitter_javascript(void);
+const TSLanguage *tree_sitter_c(void);
+#define LANGUAGE tree_sitter_c
+}
+
 #include <iostream>
 #include <string>
-
-#define TIMER_BEGIN                                                            \
-  clock_t start, end;                                                          \
-  double cpu_time_used;                                                        \
-  start = clock();
-
-#define TIMER_END                                                              \
-  end = clock();                                                               \
-  cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
 
 #define MAX_STYLED_SPANS 512
 #define MAX_BUFFER_LENGTH (1024 * 4)
 
-#define SCOPE_COMMENT (1 << 1)
-#define SCOPE_COMMENT_BLOCK (1 << 2)
-#define SCOPE_STRING (1 << 3)
-#define SCOPE_BRACKET (1 << 4)
-#define SCOPE_BRACKET_CURLY (1 << 4)
-#define SCOPE_BRACKET_ROUND (1 << 5)
-#define SCOPE_BRACKET_SQUARE (1 << 6)
-#define SCOPE_BEGIN (1 << 7)
-#define SCOPE_END (1 << 8)
-#define SCOPE_TAG (1 << 9)
-#define SCOPE_VARIABLE (1 << 10)
-#define SCOPE_CONSTANT (1 << 11)
-#define SCOPE_KEYWORD (1 << 12)
-#define SCOPE_ENTITY (1 << 13)
-#define SCOPE_ENTITY_CLASS (1 << 14)
-#define SCOPE_ENTITY_FUNCTION (1 << 15)
-
-struct theme_color_t {
-  int8_t r;
-  int8_t g;
-  int8_t b;
-};
-
-struct theme_info_t {
-  int8_t fg_r;
-  int8_t fg_g;
-  int8_t fg_b;
-  int8_t bg_r;
-  int8_t bg_g;
-  int8_t bg_b;
-  int8_t sel_r;
-  int8_t sel_g;
-  int8_t sel_b;
-  // theme_color_t fg;
-  // theme_color_t bg;
-  // theme_color_t sel;
-};
-
-struct textstyle_t {
-  int32_t start;
-  int32_t length;
-  int32_t flags;
-  int8_t r;
-  int8_t g;
-  int8_t b;
-  int8_t bg_r;
-  int8_t bg_g;
-  int8_t bg_b;
-  int8_t caret;
-  bool bold;
-  bool italic;
-  bool underline;
-  bool strike;
-};
-
-struct rgba_t {
-  int r;
-  int g;
-  int b;
-  int a;
-};
-
-struct span_info_t {
-  int start;
-  int length;
-  rgba_t fg;
-  rgba_t bg;
-  bool bold;
-  bool italic;
-  bool underline;
-  std::string scope;
-};
-
-inline bool color_is_set(rgba_t clr) {
-  return clr.r >= 0 && (clr.r != 0 || clr.g != 0 || clr.b != 0 || clr.a != 0);
-}
-
-inline textstyle_t construct_style(std::vector<span_info_t> &spans, int index) {
-  textstyle_t res = {
-      index, 1, 0, 0, 0, 0, 0, 0, 0, 0, false, false, false, false,
-  };
-
-  int32_t start;
-  int32_t length;
-  int32_t flags;
-  int8_t r;
-  int8_t g;
-  int8_t b;
-  int8_t bg_r;
-  int8_t bg_g;
-  int8_t bg_b;
-  int8_t caret;
-  bool bold;
-  bool italic;
-  bool underline;
-  bool strike;
-
-  for (auto span : spans) {
-    if (index >= span.start && index < span.start + span.length) {
-      if (!color_is_set({res.r, res.g, res.b, 0}) && color_is_set(span.fg)) {
-        res.r = span.fg.r;
-        res.g = span.fg.g;
-        res.b = span.fg.b;
-      }
-      res.italic = res.italic || span.italic;
-
-      if (span.scope.find("comment.block") == 0) {
-        res.flags = res.flags | SCOPE_COMMENT_BLOCK;
-      }
-      if (span.scope.find("comment.line") == 0) {
-        res.flags = res.flags | SCOPE_COMMENT;
-      }
-      if (span.scope.find("string.quoted") == 0) {
-        res.flags = res.flags | SCOPE_STRING;
-      }
-
-      if (index == span.start) {
-        if (span.scope.find(".bracket") != -1) {
-          res.flags = res.flags | SCOPE_BRACKET;
-          if (span.scope.find(".begin") != -1) {
-            res.flags = res.flags | SCOPE_BEGIN;
-          }
-          if (span.scope.find(".end") != -1) {
-            res.flags = res.flags | SCOPE_END;
-          }
-        }
-        if (span.scope.find("variable") != -1) {
-          res.flags = res.flags | SCOPE_VARIABLE;
-        }
-        if (span.scope.find("constant") != -1) {
-          res.flags = res.flags | SCOPE_CONSTANT;
-        }
-        if (span.scope.find("keyword") != -1) {
-          res.flags = res.flags | SCOPE_KEYWORD;
-        }
-        if (span.scope.find("entity") != -1) {
-          res.flags = res.flags | SCOPE_ENTITY;
-          if (span.scope.find("entity.name.class") != -1) {
-            res.flags = res.flags | SCOPE_ENTITY_CLASS;
-          }
-          if (span.scope.find("entity.name.function") != -1) {
-            res.flags = res.flags | SCOPE_ENTITY_FUNCTION;
-          }
-        }
-      }
-    }
-  }
-  return res;
-}
-
-inline bool textstyles_equal(textstyle_t &first, textstyle_t &second) {
-  if (first.flags & SCOPE_BEGIN || second.flags & SCOPE_BEGIN ||
-      first.flags & SCOPE_END || second.flags & SCOPE_END)
-    return false;
-  return first.italic == second.italic && first.underline == second.underline &&
-         first.r == second.r && first.g == second.g && first.b == second.b &&
-         first.bg_r == second.bg_r && first.bg_g == second.bg_g &&
-         first.bg_b == second.bg_b && first.caret == second.caret &&
-         first.flags == second.flags;
-}
-
-static extension_list extensions;
-static std::vector<theme_ptr> themes;
-static icon_theme_ptr icons;
-static std::vector<language_info_ptr> languages;
-
 static textstyle_t textstyle_buffer[MAX_STYLED_SPANS];
 static char text_buffer[MAX_BUFFER_LENGTH];
 
-theme_ptr current_theme() { return themes[0]; }
-
 EXPORT void initialize(char *extensionsPath) {
-  load_extensions(extensionsPath, extensions);
-  // for(auto ext : extensions) {
-  //     printf("%s\n", ext.name.c_str());
-  // }
-}
-
-theme_color_t theme_color_from_scope_fg_bg(char *scope, bool fore = true) {
-  theme_color_t res = {-1, 0, 0};
-  if (current_theme()) {
-    style_t scoped = current_theme()->styles_for_scope(scope);
-    color_info_t sclr = scoped.foreground;
-    if (!fore) {
-      sclr = scoped.background;
-    }
-    res.r = sclr.red * 255;
-    res.g = sclr.green * 255;
-    res.b = sclr.blue * 255;
-    if (sclr.red == -1) {
-      color_info_t clr;
-      current_theme()->theme_color(scope, clr);
-      if (clr.red == -1) {
-        current_theme()->theme_color(
-            fore ? "editor.foreground" : "editor.background", clr);
-      }
-      if (clr.red == -1) {
-        current_theme()->theme_color(fore ? "foreground" : "background", clr);
-      }
-      clr.red *= 255;
-      clr.green *= 255;
-      clr.blue *= 255;
-      res.r = clr.red;
-      res.g = clr.green;
-      res.b = clr.blue;
-    }
-  }
-  return res;
+  Textmate::initialize(extensionsPath);
 }
 
 EXPORT
-theme_color_t theme_color_from_scope(char *scope) {
+rgba_t theme_color(char *scope) {
   return theme_color_from_scope_fg_bg(scope);
 }
 
-theme_info_t themeInfo;
-int themeInfoId = -1;
-
 EXPORT
 theme_info_t theme_info() {
-  char _default[32] = "default";
-  theme_info_t info;
-  color_info_t fg;
-  if (current_theme()) {
-    current_theme()->theme_color("editor.foreground", fg);
-    if (fg.is_blank()) {
-      current_theme()->theme_color("foreground", fg);
-    }
-    if (fg.is_blank()) {
-      theme_color_t tc = theme_color_from_scope_fg_bg(_default);
-      fg.red = (float)tc.r / 255;
-      fg.green = (float)tc.g / 255;
-      fg.blue = (float)tc.b / 255;
-    }
-  }
-
-  fg.red *= 255;
-  fg.green *= 255;
-  fg.blue *= 255;
-
-  color_info_t bg;
-  if (current_theme()) {
-    current_theme()->theme_color("editor.background", bg);
-    if (bg.is_blank()) {
-      current_theme()->theme_color("background", bg);
-    }
-    if (bg.is_blank()) {
-      theme_color_t tc = theme_color_from_scope_fg_bg(_default, false);
-      bg.red = (float)tc.r / 255;
-      bg.green = (float)tc.g / 255;
-      bg.blue = (float)tc.b / 255;
-    }
-  }
-
-  bg.red *= 255;
-  bg.green *= 255;
-  bg.blue *= 255;
-
-  color_info_t sel;
-  if (current_theme())
-    current_theme()->theme_color("editor.selectionBackground", sel);
-  sel.red *= 255;
-  sel.green *= 255;
-  sel.blue *= 255;
-
-  info.fg_r = fg.red;
-  info.fg_g = fg.green;
-  info.fg_b = fg.blue;
-  info.bg_r = bg.red;
-  info.bg_g = bg.green;
-  info.bg_b = bg.blue;
-  info.sel_r = sel.red;
-  info.sel_g = sel.green;
-  info.sel_b = sel.blue;
-
-  // why does this happen?
-  if (info.sel_r < 0 && info.sel_g < 0 && info.sel_b < 0) {
-    info.sel_r *= -1;
-    info.sel_g *= -1;
-    info.sel_b *= -1;
-  }
-
-  return info;
+  return Textmate::theme_info();
 }
 
 EXPORT int load_theme(char *path) {
-  theme_ptr theme = theme_from_name(path, extensions);
-  if (theme != NULL) {
-    themes.emplace_back(theme);
-    return themes.size() - 1;
-  }
-  return 0;
+  return Textmate::load_theme(path);
 }
 
 EXPORT int load_icons(char *path) {
-  icons = icon_theme_from_name(path, extensions);
-  return 0;
+  return Textmate::load_icons(path);
 }
 
 EXPORT int load_language(char *path) {
-  language_info_ptr lange = language_from_file(path, extensions);
-  if (lange != NULL) {
-    languages.emplace_back(lange);
-    return languages.size() - 1;
-  }
-  return 0;
+  return Textmate::load_language(path);
 }
 
-void dump_tokens(std::map<size_t, scope::scope_t> &scopes) {
-  std::map<size_t, scope::scope_t>::iterator it = scopes.begin();
-  while (it != scopes.end()) {
-    size_t n = it->first;
-    scope::scope_t scope = it->second;
-    std::cout << n << " size:" << scope.size()
-              << " atoms:" << to_s(scope).c_str() << std::endl;
-
-    it++;
-  }
-}
-
-std::map<size_t, parse::stack_ptr> parser_states;
-std::map<size_t, std::string> block_texts;
-
-class Block {
+class Block : public block_data_t {
 public:
-  Block() : blockId(0), parser_state(NULL), commentLine(false) {}
+  Block() : block_data_t(), blockId(0), nextId(0)
+  {}
 
+  std::string text;
   int blockId;
-  bool commentLine;
-  parse::stack_ptr parser_state;
+  int nextId;
 };
 
 class Document {
 public:
-  int documentId = 0;
+  Document() : documentId(0), tree(0), rebuild(false) {}
+
+  ~Document() {
+    if (tree) {
+      ts_tree_delete(tree);
+    }
+  }
+
+<<<<<<< HEAD
+EXPORT
+theme_color_t theme_color_from_scope(char *scope) {
+  return theme_color_from_scope_fg_bg(scope);
+}
+=======
+  int documentId;
+  bool rebuild;
+  std::string path;
+  std::string contents;
   std::map<size_t, std::shared_ptr<Block>> blocks;
+  TSTree *tree;
+>>>>>>> 160e437c8d2b14634dee8938cab93b32baa1775e
+
+  std::shared_ptr<Block> start;
 };
 
 std::map<size_t, std::shared_ptr<Document>> documents;
 
+void walk_tree(TSTreeCursor *cursor, int depth, int line,
+               std::vector<TSNode> *nodes) {
+  TSNode node = ts_tree_cursor_current_node(cursor);
+  int start = ts_node_start_byte(node);
+  int end = ts_node_end_byte(node);
+
+  const char *type = ts_node_type(node);
+  TSPoint startPoint = ts_node_start_point(node);
+  TSPoint endPoint = ts_node_end_point(node);
+  if (line != -1 && (line < startPoint.row || line > endPoint.row)) {
+    return;
+  }
+
+  if (startPoint.row == line || endPoint.row == line) {
+    // for(int i=0; i<depth; i++) {
+    //   printf(" ");
+    // }
+    printf("(%d,%d) (%d,%d) [ %s ]\n", startPoint.row, startPoint.column, endPoint.row, endPoint.column, type);
+    if (nodes != NULL) {
+      nodes->push_back(node);
+    }
+  }
+
+  if (!ts_tree_cursor_goto_first_child(cursor)) {
+    return;
+  }
+
+  do {
+    walk_tree(cursor, depth + 1, line, nodes);
+  } while (ts_tree_cursor_goto_next_sibling(cursor));
+}
+
+void build_tree(const char *buffer, int len, Document *doc) {
+  TSParser *parser = ts_parser_new();
+  if (!ts_parser_set_language(parser, LANGUAGE())) {
+    fprintf(stderr, "Invalid language\n");
+  }
+
+  TSTree *tree = ts_parser_parse_string(parser, NULL, buffer, len);
+
+  TSNode root_node = ts_tree_root_node(tree);
+  TSTreeCursor cursor = ts_tree_cursor_new(root_node);
+
+  doc->tree = tree;
+  // ts_tree_delete(tree);
+  ts_parser_delete(parser);
+}
+
+void rebuild_tree(Document *doc) {
+  std::shared_ptr<Block> block = doc->start;
+  doc->contents = "";
+  while (block) {
+    doc->contents += block->text;
+    doc->contents += "\n";
+    if (block->nextId == 0)
+      break;
+    // printf(">>%s\n", block->text.c_str());
+    block = doc->blocks[block->nextId];
+  }
+  // printf(">%s\n", contents.c_str());
+
+  TSParser *parser = ts_parser_new();
+  if (!ts_parser_set_language(parser, LANGUAGE())) {
+    fprintf(stderr, "Invalid language\n");
+  }
+
+  if (doc->tree) {
+    ts_tree_delete(doc->tree);
+  }
+
+  TSTree *tree =
+      ts_parser_parse_string(parser, NULL, doc->contents.c_str(), doc->contents.size());
+  doc->contents = "";
+
+  TSNode root_node = ts_tree_root_node(tree);
+  TSTreeCursor cursor = ts_tree_cursor_new(root_node);
+  // walk_tree(&cursor, 0, -1, NULL);
+
+  doc->tree = tree;
+  doc->rebuild = false;
+
+  // ts_tree_delete(tree);
+  ts_parser_delete(parser);
+}
+
 EXPORT
-void create_document(int documentId) {
+void create_document(int documentId, char *path) {
   if (documents[documentId] == NULL) {
     documents[documentId] = std::make_shared<Document>();
+    if (path != NULL) {
+      documents[documentId]->path = path;
+    }
+  }
+}
+
+EXPORT
+void run_tree_sitter(int documentId, char *path) {
+  if (documents[documentId] == NULL) {
+    documents[documentId] = std::make_shared<Document>();
+  }
+
+  if (strlen(path) > 0) {
+    std::ifstream t(path);
+    std::stringstream buffer;
+    buffer << t.rdbuf();
+    build_tree(buffer.str().c_str(), buffer.str().length(),
+               documents[documentId].get());
+    documents[documentId]->rebuild = false;
   }
 }
 
@@ -381,7 +216,7 @@ EXPORT
 void destroy_document(int documentId) { documents[documentId] = NULL; }
 
 EXPORT
-void add_block(int documentId, int blockId) {
+void add_block(int documentId, int blockId, int line) {
   if (documents[documentId] == NULL) {
     return;
   }
@@ -391,7 +226,7 @@ void add_block(int documentId, int blockId) {
 }
 
 EXPORT
-void remove_block(int documentId, int blockId) {
+void remove_block(int documentId, int blockId, int line) {
   if (documents[documentId] == NULL) {
     return;
   }
@@ -399,17 +234,73 @@ void remove_block(int documentId, int blockId) {
 }
 
 EXPORT
-void set_block(int blockId, char *text) {
-  // block_texts[blockId] = text;
+void set_block(int documentId, int blockId, int line, char *text) {
+  if (documents[documentId] == NULL) {
+    create_document(documentId, NULL);
+  }
+  if (documents[documentId]->blocks[blockId] == NULL) {
+    documents[documentId]->blocks[blockId] = std::make_shared<Block>();
+  }
+
+  if (documents[documentId]->blocks[blockId]->text != text) {
+    // printf(">>[%s]\n[%s]\n",
+    // documents[documentId]->blocks[blockId]->text.c_str(), text);
+    documents[documentId]->blocks[blockId]->text = text;
+    documents[documentId]->rebuild = true;
+  }
+  if (line == 0) {
+    documents[documentId]->start = documents[documentId]->blocks[blockId];
+  }
 }
 
 EXPORT
 textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
-                             int block, int previous_block, int next_block) {
+                             int blockId, int line, int previousBlockId,
+                             int nextBlockId) {
   // end marker
   textstyle_buffer[0].start = 0;
   textstyle_buffer[0].length = 0;
+
+  set_block(document, blockId, line, _text);
+
+  block_data_t *block = documents[document]->blocks[blockId].get();
+  block_data_t *previous_block = documents[document]->blocks[previousBlockId].get();
+  block_data_t *next_block = documents[document]->blocks[nextBlockId].get();
+
+  // printf("line %d\n", line);
+
+  std::string tmp = _text;
+  std::vector<textstyle_t> res = Textmate::run_highlighter(_text, 
+      Textmate::language_info(langId),
+      Textmate::theme(),
+      block,
+      previous_block,
+      next_block
+      );
+
+  int idx = 0;
+  auto it = res.begin();
+  while(it != res.end()) {
+    textstyle_t r = *it++;
+    textstyle_buffer[idx] = r;
+    // memcpy(&textstyle_buffer[idx], &r, sizeof(textstyle_t));
+    // printf(">(%d-%d) %d %d %d\n",
+    //     textstyle_buffer[idx].start,
+    //     textstyle_buffer[idx].length,
+    //     textstyle_buffer[idx].r,
+    //     textstyle_buffer[idx].g,
+    //     textstyle_buffer[idx].b);
+    idx++;
+  }
+  textstyle_buffer[idx].start = 0;
+  textstyle_buffer[idx].length = 0;
+
+  #if 0
   if (strlen(_text) > SKIP_PARSE_THRESHOLD) {
+    return textstyle_buffer;
+  }
+
+  if (parse::grammar_t::running_threads > 0) {
     return textstyle_buffer;
   }
 
@@ -424,12 +315,29 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
     themeInfoId = themeId;
   }
 
-  create_document(document);
-
   std::map<size_t, scope::scope_t> scopes;
-
   std::string str = _text;
   str += "\n";
+
+  set_block(document, block, line, _text);
+  std::vector<TSNode> tree_nodes;
+
+  /*
+  if (documents[document]->tree) {
+    documents[document]->blocks[block]->nextId = next_block;
+    if (documents[document]->blocks[previous_block] != NULL) {
+      documents[document]->blocks[previous_block]->nextId = block;
+    }
+
+    if (documents[document]->rebuild) {
+      rebuild_tree(documents[document].get());
+    }
+
+    TSNode root_node = ts_tree_root_node(documents[document]->tree);
+    TSTreeCursor cursor = ts_tree_cursor_new(root_node);
+    walk_tree(&cursor, 0, line, &tree_nodes);
+  }
+  */
 
   const char *text = str.c_str();
 
@@ -459,9 +367,10 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
   // dump_tokens(scopes);
   // }
 
-  add_block(document, block);
+  add_block(document, block, 0);
   documents[document]->blocks[block]->parser_state = parser_state;
   documents[document]->blocks[block]->commentLine = false;
+  // documents[document]->blocks[block]->text = _text;
 
   std::map<size_t, scope::scope_t>::iterator it = scopes.begin();
   size_t n = 0;
@@ -511,6 +420,44 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
       prev = &s;
     }
   }
+
+  /*
+  for(auto node : tree_nodes)
+  {
+    const char *type = ts_node_type(node);
+    TSPoint startPoint = ts_node_start_point(node);
+    TSPoint endPoint = ts_node_end_point(node);
+
+    if (startPoint.row != endPoint.row) continue;
+
+    std::string scopeName = type;
+
+    // printf(">%d %d\n", startPoint.row, startPoint.column);
+    if (scopeName == "identifier") {
+      scopeName = "variable";
+    } else {
+      continue;
+    }
+
+    style_t style = theme->styles_for_scope(scopeName);
+    span_info_t span = {.start = (int)startPoint.column,
+                        .length = (int)(endPoint.column - startPoint.column),
+                        .fg =
+                            {
+                                (int)(255 * style.foreground.red),
+                                (int)(255 * style.foreground.green),
+                                (int)(255 * style.foreground.blue),
+                                0,
+                            },
+                        .bg = {0, 0, 0, 0},
+                        .bold = style.bold == bool_true,
+                        .italic = style.italic == bool_true,
+                        .underline = style.underlined == bool_true,
+                        // .state = state,
+                        .scope = scopeName};
+    spans.push_back(span);
+  }
+  */
 
   int idx = 0;
   textstyle_t *prev = NULL;
@@ -584,21 +531,23 @@ textstyle_t *run_highlighter(char *_text, int langId, int themeId, int document,
         (textstyle_buffer[idx - 1].flags & SCOPE_COMMENT);
   }
 
+  #endif
+  
   return textstyle_buffer;
 }
 
 EXPORT
 char *language_definition(int langId) {
-  language_info_ptr lang = languages[langId];
-  std::ostringstream ss;
-  ss << lang->definition;
-  strcpy(text_buffer, ss.str().c_str());
-  return text_buffer;
+  return Textmate::language_definition(langId);
 }
 
 EXPORT
 char *icon_for_filename(char *filename) {
-  icon_t icon = icon_for_file(icons, filename, extensions);
-  strcpy(text_buffer, icon.path.c_str());
-  return text_buffer;
+  return Textmate::icon_for_filename(filename);
+}
+
+EXPORT
+int has_running_threads()
+{
+  return Textmate::has_running_threads();
 }

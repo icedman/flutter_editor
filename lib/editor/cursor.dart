@@ -1,7 +1,7 @@
 import 'dart:convert';
+import 'dart:ui';
+import 'package:editor/editor/block.dart';
 import 'package:editor/editor/document.dart';
-import 'package:editor/editor/history.dart';
-import 'package:flutter/material.dart';
 
 String safeSubstring(String text, int start, [int? end]) {
   if ((end != null && start >= end) || start < 0 || text == '') {
@@ -34,7 +34,7 @@ class Cursor {
   int column = 0;
   Block? anchorBlock;
   int anchorColumn = 0;
-  Color color = Colors.white;
+  Color color = const Color(0xffffffff);
 
   Offset screenOffset = Offset.zero;
 
@@ -166,6 +166,8 @@ class Cursor {
   void moveCursorLeft({int count = 1, bool keepAnchor = false}) {
     block?.makeDirty();
     if (hasSelection() && !keepAnchor) {
+      Cursor cur = normalized(inverse: true);
+      copyFrom(cur);
       clearSelection();
       return;
     }
@@ -194,6 +196,8 @@ class Cursor {
   void moveCursorRight({int count = 1, bool keepAnchor = false}) {
     block?.makeDirty();
     if (hasSelection() && !keepAnchor) {
+      Cursor cur = normalized();
+      copyFrom(cur);
       clearSelection();
       return;
     }
@@ -226,7 +230,7 @@ class Cursor {
   void moveCursorUp({int count = 1, bool keepAnchor = false}) {
     _moveCursorUp(count: count, keepAnchor: keepAnchor);
     int idx = 0;
-    while ((block?.isHidden() ?? false) && idx++ < 1000) {
+    while ((block?.isHidden ?? false) && idx++ < 1000) {
       _moveCursorUp(count: count, keepAnchor: keepAnchor);
     }
   }
@@ -244,7 +248,7 @@ class Cursor {
   void moveCursorDown({int count = 1, bool keepAnchor = false}) {
     _moveCursorDown(count: count, keepAnchor: keepAnchor);
     int idx = 0;
-    while ((block?.isHidden() ?? false) && idx++ < 1000) {
+    while ((block?.isHidden ?? false) && idx++ < 1000) {
       _moveCursorDown(count: count, keepAnchor: keepAnchor);
     }
   }
@@ -328,7 +332,8 @@ class Cursor {
       document?.removeBlockAtLine(blockLine + 1);
     }
 
-    document?.history.update(cur.block);
+    String newText = left + right;
+    document?.history.update(cur.block, newText: newText);
     cur.block?.text = left + right;
     cur.column = left.length;
     cur.clearSelection();
@@ -490,8 +495,9 @@ class Cursor {
 
     String ln = next.text;
     document?.removeBlockAtLine(next.line);
-    document?.history.update(block);
-    block?.text = l + ln;
+    String newText = l + ln;
+    document?.history.update(block, newText: newText);
+    block?.text = newText;
     block?.makeDirty(highlight: true);
 
     cursorsToMerge.forEach((c) {
@@ -509,7 +515,7 @@ class Cursor {
     if (column >= l.length) {
       moveCursorToEndOfLine();
 
-      if (block?.isFolded() ?? true) {
+      if (block?.isFolded ?? true) {
         document?.unfold(block);
         return;
       }
@@ -520,14 +526,15 @@ class Cursor {
 
     String left = l.substring(0, column);
     String right = l.substring(column + numberOfCharacters);
-    document?.history.update(block);
-    block?.text = left + right;
+    String newText = left + right;
+    document?.history.update(block, newText: newText);
+    block?.text = newText;
     block?.makeDirty(highlight: true);
     advanceBlockCursors(-numberOfCharacters);
   }
 
   void insertNewLine() {
-    if (block?.isFolded() ?? true) {
+    if (block?.isFolded ?? true) {
       document?.unfold(block);
       return;
     }
@@ -542,12 +549,14 @@ class Cursor {
     String right = l.substring(column);
 
     // handle new line
-    document?.history.update(block);
-    block?.text = left;
+    String newText = left;
+    document?.history.update(block, newText: newText);
+    block?.text = newText;
     block?.makeDirty(highlight: true);
     Block? newBlock = document?.addBlockAtLine(line + 1);
-    document?.history.update(newBlock);
-    newBlock?.text = right;
+    newText = right;
+    document?.history.update(newBlock, newText: newText);
+    newBlock?.text = newText;
     newBlock?.makeDirty(highlight: true);
     moveCursorNextLine();
   }
@@ -577,9 +586,9 @@ class Cursor {
 
     String left = l.substring(0, column);
     String right = l.substring(column);
-
-    document?.history.update(block, type: 'insert', inserted: text);
-    block?.text = left + text + right;
+    String newText = left + text + right;
+    document?.history.update(block, newText: newText);
+    block?.text = newText;
     block?.makeDirty(highlight: true);
     moveCursorRight(count: text.length);
     advanceBlockCursors(text.length);

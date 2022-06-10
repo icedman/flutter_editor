@@ -2,7 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:editor/editor/block.dart';
 import 'package:editor/editor/document.dart';
+import 'package:editor/editor/controller.dart';
 import 'package:editor/editor/decorations.dart';
 import 'package:editor/services/util.dart';
 import 'package:editor/services/highlight/theme.dart';
@@ -39,7 +41,7 @@ class MapPainter extends CustomPainter {
 
     canvas.scale(minimapScaleX, 1);
 
-    Block? block = doc?.blockAtLine(start * perPage) ?? Block('');
+    Block? block = doc?.blockAtLine(start * perPage) ?? Block.empty;
     for (int l = 0; l < perPage; l++) {
       double j = 0;
       double y = (minimapLineSpacing * l).toDouble();
@@ -118,8 +120,8 @@ class MinimapPage extends StatelessWidget {
     int l = p.toInt() + (start * perPage);
     DocumentProvider doc =
         Provider.of<DocumentProvider>(context, listen: false);
-    doc.scrollTo = l + lead;
-    doc.touch();
+    // doc.scrollTo = l + lead;
+    doc.scrollToLine(l + lead);
   }
 }
 
@@ -212,10 +214,11 @@ class _Minimap extends State<Minimap> {
               itemBuilder: (context, index) {
                 int hash = 0;
                 Block? block =
-                    doc.doc.blockAtLine((index * perPage)) ?? Block('');
+                    doc.doc.blockAtLine((index * perPage)) ?? Block.empty;
                 for (int i = 0; i < perPage; i++) {
                   hash += ((block?.text ?? '').length); // improve
-                  hash += ((block?.spans ?? []).length) << 4;
+                  List<InlineSpan> spans = block?.spans ?? [];
+                  hash += (spans.length) << 4;
                   block = block?.next;
                   if (block == null) break;
                 }

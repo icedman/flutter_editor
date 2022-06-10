@@ -8,8 +8,11 @@ EXPORTS
     destroy_document
     add_block
     remove_block
+    set_block
+    theme_color
     theme_info
     theme_color_from_scope
     load_icons
     icon_for_filename
     language_definition
+    run_tree_sitter
