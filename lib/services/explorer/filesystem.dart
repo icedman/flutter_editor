@@ -86,7 +86,8 @@ class ExplorerItem {
 
   void setData(dynamic items) {
     if (items['items'] == null) return;
-    for (final item in items['items']) {
+
+    for (var item in items['items']) {
       String path = item['path'] ?? '';
       if (path == '') continue;
       if (path.startsWith('.')) {
@@ -94,6 +95,9 @@ class ExplorerItem {
       }
       String base = _path.basename(path);
       if (base.startsWith('.')) continue; // skip
+
+      item['path'] = path;
+
       String dir = _path.dirname(path);
       if (dir == fullPath && path != fullPath) {
         ExplorerItem? ci = itemFromPath(path, deep: false);
@@ -105,6 +109,26 @@ class ExplorerItem {
           children.add(ci);
         }
       }
+    }
+
+    List<ExplorerItem?> removed = [];
+    for (final c in children) {
+      bool found = false;
+      String cp = c?.fullPath ?? '';
+      for (final item in items['items']) {
+        String ip = item?['path'];
+        if (cp == ip) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        removed.add(c);
+      }
+    }
+
+    for (final c in removed) {
+      children.remove(c);
     }
 
     children.sort((a, b) {

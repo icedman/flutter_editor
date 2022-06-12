@@ -178,14 +178,11 @@ class ExplorerProvider extends ChangeNotifier implements ExplorerListener {
 
       bool shouldNotify = false;
       for (var i in tree) {
-        if (gitStatus.containsKey(i?.fullPath ?? '')) {
-          String status = gitStatus[i?.fullPath ?? ''] ?? '';
-          i?.extraData = i.extraData ?? {};
-          if (i?.extraData['status'] == null ||
-              i?.extraData['status'] != status) {
-            i?.extraData['status'] = status;
-            shouldNotify = true;
-          }
+        i?.extraData = i.extraData ?? {};
+        String? itemStatus = gitStatus[i?.fullPath ?? ''];
+        if (i?.extraData['status'] != itemStatus) {
+          i?.extraData['status'] = itemStatus;
+          shouldNotify = true;
         }
       }
 
@@ -321,7 +318,10 @@ class ExplorerTreeItem extends StatelessWidget {
               child: Icon(Icons.circle, size: 6, color: clr)));
     }
 
-    return Stack(children: [button, statusItem ?? Container()]);
+    return Stack(children: [
+      Container(width: app.sidebarWidth, child: button),
+      statusItem ?? Container()
+    ]);
   }
 }
 
