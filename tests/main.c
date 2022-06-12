@@ -1,4 +1,5 @@
-bool handle_keybinding(struct tinywl_server* server, xkb_keysym_t sym)
+bool handle_keybinding(struct tinywl_server* server,
+    xkb_keysym_t sym)
 {
     switch (sym) {
     case XKB_KEY_Escape:

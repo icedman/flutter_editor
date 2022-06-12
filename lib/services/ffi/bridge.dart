@@ -240,6 +240,9 @@ class FFIListener {
 
 FFIMessaging _messaging = FFIMessaging();
 
+const int POLL_INTERVAL = 100;
+const int REQUEST_TIMEOUT = 3000;
+
 class FFIMessaging {
   static FFIMessaging instance() {
     return _messaging;
@@ -252,21 +255,34 @@ class FFIMessaging {
   Map<int, Completer<dynamic>> requests = {};
 
   late Timer periodic;
+  int timeout = 0;
 
   FFIMessaging() {
-    periodic = Timer.periodic(Duration(milliseconds: 100), (Timer t) {
+    periodic = Timer.periodic(Duration(milliseconds: POLL_INTERVAL), (Timer t) {
+      timeout += POLL_INTERVAL;
+      if (timeout > REQUEST_TIMEOUT) {
+        timeout = 0;
+        for (var k in requests.keys) {
+          requests[k]?.complete(null);
+        }
+        requests.clear();
+      } else {}
       int messages = FFIBridge.poll_messages();
-      if (messages == 0) return;
+      if (messages == 0) {
+        return;
+      }
 
       String res = FFIBridge.receiveMessage();
       final m = json.decode(res);
 
       int requestId = m['requestId'] ?? 0;
+
       // send to completers
       if (requestId > 0) {
         if (requests.containsKey(requestId)) {
           requests[requestId]?.complete(m);
           requests.remove(requestId);
+          timeout = 0;
         }
       }
 
@@ -279,6 +295,7 @@ class FFIMessaging {
           continue;
         }
         l.callback?.call(m, l);
+        timeout = 0;
       }
     });
   }
@@ -298,10 +315,8 @@ class FFIMessaging {
     obj['requestId'] = _requestId++;
     Completer<dynamic> completer = Completer<dynamic>();
     requests[obj['requestId']] = completer;
-
-    // build completer
+    timeout = 0;
     FFIBridge.sendMessageObj(obj);
-
     return completer.future;
   }
 }

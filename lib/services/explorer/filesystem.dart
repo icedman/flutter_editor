@@ -29,6 +29,7 @@ class ExplorerItem {
   ExplorerItem? parent;
   List<ExplorerItem?> children = [];
   dynamic data;
+  dynamic extraData;
 
   void buildTree(List<ExplorerItem?> items) {
     if (isDirectory) {
@@ -77,6 +78,10 @@ class ExplorerItem {
       }
     }
     return null;
+  }
+
+  ExplorerItem? rootItem() {
+    return parent?.rootItem() ?? this;
   }
 
   void setData(dynamic items) {
