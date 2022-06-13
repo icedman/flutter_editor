@@ -5,7 +5,7 @@ import 'package:editor/services/ui/status.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-
+import 'package:path/path.dart' as _path;
 import 'package:editor/editor/decorations.dart';
 import 'package:editor/editor/cursor.dart';
 import 'package:editor/editor/block.dart';
@@ -91,6 +91,9 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       FFIBridge.run(
           () => FFIBridge.createDocument(documentId, doc.doc.docPath));
     });
+    d.addListener('onSave', (documentId) {
+      gitDiff();
+    });
     d.addListener('onDestroy', (documentId) {
       FFIBridge.run(() => FFIBridge.destroy_document(documentId));
     });
@@ -116,6 +119,8 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       Future.delayed(const Duration(seconds: 3), () {
         indexer.indexFile(widget.path);
       });
+
+      gitDiff();
     });
 
     decor = DecorInfo();
@@ -178,6 +183,21 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
         _isKeyboardVisible = newValue;
       });
     }
+  }
+
+  void gitDiff() {
+    print('git diff ${doc.doc.docPath}');
+    // path should be relative from git root
+    FFIMessaging.instance().sendMessage({
+      'channel': 'git',
+      'message': {
+        'command': 'diff',
+        'path': '${_path.dirname(doc.doc.docPath)}',
+        'path_spec': '${doc.doc.docPath}'
+      }
+    }).then((res) {
+      print(res);
+    });
   }
 
   void onShortcut(String keys) {

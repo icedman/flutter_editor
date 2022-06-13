@@ -84,8 +84,11 @@ class ExplorerItem {
     return parent?.rootItem() ?? this;
   }
 
-  void setData(dynamic items) {
-    if (items['items'] == null) return;
+  bool setData(dynamic items) {
+    if (items['items'] == null) return false;
+
+    List<ExplorerItem?> added = [];
+    List<ExplorerItem?> removed = [];
 
     for (var item in items['items']) {
       String path = item['path'] ?? '';
@@ -107,11 +110,11 @@ class ExplorerItem {
           ci.isDirectory = item['isDirectory'];
           ci.parent = this;
           children.add(ci);
+          added.add(ci);
         }
       }
     }
 
-    List<ExplorerItem?> removed = [];
     for (final c in children) {
       bool found = false;
       String cp = c?.fullPath ?? '';
@@ -138,6 +141,8 @@ class ExplorerItem {
       }
       return a.fileName.compareTo(b.fileName);
     });
+
+    return (removed.length + added.length) > 0;
   }
 
   @override
@@ -264,10 +269,10 @@ class Explorer implements ExplorerListener {
     String p = _path.normalize(Directory(json['path']).absolute.path);
     ExplorerItem? item = itemFromPath(p);
 
-    item?.setData(json);
+    bool didUpdate = item?.setData(json) ?? false;
     item?.isDirectory = true;
     if (requests.containsKey(p)) {
-      requests[p]?.complete(true);
+      requests[p]?.complete(didUpdate);
       requests.remove(p);
     }
   }

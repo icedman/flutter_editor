@@ -1,5 +1,7 @@
 #include "api.h"
 
+#ifdef ENABLE_TREESITTER
+
 extern "C" {
 #include <tree_sitter/api.h>
 const TSLanguage *tree_sitter_javascript(void);
@@ -147,3 +149,5 @@ void treesitter_init() {
 }
 
 void treesitter_shutdown() {}
+
+#endif

@@ -358,7 +358,7 @@ int _git_status(Json::Value json, request_t *req) {
                     GIT_STATUS_OPT_SORT_CASE_SENSITIVELY;
   git_repository *repo = nullptr;
 
-  int error = git_repository_open(&repo, localPath.c_str());
+  int error = open_repository(&repo, localPath.c_str());
   if (error < 0) {
     GOTO_CLEANUP_ON_ERROR
   }
@@ -405,7 +405,7 @@ int _git_log(Json::Value json, request_t *req) {
   }
 
   git_repository *repo = nullptr;
-  int error = git_repository_open(&repo, localPath.c_str());
+  int error = open_repository(&repo, localPath.c_str());
   if (error < 0) {
     GOTO_CLEANUP_ON_ERROR
   }

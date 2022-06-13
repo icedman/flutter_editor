@@ -12,6 +12,9 @@ This project is the more advanced version of editor_from_scratch (https://github
 * syntax highlighting with textmate
 * auto complete (document indexing)
 * minimap
+xx
+zz
+asdasd
 * unlimited undo
 * unlimited redo
 * search and replace

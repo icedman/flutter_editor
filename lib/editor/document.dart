@@ -200,10 +200,17 @@ class Document {
   Future<bool> saveFile({String? path}) async {
     File f = await File(path ?? docPath);
     String content = '';
+    int line = 0;
     blocks.forEach((l) {
+      l.originalLine = line++;
       content += l.text + '\n';
     });
     f.writeAsString(content);
+
+    listeners['onSave']?.forEach((l) {
+      l?.call(path);
+    });
+
     return true;
   }
 

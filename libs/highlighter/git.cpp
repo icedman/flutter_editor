@@ -1,5 +1,6 @@
 #include "api.h"
-#include <stdio.h>
+
+#ifdef ENABLE_GIT
 
 extern "C" {
 #include "git2.h"
@@ -10,25 +11,6 @@ extern "C" {
 char default_name[64] = {0};
 char default_remote[64] = {0};
 char default_branch[64] = {0};
-
-#define BEGIN_PRINTLN                                                          \
-  {                                                                            \
-    std::ostringstream ss;
-
-#define PUSH_PRINTLN(msg) ss << msg;
-
-#define END_PRINTLN                                                            \
-  req->response.push_back(ss.str());                                           \
-  }
-
-#define PRINTLN_LN req->response.push_back("");
-#define PRINTF(a, b)                                                           \
-  {                                                                            \
-    char tmp[250];                                                             \
-    sprintf(tmp, a, b);                                                        \
-    PUSH_PRINTLN(tmp);                                                         \
-  }
-#define PUSH_PRINTLN_TAB ss << "\t";
 
 #define GOTO_CLEANUP_ON_ERROR                                                  \
   {                                                                            \
@@ -56,7 +38,6 @@ static int show_branch(git_repository *repo, request_t *req) {
   } else if (error < 0) {
     GOTO_CLEANUP_ON_ERROR
   }
-  // check_lg2(error, "failed to get current branch", NULL);
 
   // if (format == FORMAT_LONG)
   //     _printf("# On branch %s\n",
@@ -79,7 +60,30 @@ cleanup:
   return error;
 }
 
+bool open_repository(git_repository** repo, const char *base_path) {
+
+  printf(">?[%s]\n", base_path);
+
+  *repo = NULL;
+  git_repository_open(repo, base_path);
+  if (*repo != NULL) {
+    return true;
+  }
+
+  std::string str = base_path;
+  std::string parent = str.substr(0, str.find_last_of("/"));
+  if (str == parent) {
+    parent = parent.substr(0, parent.find_last_of("\\"));
+  }
+  if (str != parent) {
+    return open_repository(repo, parent.c_str());
+  }
+
+  return false;
+}
+
 #include "git/git_status.inc.cpp"
+#include "git/git_diff.inc.cpp"
 
 static request_list git_requests;
 
@@ -94,6 +98,9 @@ void *git_thread(void *arg) {
   if (cmd == "log") {
     _git_log(message, req);
   }
+  if (cmd == "diff") {
+    _git_diff(message, req);
+  }
 
   // printf(">%s\n", request->message
   // printf(">>>callback 1! %s\n", message.toStyledString().c_str());;
@@ -107,7 +114,8 @@ void git_command_callback(message_t m, listener_t l) {
   for (auto r : git_requests) {
     std::string rmsg = r->message.message["message"].toStyledString();
     if (message == rmsg) {
-      printf("the same request is pending\n");
+      // todo reply right away .. to close the request
+      // printf("the same request is pending\n");
       return;
     }
   }
@@ -131,3 +139,5 @@ void git_init() {
 }
 
 void git_shutdown() { git_libgit2_shutdown(); }
+
+#endif

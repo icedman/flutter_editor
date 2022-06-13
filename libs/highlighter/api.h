@@ -121,4 +121,23 @@ void post_message(message_t msg);
 void dispatch_messages();
 void poll_requests(request_list &requests);
 
+#define BEGIN_PRINTLN                                                          \
+  {                                                                            \
+    std::ostringstream ss;
+
+#define PUSH_PRINTLN(msg) ss << msg;
+
+#define END_PRINTLN                                                            \
+  req->response.push_back(ss.str());                                           \
+  }
+
+#define PRINTLN_LN req->response.push_back("");
+#define PRINTF(a, b)                                                           \
+  {                                                                            \
+    char tmp[250];                                                             \
+    sprintf(tmp, a, b);                                                        \
+    PUSH_PRINTLN(tmp);                                                         \
+  }
+#define PUSH_PRINTLN_TAB ss << "\t";
+
 #endif // API_H
