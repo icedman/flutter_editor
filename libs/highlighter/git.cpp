@@ -61,9 +61,6 @@ cleanup:
 }
 
 bool open_repository(git_repository** repo, const char *base_path) {
-
-  printf(">?[%s]\n", base_path);
-
   *repo = NULL;
   git_repository_open(repo, base_path);
   if (*repo != NULL) {

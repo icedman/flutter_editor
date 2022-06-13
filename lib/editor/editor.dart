@@ -47,6 +47,8 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
   late FocusNode focusNode;
   late FocusNode textFocusNode;
 
+  FileInfoCache fileInfo = FileInfoCache();
+
   bool _isKeyboardVisible =
       WidgetsBinding.instance.window.viewInsets.bottom > 0.0;
 
@@ -186,7 +188,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
   }
 
   void gitDiff() {
-    print('git diff ${doc.doc.docPath}');
+    // print('git diff ${doc.doc.docPath}');
     // path should be relative from git root
     FFIMessaging.instance().sendMessage({
       'channel': 'git',
@@ -196,7 +198,82 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
         'path_spec': '${doc.doc.docPath}'
       }
     }).then((res) {
-      print(res);
+      // print(res);
+      
+      List<int> previousEdited = <int>[...fileInfo.gitDiffEditLinesTracker];
+      fileInfo.gitDiffLineTracker = <int>[];
+      fileInfo.gitDiffEditLinesTracker = <int>[];
+      fileInfo.idx = -1;
+      fileInfo.idxOffset = 0;
+
+      for(final text in res['message']) {
+        if (text.startsWith('@@')) {
+          List<int> nums = <int>[];
+          RegExp regExp =
+              RegExp(r'([0-9]{0,6})', caseSensitive: false, multiLine: false);
+          var matches = regExp.allMatches(text);
+          matches.forEach((m) {
+            var g = m.groups([0]);
+            if (g != null && g.length > 0 && (g[0]?.length ?? 0) > 0) {
+              String s = g[0] ?? '-1';
+              nums.add(int.parse(s));
+            }
+          });
+            if (fileInfo.gitDiffLineTracker.length > 0) {
+              int offset = fileInfo.idxOffset;
+              offset += fileInfo.gitDiffLineTracker[3] -
+                  fileInfo.gitDiffLineTracker[1];
+              fileInfo.idxOffset = offset;
+            }
+            fileInfo.gitDiffLineTracker = nums;
+            fileInfo.idx = 0;
+        } else {
+            int idx = fileInfo.idx;
+            if (text.startsWith(' ')) {
+              idx++;
+            }
+            if (text.startsWith('+')) {
+              int start = fileInfo.gitDiffLineTracker[0];
+              int editedLine = start;
+              editedLine += fileInfo.idx;
+              editedLine += fileInfo.idxOffset;
+              fileInfo.gitDiffEditLinesTracker.add(editedLine-1);
+              idx++;
+              // print('line edited: ${start} ${editedLine} ${fileInfo.idx} ${fileInfo.idxOffset}');
+            }
+            fileInfo.idx = idx;
+        }
+
+        // previous
+        List<int> shouldClear = [];
+        for(final l in previousEdited) {
+          if (!fileInfo.gitDiffEditLinesTracker.contains(l)) {
+            shouldClear.add(l);
+          }
+        }
+
+        for(final l in shouldClear) {
+          Block? block = doc.doc.blockAtLine(l);
+          if (block != null) {
+            block.diff = '';
+            block.notify();
+          }
+        }
+
+        // print('$previousEdited ${fileInfo.gitDiffEditLinesTracker}');
+
+        for(final l in fileInfo.gitDiffEditLinesTracker) {
+          Block? block = doc.doc.blockAtLine(l);
+          if (block != null) {
+            String diff = 'edited';
+            if (diff != block.diff) {
+              block.diff = diff;
+              block.notify();
+            }
+          }
+        }
+      }
+
     });
   }
 
