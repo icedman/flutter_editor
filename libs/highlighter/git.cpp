@@ -112,12 +112,9 @@ void git_command_callback(message_t m, listener_t l) {
     std::string rmsg = r->message.message["message"].toStyledString();
     if (message == rmsg) {
       post_reply(m, "error: similar request is pending");
-      // todo reply right away .. to close the request
-      // printf("the same request is pending\n");
       return;
     }
   }
-  printf(">>>%s\n", message.c_str());
 
   request_ptr request = std::make_shared<request_t>();
   request->message = m;

@@ -73,37 +73,6 @@ static message_list incoming;
 static message_list outgoing;
 static listener_list listeners;
 
-/*
-void cb1(message_t m, listener_t l) {
-    printf(">>>callback 1! %s\n", m.message.toStyledString().c_str());
-}
-
-void cb2(message_t m, listener_t l) {
-    printf(">>>callback 2!\n");
-
-    Json::Value json;
-    json = "hello";
-
-    message_t response = {
-        .messageId = 0,
-        .receiver = "whoever",
-        .sender = "native",
-        .channel = "",
-        .message = json
-    };
-
-    post(response);
-}
-
-EXPORT void test()
-{
-    listeners.clear();
-    add_listener("me", "lobby", &cb1, NULL);
-    add_listener("me2", "lobby", &cb2, NULL);
-    printf("listening...\n");
-}
-*/
-
 EXPORT void send_message(char *message) {
   _messageId++;
 
