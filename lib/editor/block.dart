@@ -116,7 +116,8 @@ class Block {
 
   String diff = '';
   int originalLine = -1;
-  String? originalText;
+  int originalLineLength = -1;
+  // String? originalText;
   Iterable<RegExpMatch> words = [];
 
   List<LineDecoration>? decors = [];

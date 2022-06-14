@@ -71,6 +71,7 @@ struct message_t {
   std::string sender;
   std::string channel;
   Json::Value message;
+  bool dispatched;
 };
 
 struct listener_t {
@@ -120,6 +121,7 @@ void remove_listener(int id);
 void post_message(message_t msg);
 void dispatch_messages();
 void poll_requests(request_list &requests);
+void post_reply(message_t &m, std::string message);
 
 #define BEGIN_PRINTLN                                                          \
   {                                                                            \

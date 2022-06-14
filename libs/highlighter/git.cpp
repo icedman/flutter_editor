@@ -60,7 +60,7 @@ cleanup:
   return error;
 }
 
-bool open_repository(git_repository** repo, const char *base_path) {
+bool open_repository(git_repository **repo, const char *base_path) {
   *repo = NULL;
   git_repository_open(repo, base_path);
   if (*repo != NULL) {
@@ -79,8 +79,8 @@ bool open_repository(git_repository** repo, const char *base_path) {
   return false;
 }
 
-#include "git/git_status.inc.cpp"
 #include "git/git_diff.inc.cpp"
+#include "git/git_status.inc.cpp"
 
 static request_list git_requests;
 
@@ -111,6 +111,7 @@ void git_command_callback(message_t m, listener_t l) {
   for (auto r : git_requests) {
     std::string rmsg = r->message.message["message"].toStyledString();
     if (message == rmsg) {
+      post_reply(m, "error: similar request is pending");
       // todo reply right away .. to close the request
       // printf("the same request is pending\n");
       return;

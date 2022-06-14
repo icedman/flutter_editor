@@ -141,7 +141,7 @@ class GutterLine extends StatelessWidget {
   Widget build(BuildContext context) {
     HLTheme theme = Provider.of<HLTheme>(context);
 
-    Color? diff = block?.diff == 'edited' ? Colors.yellow : null;
+    Color? diff = (block?.originalLineLength != block?.text.length) || block?.diff == 'edited' ? Colors.yellow : null;
     if (block?.originalLine == -1) {
       diff = Colors.green;
     }

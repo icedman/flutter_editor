@@ -115,7 +115,8 @@ EXPORT void send_message(char *message) {
                  .receiver = json["to"].asString(),
                  .sender = json["from"].asString(),
                  .channel = json["channel"].asString(),
-                 .message = json};
+                 .message = json,
+                 .dispatched = false};
 
   incoming.emplace_back(m);
 
@@ -187,17 +188,25 @@ void dispatch_messages() {
   // read incoming and dispatch
 
   int idx = 0;
-  for (auto m : incoming) {
+  for (message_t &m : incoming) {
     for (auto l : listeners) {
       if ((m.receiver != "" && m.receiver != l.listener) ||
           (m.channel != "" && m.channel != l.channel)) {
         continue;
       }
       if (l.callback) {
+        m.dispatched = true;
         l.callback(m, l);
       }
     }
   }
+
+  for (message_t &m : incoming) {
+    if (!m.dispatched) {
+      post_reply(m, "error: unhandled request");
+    }
+  }
+
   incoming.clear();
 
   for (auto l : listeners) {
@@ -205,6 +214,17 @@ void dispatch_messages() {
       l.poll(l);
     }
   }
+}
+
+void post_reply(message_t &m, std::string message) {
+  Json::Value json = m.message;
+  json["to"] = m.receiver;
+  json["from"] = m.sender;
+  json["message"] = Json::arrayValue;
+  json["message"].append(message);
+  m.message = json;
+  // printf("%s\n", json.toStyledString().c_str());
+  post_message(m);
 }
 
 void poll_requests(request_list &requests) {

@@ -95,6 +95,12 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     });
     d.addListener('onSave', (documentId) {
       gitDiff();
+    });    
+    d.addListener('onUndo', () {
+      gitDiff();
+    });
+    d.addListener('onRedo', () {
+      gitDiff();
     });
     d.addListener('onDestroy', (documentId) {
       FFIBridge.run(() => FFIBridge.destroy_document(documentId));
@@ -199,6 +205,9 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       }
     }).then((res) {
       // print(res);
+      if (res == null) {
+        return;
+      }
       
       List<int> previousEdited = <int>[...fileInfo.gitDiffEditLinesTracker];
       fileInfo.gitDiffLineTracker = <int>[];
@@ -454,6 +463,9 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     if (debounceTimer != null) {
       debounceTimer?.cancel();
     }
+
+    // UIProvider ui = Provider.of<UIProvider>(context, listen: false);
+    // ui.clearPopups();
 
     debounceTimer = Timer(const Duration(milliseconds: 250), () {
       Document d = doc.doc;
