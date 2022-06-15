@@ -326,3 +326,17 @@ std::vector<std::string> split(const std::string& s, char seperator)
     std::set<char> delims = { seperator };
     return split_path(s, delims);
 }
+
+std::string clean_path(std::string fullPath)
+{
+    size_t pos = 0;
+    for (int i = 0; i < 3; i++) {
+        pos = fullPath.find("//");
+        if (pos != std::string::npos) {
+            fullPath.replace(fullPath.begin() + pos, fullPath.begin() + pos + 2, "/");
+            continue;
+        }
+        break;
+    }
+    return fullPath;
+}

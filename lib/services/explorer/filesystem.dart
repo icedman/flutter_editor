@@ -277,6 +277,9 @@ class Explorer implements ExplorerListener {
     }
   }
 
+  void onCreate(dynamic item) {
+  }
+
   void onDelete(dynamic item) {
     dynamic json = jsonDecode(item);
     String p = _path.normalize(Directory(json['path']).absolute.path);
@@ -310,6 +313,7 @@ class Explorer implements ExplorerListener {
 
 abstract class ExplorerListener {
   void onLoad(dynamic items);
+  void onCreate(dynamic item);
   void onDelete(dynamic item);
   void onError(dynamic error);
 }
@@ -327,5 +331,5 @@ abstract class ExplorerBackend {
   void renameDirectory(String path, String newPath);
   void renameFile(String path, String newPath);
   void search(String fileName);
-  void preload();
+  // void preload();
 }

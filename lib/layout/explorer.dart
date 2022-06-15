@@ -15,6 +15,7 @@ import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 import 'package:editor/services/explorer/filesystem.dart';
 import 'package:editor/services/explorer/localfs.dart';
+import 'package:editor/services/explorer/sftp.dart';
 
 const int animateK = 55;
 
@@ -55,11 +56,15 @@ class ExplorerProvider extends ChangeNotifier implements ExplorerListener {
   ExplorerProvider() {
     explorer = Explorer();
     explorer.setBackend(LocalFs());
+    // explorer.setBackend(SFtpFs());
     explorer.backend?.addListener(this);
   }
 
   void onLoad(dynamic items) {
     rebuild();
+  }
+
+  void onCreate(dynamic item) {
   }
 
   void onDelete(dynamic item) {

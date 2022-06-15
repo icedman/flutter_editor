@@ -46,6 +46,7 @@ extern "C" {
 #endif
 
 #include <set>
+#include "extensions/util.h"
 
 static request_list ssh_requests;
 
@@ -57,12 +58,13 @@ int sftp_run(std::string cmd, transport_t* transport);
 
 struct transport_t {
 
-    std::string basePath;
     Json::Value json;
+    request_t* req;
 
+    // extracted at prepare
     std::string user;
     std::string url;
-    std::string repository;
+    std::string basePath;
     std::string entryPath;
     std::string password;
     std::string remotePath;
@@ -71,12 +73,12 @@ struct transport_t {
 
     void prepare()
     {
-        repository = json["repository"].asString();
+        basePath = json["basePath"].asString();
         entryPath = json["path"].asString();
-        // printf("%s\n", repository.c_str());
+        // printf("%s\n", basePath.c_str());
 
         std::set<char> delims = { '@' };
-        std::vector<std::string> spath; // = split_path(repository, delims);
+        std::vector<std::string> spath = split_path(basePath, delims);
         if (spath.size() == 2) {
             user = spath[0];
             url = spath[1];
@@ -112,12 +114,12 @@ struct transport_t {
     std::string localPath(std::string path)
     {
         std::string _path = path;
-        _path += json["repository"].asString();
+        _path += basePath; //json["basePath"].asString();
 
         std::ostringstream filePath;
-        // filePath << temporaryDirectory();
+        filePath << temporary_directory();
         filePath << "/";
-        // filePath << murmur_hash(_path.c_str(), _path.length(), 0xf1);
+        filePath << murmur_hash(_path.c_str(), _path.length(), 0xf1);
         filePath << ".tmp";
         return filePath.str();
     }
@@ -145,6 +147,11 @@ struct transport_t {
         sftp_run("upload", this);
         return localPath(path);
     }
+
+    void run(std::string cmd) {
+        prepare();
+        sftp_run(cmd, this);
+    }
 };
 
 int sftp_run(std::string cmd, transport_t* transport)
@@ -163,10 +170,8 @@ int sftp_run(std::string cmd, transport_t* transport)
     LIBSSH2_SFTP* sftp_session = NULL;
     LIBSSH2_SFTP_HANDLE* sftp_handle = NULL;
 
-    // int group = transport->group;
-    int
-        error
-        = 0;
+    request_t* req = transport->req;
+    int error = 0;
 
     hostaddr = inet_addr(transport->url.c_str());
     username = transport->user.c_str();
@@ -182,8 +187,8 @@ int sftp_run(std::string cmd, transport_t* transport)
 
     err = WSAStartup(MAKEWORD(2, 0), &wsadata);
     if (err != 0) {
-        fprintf(stderr, "WSAStartup failed with error: %d\n", err);
-        // TODO list_push_string("error : WSAStartup failed");
+        fprintf(stderr, "WSAStartup failed with error %d\n", err);
+        req->response.push_back("error : WSAStartup failed");
         return -1;
     }
 #endif
@@ -191,7 +196,7 @@ int sftp_run(std::string cmd, transport_t* transport)
     // rc = libssh2_init(0);
     // if (rc != 0) {
     //     fprintf(stderr, "libssh2 initialization failed (%d)\n", rc);
-    //     // TODO list_push_string("libssh2 init failed", group);
+    //     // req->response.push_back("libssh2 init failed");
     //     return 1;
     // }
 
@@ -208,7 +213,7 @@ int sftp_run(std::string cmd, transport_t* transport)
             sizeof(struct sockaddr_in))
         != 0) {
         fprintf(stderr, "failed to connect!\n");
-        // TODO list_push_string("error : socket connect failed", group);
+        req->response.push_back("error : socket connect failed");
         goto shutdown;
     }
 
@@ -224,7 +229,7 @@ int sftp_run(std::string cmd, transport_t* transport)
     rc = libssh2_session_handshake(session, sock);
     if (rc) {
         fprintf(stderr, "Failure establishing SSH session: %d\n", rc);
-        // TODO list_push_string("error : ssh handshake failed", group);
+        req->response.push_back("error : ssh handshake failed");
         goto shutdown;
     }
 
@@ -264,7 +269,8 @@ int sftp_run(std::string cmd, transport_t* transport)
         /* We could authenticate via password */
         if (libssh2_userauth_password(session, username, password)) {
             fprintf(stderr, "\tAuthentication by password failed!\n");
-            // TODO list_push_string("error : authentication by password failed", group);
+            printf("%s %s\n", username, password);
+            req->response.push_back("error : authentication by password failed");
             goto shutdown;
         } else {
             fprintf(stderr, "\tAuthentication by password succeeded.\n");
@@ -276,7 +282,7 @@ int sftp_run(std::string cmd, transport_t* transport)
         if (libssh2_userauth_publickey_fromfile(session, username, keyfile1,
                 keyfile2, password)) {
             fprintf(stderr, "\tAuthentication by public key failed! %s %s %s\n", keyfile1, keyfile2, password);
-            // TODO list_push_string("error : authentication by public key failed", group);
+            req->response.push_back("error : authentication by public key failed");
             goto shutdown;
         } else {
             fprintf(stderr, "\tAuthentication by public key succeeded.\n");
@@ -291,7 +297,7 @@ int sftp_run(std::string cmd, transport_t* transport)
 
     if (!sftp_session) {
         fprintf(stderr, "Unable to init SFTP session\n");
-        // TODO list_push_string("error : unable to init SFTP session", group);
+        req->response.push_back("error : unable to init SFTP session");
         goto shutdown;
     }
 
@@ -305,7 +311,7 @@ int sftp_run(std::string cmd, transport_t* transport)
 
         if (!sftp_handle) {
             fprintf(stderr, "Unable to open dir with SFTP\n");
-            // TODO list_push_string("error : unable to open dir with SFTP", group);
+            req->response.push_back("error : unable to open dir with SFTP");
             goto shutdown;
         }
         fprintf(stderr, "libssh2_sftp_opendir() is done, now receive listing!\n");
@@ -319,7 +325,6 @@ int sftp_run(std::string cmd, transport_t* transport)
                 longentry, sizeof(longentry), &attrs);
 
             if (rc > 0) {
-
                 // todo
                 // transport_entry_t entry;
                 // entry.path = sftppath;
@@ -331,9 +336,17 @@ int sftp_run(std::string cmd, transport_t* transport)
                 //     entry.isDirectory = true;
                 // }
 
-                // if (mem[0] != '.') {
+                if (mem[0] != '.') {
                 //     transport->entries.emplace_back(entry);
-                // }
+                    std::ostringstream filePath;
+                    if (LIBSSH2_SFTP_S_ISDIR(attrs.permissions)) {
+                        filePath << "dir;";
+                    }
+                    filePath << sftppath;
+                    filePath << "/";
+                    filePath << mem;
+                    req->response.push_back(clean_path(filePath.str()));
+                }
 
             } else
                 break;
@@ -351,7 +364,7 @@ int sftp_run(std::string cmd, transport_t* transport)
         if (!sftp_handle) {
             fprintf(stderr, "Unable to open file with SFTP: %ld\n",
                 libssh2_sftp_last_error(sftp_session));
-            // TODO list_push_string("error : unable to open file with SFTP", group);
+            req->response.push_back("error : unable to open file with SFTP");
             goto shutdown;
         }
 
@@ -395,7 +408,7 @@ int sftp_run(std::string cmd, transport_t* transport)
         FILE* fp = fopen(localPath.c_str(), "r");
         if (!fp) {
             fprintf(stderr, "Unable to open local file\n");
-            // TODO list_push_string("error : unable to open local file", group);
+            req->response.push_back("error : unable to open local file");
             goto shutdown;
         }
 
@@ -405,7 +418,7 @@ int sftp_run(std::string cmd, transport_t* transport)
 
         if (!sftp_handle) {
             fprintf(stderr, "Unable to open file with SFTP\n");
-            // TODO list_push_string("error : unable to open file with SFTP", group);
+            req->response.push_back("error : unable to open file with SFTP");
             goto shutdown;
         }
 
@@ -445,7 +458,7 @@ int sftp_run(std::string cmd, transport_t* transport)
             LIBSSH2_SFTP_S_IRWXU | LIBSSH2_SFTP_S_IRGRP | LIBSSH2_SFTP_S_IXGRP | LIBSSH2_SFTP_S_IROTH | LIBSSH2_SFTP_S_IXOTH);
         if (rc) {
             fprintf(stderr, "libssh2_sftp_mkdir failed: %d\n", rc);
-            // TODO list_push_string("error : unable mkdir with SFTP", group);
+            req->response.push_back("error : unable to mkdir with SFTP");
             goto shutdown;
         }
     }
@@ -455,7 +468,7 @@ int sftp_run(std::string cmd, transport_t* transport)
         printf("delete %s\n", sftppath);
         if (rc) {
             fprintf(stderr, "libssh2_sftp_rmdir failed: %d\n", rc);
-            // TODO list_push_string("error : unable rmdir with SFTP", group);
+            req->response.push_back("error : unable to rmdir with SFTP");
             goto shutdown;
         }
     }
@@ -465,7 +478,7 @@ int sftp_run(std::string cmd, transport_t* transport)
         printf("delete %s\n", sftppath);
         if (rc) {
             fprintf(stderr, "libssh2_sftp_unlink failed: %d\n", rc);
-            // TODO list_push_string("error : unable unlink with SFTP", group);
+            req->response.push_back("error : unable to unlink with SFTP");
             goto shutdown;
         }
     }
@@ -477,7 +490,7 @@ int sftp_run(std::string cmd, transport_t* transport)
             LIBSSH2_SFTP_S_IRWXU | LIBSSH2_SFTP_S_IRGRP | LIBSSH2_SFTP_S_IXGRP | LIBSSH2_SFTP_S_IROTH | LIBSSH2_SFTP_S_IXOTH);
         if (rc) {
             fprintf(stderr, "libssh2_sftp_rename_ex failed: %d\n", rc);
-            // TODO list_push_string("error : unable rename with SFTP", group);
+            req->response.push_back("error : unable to rename with SFTP");
             goto shutdown;
         }
     }
@@ -502,7 +515,7 @@ shutdown:
     }
     fprintf(stderr, "all done\n");
 
-    // // TODO list_push_string("done", group);
+    // // TODO req->response.push_back("done");
     // libssh2_exit();
 
     return 0;
@@ -514,6 +527,11 @@ void *ssh_thread(void *arg) {
   Json::Value message = req->message.message["message"];
   std::string cmd = message["command"].asString();
 
+  transport_t transport;
+  transport.json = message;
+  transport.req = req;
+  transport.run(cmd);
+
   // printf(">%s\n", request->message
   // printf(">>>callback 1! %s\n", message.toStyledString().c_str());;
 
@@ -522,6 +540,15 @@ void *ssh_thread(void *arg) {
 }
 
 void ssh_command_callback(message_t m, listener_t l) {
+  std::string message = m.message["message"].toStyledString();
+  for (auto r : ssh_requests) {
+    std::string rmsg = r->message.message["message"].toStyledString();
+    if (message == rmsg) {
+      post_reply(m, "error: similar request is pending");
+      return;
+    }
+  }
+
   request_ptr request = std::make_shared<request_t>();
   request->message = m;
   ssh_requests.push_back(request);
@@ -533,7 +560,8 @@ void ssh_poll_callback(listener_t l) { poll_requests(ssh_requests); }
 
 void ssh_init() {
   printf("ssh enabled\n");
-  add_listener("ssh_global", "ssh", &ssh_command_callback, &ssh_poll_callback);
+  libssh2_init(0);
+  add_listener("ssh_global", "sftp", &ssh_command_callback, &ssh_poll_callback);
 }
 
 void ssh_shutdown() {}

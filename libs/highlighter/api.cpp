@@ -221,3 +221,8 @@ void poll_requests(request_list &requests) {
     }
   }
 }
+
+std::string temporary_directory()
+{
+  return "";
+}

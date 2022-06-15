@@ -123,6 +123,8 @@ void dispatch_messages();
 void poll_requests(request_list &requests);
 void post_reply(message_t &m, std::string message);
 
+std::string temporary_directory();
+
 #define BEGIN_PRINTLN                                                          \
   {                                                                            \
     std::ostringstream ss;

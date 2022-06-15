@@ -53,6 +53,19 @@ void main(List<String> args) async {
   //   print(res);
   //   });
 
+  // FFIMessaging.instance().sendMessage({
+  //    'channel': 'sftp',
+  //    'message': {
+  //       'command': 'dir',
+  //       'basePath': 'iceman@127.0.0.1',
+  //       'passphrase': '',
+  //       'path': '/home/iceman/',
+  //       'cmd': 'dir'
+  //    }
+  // }).then((res) {
+  //   print(res);
+  //   });
+
   HLTheme theme = HLTheme.instance();
   TMParser()
     ..loadTheme(app.settings['theme'] ?? 'Monokai')
