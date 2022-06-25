@@ -10,6 +10,9 @@ class SFtpFs extends ExplorerBackend {
   List<FileSystemEntity> files = [];
   String rootPath = '';
 
+    String url = 'iceman@127.0.0.1';
+    String password = '';
+
   void addListener(ExplorerListener listener) {
     listeners.add(listener);
   }
@@ -25,8 +28,6 @@ class SFtpFs extends ExplorerBackend {
   }
 
   void _loadPath(String path, {bool recursive: false}) {
-    path = '/home/iceman/Developer/Projects/flutter/flutter_editor';
-
     files = <FileSystemEntity>[];
     Directory dir = Directory(path);
     int depthRoot = _depth(dir.absolute.path);
@@ -69,17 +70,24 @@ class SFtpFs extends ExplorerBackend {
      'channel': 'sftp',
      'message': {
         'command': 'dir',
-        'basePath': 'iceman@127.0.0.1',
-        'passphrase': '',
+        'basePath': url,
+        'passphrase': password,
         'path': path,
         'cmd': 'dir'
      }
   }).then((res) {
-    print(res);
+    // print(res);
     for(final entry in res['message']) {
-        Directory f = Directory(entry);
-        files.add(f);
-        print(entry);
+        List<String> ss = entry.split(';');
+        if (ss.length < 2) continue;
+        if (ss[0] == 'dir') {
+            Directory f = Directory(ss[1]);
+            files.add(f);
+        } else {
+            File f = File(ss[1]);
+            files.add(f);
+        }
+        // print(entry);
     }
     _sendTheFiles();
     });

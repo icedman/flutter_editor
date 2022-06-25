@@ -341,6 +341,8 @@ int sftp_run(std::string cmd, transport_t* transport)
                     std::ostringstream filePath;
                     if (LIBSSH2_SFTP_S_ISDIR(attrs.permissions)) {
                         filePath << "dir;";
+                    } else {
+                        filePath << "file;";
                     }
                     filePath << sftppath;
                     filePath << "/";

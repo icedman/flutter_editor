@@ -25,9 +25,11 @@ void set_block(int documentId, int blockId, int line, char *text);
 Document::Document() : documentId(0), tree(0), rebuild(false) {}
 
 Document::~Document() {
+#ifdef ENABLE_TREESITTER
   if (tree) {
     ts_tree_delete(tree);
   }
+#endif
 }
 
 // subsystems
