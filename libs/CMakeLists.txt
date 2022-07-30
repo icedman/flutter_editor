@@ -3,33 +3,15 @@ project(editor LANGUAGES CXX C)
 
 #string(APPEND CMAKE_CXX_FLAGS " -Wno-c++11-narrowing")
 string(APPEND CMAKE_CXX_FLAGS " -std=gnu++11")
-#string(APPEND CMAKE_CXX_FLAGS " -DDISABLE_ADD_GRAMMAR_THREADS")
 set (CMAKE_CXX_STANDARD 11)
 
-ADD_DEFINITIONS(-fPIC)
+if (CMAKE_SYSTEM_NAME STREQUAL "Android")
+string(APPEND PRECOMPILED ${CMAKE_SOURCE_DIR}/../precompiled/android/${ANDROID_ABI})
+else()
+string(APPEND PRECOMPILED ${CMAKE_SOURCE_DIR}/../precompiled/linux)
+endif()
 
-add_library(treesitter
-  SHARED
-  ./tree-sitter/lib/src/alloc.c
-  ./tree-sitter/lib/src/get_changed_ranges.c
-  ./tree-sitter/lib/src/language.c
-  ./tree-sitter/lib/src/lexer.c
-  ./tree-sitter/lib/src/node.c
-  ./tree-sitter/lib/src/parser.c
-  ./tree-sitter/lib/src/query.c
-  ./tree-sitter/lib/src/stack.c
-  ./tree-sitter/lib/src/subtree.c
-  ./tree-sitter/lib/src/tree.c
-  ./tree-sitter/lib/src/tree_cursor.c
-  ./tree-sitter-grammars/tree-sitter-javascript/src/parser.c
-  ./tree-sitter-grammars/tree-sitter-javascript/src/scanner.c
-  ./tree-sitter-grammars/tree-sitter-c/src/parser.c
-)
-
-target_include_directories(treesitter 
-    PRIVATE
-    ./tree-sitter/lib/include
-)
+add_definitions(-fPIC)
 
 add_library(onigmolib
   SHARED 
@@ -114,9 +96,15 @@ add_library(editor_api
     ./tm-parser/textmate/extensions/util.cpp
     ./tm-parser/textmate/extensions/utf8.cpp
     ./tm-parser/textmate/extensions/extension.cpp
+    ./tm-parser/textmate/resources/grammars.cpp
+    ./tm-parser/textmate/resources/themes.cpp
     ./tinyxml2/tinyxml2.cpp
     ./jsoncpp/dist/jsoncpp.cpp
     ./highlighter/api.cpp
+    ./highlighter/highlighter.cpp
+    ./highlighter/treesitter.cpp
+    ./highlighter/git.cpp
+    ./highlighter/ssh.cpp
 )
 
 target_include_directories(editor_api 
@@ -129,11 +117,96 @@ target_include_directories(editor_api
     ./tm-parser/textmate/scopes
     ./tm-parser/textmate/theme
     ./tm-parser/textmate/extensions
+    ./tm-parser/textmate/resources
     ./tree-sitter/lib/include
     ./highlighter
+    ${PRECOMPILED}/libgit2/include
+    ${PRECOMPILED}/libssh2/include
 )
+
+#########################
+# libgit2 libssh2
+#########################
+
+if (DEFINED ENV{ENABLE_TREESITTER})
+add_library(treesitter
+  SHARED
+  ./tree-sitter/lib/src/alloc.c
+  ./tree-sitter/lib/src/get_changed_ranges.c
+  ./tree-sitter/lib/src/language.c
+  ./tree-sitter/lib/src/lexer.c
+  ./tree-sitter/lib/src/node.c
+  ./tree-sitter/lib/src/parser.c
+  ./tree-sitter/lib/src/query.c
+  ./tree-sitter/lib/src/stack.c
+  ./tree-sitter/lib/src/subtree.c
+  ./tree-sitter/lib/src/tree.c
+  ./tree-sitter/lib/src/tree_cursor.c
+  ./tree-sitter-grammars/tree-sitter-javascript/src/parser.c
+  ./tree-sitter-grammars/tree-sitter-javascript/src/scanner.c
+  ./tree-sitter-grammars/tree-sitter-c/src/parser.c
+)
+
+target_include_directories(treesitter 
+    PRIVATE
+    ./tree-sitter/lib/include
+    ./tree-sitter/lib/src
+)
+endif()
+
+#########################
+# libgit2 libssh2
+#########################
+
+add_library(ssl
+        STATIC
+        IMPORTED)
+
+set_target_properties(ssl
+        PROPERTIES IMPORTED_LOCATION
+        ${PRECOMPILED}/openssl/ssl/libssl.a)
+
+add_library(crypto
+        STATIC
+        IMPORTED)
+
+set_target_properties(crypto
+        PROPERTIES IMPORTED_LOCATION
+        ${PRECOMPILED}/openssl/crypto/libcrypto.a)
+
+add_library(ssh2
+        STATIC
+        IMPORTED)
+
+set_target_properties(ssh2
+        PROPERTIES IMPORTED_LOCATION
+        ${PRECOMPILED}/libssh2/libssh2.a)
+
+add_library(git2
+        STATIC
+        IMPORTED)
+
+set_target_properties(git2
+        PROPERTIES IMPORTED_LOCATION
+        ${PRECOMPILED}/libgit2/libgit2.a)
 
 set_target_properties(editor_api PROPERTIES
   BUILD_WITH_INSTALL_RPATH 1 INSTALL_RPATH "$ORIGIN")
 
-target_link_libraries(editor_api PRIVATE onigmolib treesitter)
+target_link_libraries(editor_api PRIVATE onigmolib)
+
+if (DEFINED ENV{ENABLE_TREESITTER})
+target_link_libraries(editor_api PRIVATE treesitter)
+endif()
+
+if (DEFINED ENV{ENABLE_GIT})
+add_definitions(-DENABLE_GIT=1)
+endif()
+
+if (DEFINED ENV{ENABLE_SSH})
+add_definitions(-DENABLE_SSH=1)
+endif()
+
+if (DEFINED ENV{ENABLE_GIT} OR DEFINED ENV{ENABLE_SSH})
+target_link_libraries(editor_api PRIVATE git2 ssl crypto ssh2)
+endif()

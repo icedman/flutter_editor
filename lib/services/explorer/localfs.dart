@@ -78,9 +78,9 @@ class LocalFs extends ExplorerBackend {
     _loadPath(path);
   }
 
-  void preload() {
-    _loadPath(rootPath, recursive: true);
-  }
+  // void preload() {
+  //   _loadPath(rootPath, recursive: true);
+  // }
 
   void openFile(String path) {}
 
@@ -89,7 +89,7 @@ class LocalFs extends ExplorerBackend {
     d.create().then((res) {
       final json = jsonEncode({'path': _path.normalize(path)});
       listeners.forEach((l) {
-        l.onDelete(json);
+        l.onCreate(json);
       });
     }).catchError((err) {
       listeners.forEach((l) {

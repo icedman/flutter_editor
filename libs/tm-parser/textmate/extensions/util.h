@@ -21,5 +21,6 @@ unsigned int hash_combine(int lhs, int rhs);
 
 std::string join(std::vector<std::string> ss, char c);
 std::vector<std::string> split(const std::string& s, char seperator);
+std::string clean_path(std::string fullPath);
 
 #endif // UTIL_H

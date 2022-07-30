@@ -9,6 +9,25 @@ import 'package:editor/editor/document.dart';
 
 int _blockId = 0xffff;
 
+class BlockInfoCache {
+  String blameAuthor = '';
+  String blameSha = '';
+  bool added = false;
+  bool modified = false;
+}
+
+class FileInfoCache {
+  String path = '';
+  Map<int, BlockInfoCache> blocks = <int, BlockInfoCache>{};
+
+  List<int> gitDiffLineTracker = <int>[];
+  List<int> gitDiffEditLinesTracker = <int>[];
+  int idx = 0;
+  int idxOffset = 0;
+
+  List<int> editedLines = <int>[];
+}
+
 class Notifier {
   void init() {}
   void dispose() {}
@@ -95,8 +114,10 @@ class Block {
   Block? previous;
   Block? next;
 
-  int originalLine = 0;
-  String? originalText;
+  String diff = '';
+  int originalLine = -1;
+  int originalLineLength = -1;
+  // String? originalText;
   Iterable<RegExpMatch> words = [];
 
   List<LineDecoration>? decors = [];
@@ -112,6 +133,11 @@ class Block {
 
   void dispose() {
     notifier.dispose();
+  }
+
+  void notify({bool now = false}) {
+    notifier.init();
+    notifier.notify(now: now);
   }
 
   void makeDirty({bool highlight = false, bool notify = true}) {

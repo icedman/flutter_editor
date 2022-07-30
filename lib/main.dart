@@ -30,12 +30,41 @@ void main(List<String> args) async {
 
   FFIBridge.load();
 
+  // FFIMessaging.instance().addListener(FFIListener('whoever', '', (m, l) {
+  //   print('heya!');
+  //   print(l);
+  //   print(m);
+  // }));
+
   String path = './';
   if (args.isNotEmpty) {
     path = args[0];
   }
 
   FFIBridge.initialize(app.extensionsPath);
+
+  // FFIMessaging.instance().sendMessage({
+  //    'channel': 'git',
+  //    'message': {
+  //       'command': 'status',
+  //       'path': './'
+  //    }
+  // }).then((res) {
+  //   print(res);
+  //   });
+
+  // FFIMessaging.instance().sendMessage({
+  //    'channel': 'sftp',
+  //    'message': {
+  //       'command': 'dir',
+  //       'basePath': 'iceman@127.0.0.1',
+  //       'passphrase': '',
+  //       'path': '/home/iceman/',
+  //       'cmd': 'dir'
+  //    }
+  // }).then((res) {
+  //   print(res);
+  //   });
 
   HLTheme theme = HLTheme.instance();
   TMParser()

@@ -140,14 +140,26 @@ class GutterLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     HLTheme theme = Provider.of<HLTheme>(context);
+
+    Color? diff = (block?.originalLineLength != block?.text.length) || block?.diff == 'edited' ? Colors.yellow : null;
+    if (block?.originalLine == -1) {
+      diff = Colors.green;
+    }
+
     return Container(
-        color: (block?.carets ?? []).isNotEmpty
-            ? colorCombine(theme.selection, theme.background, aw: 2, bw: 3)
-            : theme.background,
         height: height,
         width: width,
         alignment: Alignment.centerRight,
-        child: Text(text, style: style));
+        child: Text('$text', style: style),
+        decoration: BoxDecoration(
+                color: (block?.carets ?? []).isNotEmpty
+                    ? colorCombine(theme.selection, theme.background, aw: 2, bw: 3)
+                    : theme.background,
+                border: diff != null ? Border(left: BorderSide(
+                    color: diff, width: 2
+                  )) : null
+                )
+      );
   }
 }
 

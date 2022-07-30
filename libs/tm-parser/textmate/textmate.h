@@ -113,14 +113,20 @@ public:
   static void initialize(std::string path);
   static int load_theme(std::string path);
   static int load_language(std::string path);
+  static int load_theme_data(const char* theme);
+  static int load_language_data(const char* grammar);
   static int load_icons(std::string path);
-  static language_info_ptr language_info(int id);
+  static language_info_ptr language_info(int id = 0);
+  static language_info_ptr language();
+  static int set_language(int id);
   static std::vector<textstyle_t>
   run_highlighter(char *_text, language_info_ptr lang, theme_ptr theme,
                   block_data_t *block = NULL, block_data_t *prev = NULL,
                   block_data_t *next = NULL, std::vector<span_info_t> *span_infos = NULL);
+  static block_data_t* previous_block_data();
   static theme_info_t theme_info();
   static theme_ptr theme();
+  static int set_theme(int id);
   static bool has_running_threads();
 
   static char* language_definition(int langId);

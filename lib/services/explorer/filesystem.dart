@@ -29,6 +29,7 @@ class ExplorerItem {
   ExplorerItem? parent;
   List<ExplorerItem?> children = [];
   dynamic data;
+  dynamic extraData;
 
   void buildTree(List<ExplorerItem?> items) {
     if (isDirectory) {
@@ -79,9 +80,17 @@ class ExplorerItem {
     return null;
   }
 
-  void setData(dynamic items) {
-    if (items['items'] == null) return;
-    for (final item in items['items']) {
+  ExplorerItem? rootItem() {
+    return parent?.rootItem() ?? this;
+  }
+
+  bool setData(dynamic items) {
+    if (items['items'] == null) return false;
+
+    List<ExplorerItem?> added = [];
+    List<ExplorerItem?> removed = [];
+
+    for (var item in items['items']) {
       String path = item['path'] ?? '';
       if (path == '') continue;
       if (path.startsWith('.')) {
@@ -89,6 +98,9 @@ class ExplorerItem {
       }
       String base = _path.basename(path);
       if (base.startsWith('.')) continue; // skip
+
+      item['path'] = path;
+
       String dir = _path.dirname(path);
       if (dir == fullPath && path != fullPath) {
         ExplorerItem? ci = itemFromPath(path, deep: false);
@@ -98,8 +110,28 @@ class ExplorerItem {
           ci.isDirectory = item['isDirectory'];
           ci.parent = this;
           children.add(ci);
+          added.add(ci);
         }
       }
+    }
+
+    for (final c in children) {
+      bool found = false;
+      String cp = c?.fullPath ?? '';
+      for (final item in items['items']) {
+        String ip = item?['path'];
+        if (cp == ip) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        removed.add(c);
+      }
+    }
+
+    for (final c in removed) {
+      children.remove(c);
     }
 
     children.sort((a, b) {
@@ -109,6 +141,8 @@ class ExplorerItem {
       }
       return a.fileName.compareTo(b.fileName);
     });
+
+    return (removed.length + added.length) > 0;
   }
 
   @override
@@ -235,12 +269,15 @@ class Explorer implements ExplorerListener {
     String p = _path.normalize(Directory(json['path']).absolute.path);
     ExplorerItem? item = itemFromPath(p);
 
-    item?.setData(json);
+    bool didUpdate = item?.setData(json) ?? false;
     item?.isDirectory = true;
     if (requests.containsKey(p)) {
-      requests[p]?.complete(true);
+      requests[p]?.complete(didUpdate);
       requests.remove(p);
     }
+  }
+
+  void onCreate(dynamic item) {
   }
 
   void onDelete(dynamic item) {
@@ -276,6 +313,7 @@ class Explorer implements ExplorerListener {
 
 abstract class ExplorerListener {
   void onLoad(dynamic items);
+  void onCreate(dynamic item);
   void onDelete(dynamic item);
   void onError(dynamic error);
 }
@@ -293,5 +331,5 @@ abstract class ExplorerBackend {
   void renameDirectory(String path, String newPath);
   void renameFile(String path, String newPath);
   void search(String fileName);
-  void preload();
+  // void preload();
 }

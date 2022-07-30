@@ -87,10 +87,12 @@ icon_theme_from_name(const std::string path,
     std::vector<struct extension_t>& extensions);
 theme_ptr theme_from_name(const std::string path,
     std::vector<struct extension_t>& extensions,
-    const std::string uiTheme = "");
+    std::string uiTheme = "",
+    const char* data = NULL);
 language_info_ptr
 language_from_file(const std::string path,
-    std::vector<struct extension_t>& extensions);
+    std::vector<struct extension_t>& extensions,
+    const char* data = NULL);
 
 icon_t icon_for_file(icon_theme_ptr icons, std::string file,
     std::vector<struct extension_t>& extensions);

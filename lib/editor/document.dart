@@ -152,6 +152,7 @@ class Document {
           .forEach((l) {
         Block block = Block(l, document: this);
         block.originalLine = blocks.length;
+        block.originalLineLength = block.text.length;
         // block.originalText = l;
         if (blocks.length < 100) {
           int c = countIndentSize(l);
@@ -200,10 +201,18 @@ class Document {
   Future<bool> saveFile({String? path}) async {
     File f = await File(path ?? docPath);
     String content = '';
+    int line = 0;
     blocks.forEach((l) {
+      l.originalLine = line++;
+      l.originalLineLength = l.text.length;
       content += l.text + '\n';
     });
     f.writeAsString(content);
+
+    listeners['onSave']?.forEach((l) {
+      l?.call(path);
+    });
+
     return true;
   }
 
@@ -256,10 +265,18 @@ class Document {
 
   void undo() {
     history.undo(this);
+    
+    listeners['onUndo']?.forEach((l) {
+      l?.call();
+    });
   }
 
   void redo() {
     history.redo(this);
+    
+    listeners['onRedo']?.forEach((l) {
+      l?.call();
+    });
   }
 
   void addCursor() {

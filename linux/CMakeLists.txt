@@ -106,8 +106,10 @@ install(FILES ${PROJECT_BINARY_DIR}/libs/libeditor_api.so DESTINATION "${INSTALL
   COMPONENT Runtime)
 install(FILES ${PROJECT_BINARY_DIR}/libs/libonigmolib.so DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
   COMPONENT Runtime)
+if (DEFINED ENV{ENABLE_TREESITTER})
 install(FILES ${PROJECT_BINARY_DIR}/libs/libtreesitter.so DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
   COMPONENT Runtime)
+endif()
 
 # Fully re-copy the assets directory on each build to avoid having stale files
 # from a previous install.

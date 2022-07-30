@@ -97,7 +97,7 @@ class _UIPalettePopup extends State<UIPalettePopup> {
       });
     });
 
-    WidgetsBinding.instance?.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       focusNode.requestFocus();
     });
   }

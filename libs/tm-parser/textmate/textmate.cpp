@@ -89,8 +89,12 @@ static std::vector<language_info_ptr> languages;
 static textstyle_t textstyle_buffer[MAX_STYLED_SPANS];
 static char text_buffer[MAX_BUFFER_LENGTH];
 
-theme_ptr current_theme() { return themes[0]; }
-theme_ptr Textmate::theme() { return themes[0]; }
+int current_theme_id = 0;
+theme_ptr current_theme() { return themes[current_theme_id]; }
+theme_ptr Textmate::theme() { return themes[current_theme_id]; }
+
+int current_language_id = 0;
+language_info_ptr Textmate::language() { return languages[current_language_id]; }
 
 void Textmate::initialize(std::string path) {
   load_extensions(path, extensions);
@@ -135,6 +139,12 @@ rgba_t theme_color(char *scope) { return theme_color_from_scope_fg_bg(scope); }
 
 theme_info_t themeInfo;
 int themeInfoId = -1;
+
+int Textmate::set_theme(int id)
+{
+  current_theme_id = id;
+  return id;
+}
 
 theme_info_t Textmate::theme_info() {
   char _default[32] = "default";
@@ -305,6 +315,9 @@ theme_info_t Textmate::theme_info() {
 int Textmate::load_theme(std::string path) {
   theme_ptr theme = theme_from_name(path, extensions);
   if (theme != NULL) {
+    #ifdef DISABLE_RESOURCE_CACHING
+    themes.clear();
+    #endif
     themes.emplace_back(theme);
     return themes.size() - 1;
   }
@@ -319,6 +332,41 @@ int Textmate::load_icons(std::string path) {
 int Textmate::load_language(std::string path) {
   language_info_ptr lang = language_from_file(path, extensions);
   if (lang != NULL) {
+    #ifdef DISABLE_RESOURCE_CACHING
+    languages.clear();
+    #endif
+    languages.emplace_back(lang);
+    return languages.size() - 1;
+  }
+  return 0;
+}
+
+int Textmate::set_language(int id)
+{
+  current_language_id = id;
+  return id;
+}
+
+int Textmate::load_theme_data(const char* data)
+{
+  theme_ptr theme = theme_from_name("", extensions, "", data);
+  if (theme != NULL) {
+    #ifdef DISABLE_RESOURCE_CACHING
+    themes.clear();
+    #endif
+    themes.emplace_back(theme);
+    return themes.size() - 1;
+  }
+  return 0;
+}
+
+int Textmate::load_language_data(const char* data)
+{
+  language_info_ptr lang = language_from_file("", extensions, data);
+  if (lang != NULL) {
+    #ifdef DISABLE_RESOURCE_CACHING
+    languages.clear();
+    #endif
     languages.emplace_back(lang);
     return languages.size() - 1;
   }
@@ -337,6 +385,12 @@ void dump_tokens(std::map<size_t, scope::scope_t> &scopes) {
 
     it++;
   }
+}
+
+block_data_t _previous_block_data;
+block_data_t* Textmate::previous_block_data()
+{
+  return &_previous_block_data;
 }
 
 std::vector<textstyle_t>
@@ -485,6 +539,7 @@ Textmate::run_highlighter(char *_text, language_info_ptr lang, theme_ptr theme,
     }
   }
 
+  _previous_block_data.parser_state = parser_state;
   return textstyle_buffer;
 }
 

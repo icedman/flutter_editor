@@ -1,8 +1,10 @@
 import 'dart:io';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:path/path.dart' as _path;
 import 'package:editor/services/app.dart';
 import 'package:editor/services/util.dart';
 import 'package:editor/services/ffi/bridge.dart';
@@ -13,6 +15,7 @@ import 'package:editor/services/highlight/theme.dart';
 import 'package:editor/services/highlight/highlighter.dart';
 import 'package:editor/services/explorer/filesystem.dart';
 import 'package:editor/services/explorer/localfs.dart';
+import 'package:editor/services/explorer/sftp.dart';
 
 const int animateK = 55;
 
@@ -43,6 +46,7 @@ class _FileIcon extends State<FileIcon> {
 class ExplorerProvider extends ChangeNotifier implements ExplorerListener {
   late Explorer explorer;
 
+  Map<String, String> gitStatus = {};
   List<ExplorerItem?> tree = [];
   ExplorerItem? selected;
   bool animate = false;
@@ -52,11 +56,15 @@ class ExplorerProvider extends ChangeNotifier implements ExplorerListener {
   ExplorerProvider() {
     explorer = Explorer();
     explorer.setBackend(LocalFs());
+    // explorer.setBackend(SFtpFs());
     explorer.backend?.addListener(this);
   }
 
   void onLoad(dynamic items) {
     rebuild();
+  }
+
+  void onCreate(dynamic item) {
   }
 
   void onDelete(dynamic item) {
@@ -70,7 +78,9 @@ class ExplorerProvider extends ChangeNotifier implements ExplorerListener {
     onSelect?.call(item);
   }
 
-  void rebuild() {
+  void rebuild() async {
+    update_git_status();
+
     List<ExplorerItem?> _previous = [...tree];
     tree = explorer.tree();
 
@@ -123,6 +133,68 @@ class ExplorerProvider extends ChangeNotifier implements ExplorerListener {
     }
 
     notifyListeners();
+  }
+
+  void update_git_status() {
+    if (tree.length == 0) return;
+
+    Completer<void> c = Completer<void>();
+    gitStatus = {};
+
+    FFIMessaging.instance().sendMessage({
+      'channel': 'git',
+      'message': {'command': 'status', 'path': '${(tree[0]?.fullPath ?? '')}/'}
+    }).then((res) {
+      if (res == null) return;
+
+      String status = '';
+      for (dynamic l in res['message']) {
+        if (l.contains('modified:')) {
+          status = 'modified';
+        }
+        if (l.contains('new file:')) {
+          status = 'new';
+        }
+        if (l.contains('deleted:')) {
+          status = 'deleted';
+        }
+        if (l.contains('Untracked files:')) {
+          status = 'untracked';
+          continue;
+        }
+
+        List<String> ss = l.split(':');
+        String s = '';
+        if (ss.length > 1) {
+          s = ss[1].trim();
+        }
+
+        if (status == 'untracked') {
+          s = l.trim();
+        }
+
+        if (s == '') continue;
+
+        ExplorerItem? root = tree[0]?.rootItem()!;
+        s = _path.normalize(_path.join(root?.fullPath ?? '', s));
+        gitStatus[s] = status;
+        // print('$status $s');
+      }
+
+      bool shouldNotify = false;
+      for (var i in tree) {
+        i?.extraData = i.extraData ?? {};
+        String? itemStatus = gitStatus[i?.fullPath ?? ''];
+        if (i?.extraData['status'] != itemStatus) {
+          i?.extraData['status'] = itemStatus;
+          shouldNotify = true;
+        }
+      }
+
+      if (shouldNotify) {
+        notifyListeners();
+      }
+    });
   }
 }
 
@@ -193,7 +265,7 @@ class ExplorerTreeItem extends StatelessWidget {
           child: FileIcon(path: iconPath, size: theme.uiFontSize + 2));
     }
 
-    return InkWell(
+    Widget button = InkWell(
         canRequestFocus: false,
         child: GestureDetector(
             onSecondaryTapDown: (details) {
@@ -216,19 +288,48 @@ class ExplorerTreeItem extends StatelessWidget {
                             style: style,
                             maxLines: 1,
                           ),
-                          // IconButton(icon: Icon(Icons.close), onPressed:() {}),
                         ]))))),
         onTap: () {
           ui.clearPopups();
           if (_item.isDirectory) {
             _item.isExpanded = !expanded;
             if (_item.isExpanded) {
-              provider?.explorer.loadPath(_item.fullPath);
+              provider?.explorer.loadPath(_item.fullPath).then((res) {
+                provider?.rebuild();
+              });
+            } else {
+              provider?.rebuild();
             }
-            provider?.rebuild();
           }
           provider?.select(_item);
         });
+
+    Widget? statusItem;
+    if (_item.extraData != null && _item.extraData['status'] != null) {
+      String stat = _item.extraData['status'] ?? '';
+      Color clr = Colors.yellow;
+      switch (stat) {
+        case 'modified':
+          clr = Colors.blue;
+          break;
+        case 'new':
+          clr = Colors.green;
+          break;
+        case 'untracked':
+          clr = Colors.grey;
+          break;
+      }
+      statusItem = Padding(
+          padding: EdgeInsets.only(right: 8),
+          child: Align(
+              alignment: Alignment.centerRight,
+              child: Icon(Icons.circle, size: 6, color: clr)));
+    }
+
+    return Stack(children: [
+      Container(width: app.sidebarWidth, child: button),
+      statusItem ?? Container()
+    ]);
   }
 }
 

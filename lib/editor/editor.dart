@@ -5,7 +5,7 @@ import 'package:editor/services/ui/status.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-
+import 'package:path/path.dart' as _path;
 import 'package:editor/editor/decorations.dart';
 import 'package:editor/editor/cursor.dart';
 import 'package:editor/editor/block.dart';
@@ -47,8 +47,10 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
   late FocusNode focusNode;
   late FocusNode textFocusNode;
 
+  FileInfoCache fileInfo = FileInfoCache();
+
   bool _isKeyboardVisible =
-      WidgetsBinding.instance!.window.viewInsets.bottom > 0.0;
+      WidgetsBinding.instance.window.viewInsets.bottom > 0.0;
 
   bool shifting = false;
   bool controlling = false;
@@ -91,6 +93,15 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       FFIBridge.run(
           () => FFIBridge.createDocument(documentId, doc.doc.docPath));
     });
+    d.addListener('onSave', (documentId) {
+      gitDiff();
+    });    
+    d.addListener('onUndo', () {
+      gitDiff();
+    });
+    d.addListener('onRedo', () {
+      gitDiff();
+    });
     d.addListener('onDestroy', (documentId) {
       FFIBridge.run(() => FFIBridge.destroy_document(documentId));
     });
@@ -116,6 +127,8 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
       Future.delayed(const Duration(seconds: 3), () {
         indexer.indexFile(widget.path);
       });
+
+      gitDiff();
     });
 
     decor = DecorInfo();
@@ -151,7 +164,7 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
 
     focusNode = FocusNode();
     textFocusNode = FocusNode();
-    WidgetsBinding.instance!.addObserver(this);
+    WidgetsBinding.instance.addObserver(this);
 
     Future.delayed(const Duration(milliseconds: 50), () {
       focusNode.requestFocus();
@@ -165,19 +178,112 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
 
     focusNode.dispose();
     textFocusNode.dispose();
-    WidgetsBinding.instance!.removeObserver(this);
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
   @override
   void didChangeMetrics() {
-    final bottomInset = WidgetsBinding.instance!.window.viewInsets.bottom;
+    final bottomInset = WidgetsBinding.instance.window.viewInsets.bottom;
     final newValue = bottomInset > 0.0;
     if (newValue != _isKeyboardVisible) {
       setState(() {
         _isKeyboardVisible = newValue;
       });
     }
+  }
+
+  void gitDiff() {
+    // print('git diff ${doc.doc.docPath}');
+    // path should be relative from git root
+    FFIMessaging.instance().sendMessage({
+      'channel': 'git',
+      'message': {
+        'command': 'diff',
+        'path': '${_path.dirname(doc.doc.docPath)}',
+        'path_spec': '${doc.doc.docPath}'
+      }
+    }).then((res) {
+      // print(res);
+      if (res == null) {
+        return;
+      }
+      
+      List<int> previousEdited = <int>[...fileInfo.gitDiffEditLinesTracker];
+      fileInfo.gitDiffLineTracker = <int>[];
+      fileInfo.gitDiffEditLinesTracker = <int>[];
+      fileInfo.idx = -1;
+      fileInfo.idxOffset = 0;
+
+      for(final text in res['message']) {
+        if (text.startsWith('@@')) {
+          List<int> nums = <int>[];
+          RegExp regExp =
+              RegExp(r'([0-9]{0,6})', caseSensitive: false, multiLine: false);
+          var matches = regExp.allMatches(text);
+          matches.forEach((m) {
+            var g = m.groups([0]);
+            if (g != null && g.length > 0 && (g[0]?.length ?? 0) > 0) {
+              String s = g[0] ?? '-1';
+              nums.add(int.parse(s));
+            }
+          });
+            if (fileInfo.gitDiffLineTracker.length > 0) {
+              int offset = fileInfo.idxOffset;
+              offset += fileInfo.gitDiffLineTracker[3] -
+                  fileInfo.gitDiffLineTracker[1];
+              fileInfo.idxOffset = offset;
+            }
+            fileInfo.gitDiffLineTracker = nums;
+            fileInfo.idx = 0;
+        } else {
+            int idx = fileInfo.idx;
+            if (text.startsWith(' ')) {
+              idx++;
+            }
+            if (text.startsWith('+')) {
+              int start = fileInfo.gitDiffLineTracker[0];
+              int editedLine = start;
+              editedLine += fileInfo.idx;
+              editedLine += fileInfo.idxOffset;
+              fileInfo.gitDiffEditLinesTracker.add(editedLine-1);
+              idx++;
+              // print('line edited: ${start} ${editedLine} ${fileInfo.idx} ${fileInfo.idxOffset}');
+            }
+            fileInfo.idx = idx;
+        }
+
+        // previous
+        List<int> shouldClear = [];
+        for(final l in previousEdited) {
+          if (!fileInfo.gitDiffEditLinesTracker.contains(l)) {
+            shouldClear.add(l);
+          }
+        }
+
+        for(final l in shouldClear) {
+          Block? block = doc.doc.blockAtLine(l);
+          if (block != null) {
+            block.diff = '';
+            block.notify();
+          }
+        }
+
+        // print('$previousEdited ${fileInfo.gitDiffEditLinesTracker}');
+
+        for(final l in fileInfo.gitDiffEditLinesTracker) {
+          Block? block = doc.doc.blockAtLine(l);
+          if (block != null) {
+            String diff = 'edited';
+            if (diff != block.diff) {
+              block.diff = diff;
+              block.notify();
+            }
+          }
+        }
+      }
+
+    });
   }
 
   void onShortcut(String keys) {
@@ -357,6 +463,9 @@ class _Editor extends State<Editor> with WidgetsBindingObserver {
     if (debounceTimer != null) {
       debounceTimer?.cancel();
     }
+
+    // UIProvider ui = Provider.of<UIProvider>(context, listen: false);
+    // ui.clearPopups();
 
     debounceTimer = Timer(const Duration(milliseconds: 250), () {
       Document d = doc.doc;
