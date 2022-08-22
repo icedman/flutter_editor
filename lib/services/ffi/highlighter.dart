@@ -70,6 +70,30 @@ class ThemeInfo extends Struct {
   external int var_b;
   @Int16()
   external int var_a;
+  @Int16()
+  external int type_r;
+  @Int16()
+  external int type_g;
+  @Int16()
+  external int type_b;
+  @Int16()
+  external int type_a;
+  @Int16()
+  external int strct_r;
+  @Int16()
+  external int strct_g;
+  @Int16()
+  external int strct_b;
+  @Int16()
+  external int strct_a;
+  @Int16()
+  external int ctrl_r;
+  @Int16()
+  external int ctrl_g;
+  @Int16()
+  external int ctrl_b;
+  @Int16()
+  external int ctrl_a;
 }
 
 class TextSpanStyle extends Struct {

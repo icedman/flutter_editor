@@ -96,6 +96,7 @@ public:
 
   message_t message;
   std::vector<std::string> response;
+  std::vector<Json::Value> response_objects;
 
   void set_ready() { state = state_e::Ready; }
   void set_consumed() { state = state_e::Consumed; }

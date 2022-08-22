@@ -1,10 +1,11 @@
+#include "textmate.h"
+
 #include "extension.h"
 #include "grammar.h"
 #include "parse.h"
 #include "reader.h"
 #include "theme.h"
-
-#include "textmate.h"
+#include "util.h"
 
 #include <time.h>
 #define SKIP_PARSE_THRESHOLD 500
@@ -89,8 +90,14 @@ static std::vector<language_info_ptr> languages;
 static textstyle_t textstyle_buffer[MAX_STYLED_SPANS];
 static char text_buffer[MAX_BUFFER_LENGTH];
 
-theme_ptr current_theme() { return themes[0]; }
-theme_ptr Textmate::theme() { return themes[0]; }
+block_data_t _previous_block_data;
+
+int current_theme_id = 0;
+theme_ptr current_theme() { return themes[current_theme_id]; }
+theme_ptr Textmate::theme() { return themes[current_theme_id]; }
+
+int current_language_id = 0;
+language_info_ptr Textmate::language() { return languages[current_language_id]; }
 
 void Textmate::initialize(std::string path) {
   load_extensions(path, extensions);
@@ -136,9 +143,100 @@ rgba_t theme_color(char *scope) { return theme_color_from_scope_fg_bg(scope); }
 theme_info_t themeInfo;
 int themeInfoId = -1;
 
+int Textmate::set_theme(int id)
+{
+  current_theme_id = id;
+  return id;
+}
+
+std::vector<list_item_t> Textmate::theme_extensions()
+{
+  std::vector<list_item_t> res;
+  for(auto ext : extensions) {
+      if (!ext.hasThemes)
+          continue;
+      Json::Value themes = ext.package["contributes"]["themes"];
+      for (int i = 0; i < themes.size(); i++) {
+            list_item_t item = {
+                .name = ext.package["id"].asString(),
+                .description = ext.package["description"].asString(),
+                .value = ext.path + "/" + themes[i]["path"].asString()
+            };
+
+            if (item.name == "") {
+                item.name = themes[i]["label"].asString();
+            }
+            if (item.name == "") {
+                item.name = themes[i]["themeLabel"].asString();
+            }
+            if (item.name == "") {
+                item.name = themes[i]["id"].asString();
+            }
+
+            item.name = package_string(ext, item.name);
+            item.description = package_string(ext, item.description);
+
+            if (ext.publisher.length()) {
+                item.description += "\npublisher: ";
+                item.description += ext.publisher;
+            }
+
+            res.push_back(item);
+      }
+  }
+  return res;
+}
+
+std::vector<list_item_t> Textmate::grammar_extensions()
+{
+  std::vector<list_item_t> res;
+  for(auto ext : extensions) {
+      if (!ext.hasGrammars)
+          continue;
+
+        Json::Value contribs = ext.package["contributes"];
+        if (!contribs.isMember("languages") || !contribs.isMember("grammars")) {
+            continue;
+        }
+        Json::Value langs = contribs["languages"];
+        for (int i = 0; i < langs.size(); i++) {
+            Json::Value lang = langs[i];
+            if (!lang.isMember("id")) {
+                continue;
+            }
+
+            if (lang.isMember("extensions")) {
+                Json::Value exts = lang["extensions"];
+                for (int j = 0; j < exts.size(); j++) {
+                    Json::Value ex = exts[j];
+                    list_item_t item = {
+                        .name = lang["id"].asString(),
+                        .description = ext.package["description"].asString(),
+                        .value = ex.asString()
+                    };
+                    res.push_back(item);
+                    break;
+
+                }
+            }
+
+        }
+  }
+  return res;
+}
+
 theme_info_t Textmate::theme_info() {
   char _default[32] = "default";
   theme_info_t info;
+  color_info_t fallback;
+
+  {
+    rgba_t tc = theme_color_from_scope_fg_bg(_default);
+    fallback.red = (float)tc.r / 255;
+    fallback.green = (float)tc.g / 255;
+    fallback.blue = (float)tc.b / 255;
+  }
+
   color_info_t fg;
   if (current_theme()) {
     current_theme()->theme_color("editor.foreground", fg);
@@ -146,10 +244,7 @@ theme_info_t Textmate::theme_info() {
       current_theme()->theme_color("foreground", fg);
     }
     if (fg.is_blank()) {
-      rgba_t tc = theme_color_from_scope_fg_bg(_default);
-      fg.red = (float)tc.r / 255;
-      fg.green = (float)tc.g / 255;
-      fg.blue = (float)tc.b / 255;
+      fg = fallback;
     }
   }
 
@@ -176,8 +271,9 @@ theme_info_t Textmate::theme_info() {
   bg.blue *= 255;
 
   color_info_t sel;
-  if (current_theme())
+  if (current_theme()) {
     current_theme()->theme_color("editor.selectionBackground", sel);
+  }
   sel.red *= 255;
   sel.green *= 255;
   sel.blue *= 255;
@@ -188,13 +284,7 @@ theme_info_t Textmate::theme_info() {
     style_t style = current_theme()->styles_for_scope("comment");
     cmt = style.foreground;
     if (cmt.is_blank()) {
-      current_theme()->theme_color("editor.foreground", cmt);
-    }
-    if (cmt.is_blank()) {
-      rgba_t tc = theme_color_from_scope_fg_bg(_default, false);
-      cmt.red = (float)tc.r / 255;
-      cmt.green = (float)tc.g / 255;
-      cmt.blue = (float)tc.b / 255;
+      cmt = fallback;   
     }
   }
 
@@ -209,13 +299,7 @@ theme_info_t Textmate::theme_info() {
     style_t style = current_theme()->styles_for_scope("entity.name.function");
     fn = style.foreground;
     if (fn.is_blank()) {
-      current_theme()->theme_color("editor.foreground", fn);
-    }
-    if (fn.is_blank()) {
-      rgba_t tc = theme_color_from_scope_fg_bg(_default, false);
-      fn.red = (float)tc.r / 255;
-      fn.green = (float)tc.g / 255;
-      fn.blue = (float)tc.b / 255;
+      fn = fallback;
     }
   }
 
@@ -229,13 +313,7 @@ theme_info_t Textmate::theme_info() {
     style_t style = current_theme()->styles_for_scope("keyword");
     kw = style.foreground;
     if (kw.is_blank()) {
-      current_theme()->theme_color("editor.foreground", kw);
-    }
-    if (kw.is_blank()) {
-      rgba_t tc = theme_color_from_scope_fg_bg(_default, false);
-      kw.red = (float)tc.r / 255;
-      kw.green = (float)tc.g / 255;
-      kw.blue = (float)tc.b / 255;
+      kw = fallback;
     }
   }
 
@@ -249,13 +327,7 @@ theme_info_t Textmate::theme_info() {
     style_t style = current_theme()->styles_for_scope("variable");
     var = style.foreground;
     if (var.is_blank()) {
-      current_theme()->theme_color("editor.foreground", var);
-    }
-    if (var.is_blank()) {
-      rgba_t tc = theme_color_from_scope_fg_bg(_default, false);
-      var.red = (float)tc.r / 255;
-      var.green = (float)tc.g / 255;
-      var.blue = (float)tc.b / 255;
+      var = fallback;
     }
   }
 
@@ -263,6 +335,47 @@ theme_info_t Textmate::theme_info() {
   var.green *= 255;
   var.blue *= 255;
 
+  color_info_t typ;
+  if (current_theme()) {
+    // current_theme()->theme_color("comment", var);
+    style_t style = current_theme()->styles_for_scope("type");
+    typ = style.foreground;
+    if (typ.is_blank()) {
+      typ = fallback;
+    }
+  }
+
+  typ.red *= 255;
+  typ.green *= 255;
+  typ.blue *= 255;
+
+  color_info_t strct;
+  if (current_theme()) {
+    // current_theme()->theme_color("comment", var);
+    style_t style = current_theme()->styles_for_scope("type");
+    strct = style.foreground;
+    if (strct.is_blank()) {
+      strct = fallback;
+    }
+  }
+
+  strct.red *= 255;
+  strct.green *= 255;
+  strct.blue *= 255;
+  
+  color_info_t ctrl;
+  if (current_theme()) {
+    // current_theme()->theme_color("comment", var);
+    style_t style = current_theme()->styles_for_scope("control");
+    ctrl = style.foreground;
+    if (strct.is_blank()) {
+      ctrl = fallback;
+    }
+  }
+
+  strct.red *= 255;
+  strct.green *= 255;
+  strct.blue *= 255;
   info.fg_r = fg.red;
   info.fg_g = fg.green;
   info.fg_b = fg.blue;
@@ -291,7 +404,19 @@ theme_info_t Textmate::theme_info() {
   info.var_g = var.green;
   info.var_b = var.blue;
   info.var_a = color_info_t::nearest_color_index(var.red, var.green, var.blue);
-
+  info.type_r = var.red;
+  info.type_g = var.green;
+  info.type_b = var.blue;
+  info.type_a = color_info_t::nearest_color_index(typ.red, typ.green, typ.blue);
+  info.struct_r = var.red;
+  info.struct_g = var.green;
+  info.struct_b = var.blue;
+  info.struct_a = color_info_t::nearest_color_index(strct.red, strct.green, strct.blue);
+  info.ctrl_r = ctrl.red;
+  info.ctrl_g = ctrl.green;
+  info.ctrl_b = ctrl.blue;
+  info.ctrl_a = color_info_t::nearest_color_index(ctrl.red, ctrl.green, ctrl.blue);
+  
   // why does this happen?
   if (info.sel_r < 0 && info.sel_g < 0 && info.sel_b < 0) {
     info.sel_r *= -1;
@@ -305,8 +430,12 @@ theme_info_t Textmate::theme_info() {
 int Textmate::load_theme(std::string path) {
   theme_ptr theme = theme_from_name(path, extensions);
   if (theme != NULL) {
+    #ifdef DISABLE_RESOURCE_CACHING
+    themes.clear();
+    #endif
     themes.emplace_back(theme);
-    return themes.size() - 1;
+    set_theme(themes.size() - 1);
+    return current_theme_id;
   }
   return 0;
 }
@@ -317,8 +446,57 @@ int Textmate::load_icons(std::string path) {
 }
 
 int Textmate::load_language(std::string path) {
+  _previous_block_data.parser_state = NULL;
   language_info_ptr lang = language_from_file(path, extensions);
+  if (lang && !lang->grammar->document().isMember("patterns")) {
+    log("invalid language");
+    return -1;
+  }
+
+  // log(">%s", lang->grammar->document()["scopeName"].asString().c_str());
+
   if (lang != NULL) {
+    #ifdef DISABLE_RESOURCE_CACHING
+    languages.clear();
+    #endif
+    languages.emplace_back(lang);
+    return languages.size() - 1;
+  }
+  return 0;
+}
+
+int Textmate::set_language(int id)
+{
+  current_language_id = id;
+  return id;
+}
+
+int Textmate::load_theme_data(const char* data)
+{
+  theme_ptr theme = theme_from_name("", extensions, "", data);
+  if (theme != NULL) {
+    #ifdef DISABLE_RESOURCE_CACHING
+    themes.clear();
+    #endif
+    themes.emplace_back(theme);
+    set_theme(themes.size() - 1);
+    return current_theme_id;
+  }
+  return 0;
+}
+
+int Textmate::load_language_data(const char* data)
+{
+  _previous_block_data.parser_state = NULL;
+  language_info_ptr lang = language_from_file("", extensions, data);
+  if (lang && !lang->grammar->document().isMember("patterns")) {
+    log("invalid language");
+    return -1;
+  }
+  if (lang != NULL) {
+    #ifdef DISABLE_RESOURCE_CACHING
+    languages.clear();
+    #endif
     languages.emplace_back(lang);
     return languages.size() - 1;
   }
@@ -337,6 +515,11 @@ void dump_tokens(std::map<size_t, scope::scope_t> &scopes) {
 
     it++;
   }
+}
+
+block_data_t* Textmate::previous_block_data()
+{
+  return &_previous_block_data;
 }
 
 std::vector<textstyle_t>
@@ -367,7 +550,7 @@ Textmate::run_highlighter(char *_text, language_info_ptr lang, theme_ptr theme,
   const char *last = first + l;
 
   parse::stack_ptr parser_state;
-  if (prev_block != NULL) {
+  if (block != NULL && prev_block != NULL) {
     parser_state = prev_block->parser_state;
     block->prev_comment_block = prev_block->comment_block;
     block->prev_string_block = prev_block->string_block;
@@ -389,7 +572,10 @@ Textmate::run_highlighter(char *_text, language_info_ptr lang, theme_ptr theme,
   // dump_tokens(scopes);
   // }
 
-  block->parser_state = parser_state;
+  if (block) {
+    block->parser_state = parser_state;
+    block->dirty = false;
+  }
 
   std::map<size_t, scope::scope_t>::iterator it = scopes.begin();
   size_t n = 0;
@@ -471,6 +657,8 @@ Textmate::run_highlighter(char *_text, language_info_ptr lang, theme_ptr theme,
     }
   }
 
+  if (!block) return textstyle_buffer;
+  
   idx = textstyle_buffer.size();
   if (idx > 0) {
     block->comment_block =
@@ -485,6 +673,7 @@ Textmate::run_highlighter(char *_text, language_info_ptr lang, theme_ptr theme,
     }
   }
 
+  _previous_block_data.parser_state = parser_state;
   return textstyle_buffer;
 }
 
@@ -505,3 +694,57 @@ char* Textmate::icon_for_filename(char *filename) {
 bool Textmate::has_running_threads() {
   return parse::grammar_t::running_threads > 0;
 }
+
+void Textmate::shutdown()
+{
+  extensions.clear();
+  themes.clear();
+  languages.clear(); 
+  icons = nullptr;
+}
+
+void block_data_t::make_dirty() {
+  dirty = true;
+}
+
+void doc_data_t::add_block_at(int line)
+{
+  blocks.insert(blocks.begin() + line, std::make_shared<block_data_t>());
+}
+
+void doc_data_t::remove_block_at(int line)
+{
+  blocks.erase(blocks.begin() + line);
+}
+
+void doc_data_t::make_dirty()
+{
+  for(auto b : blocks) {
+    b->make_dirty();
+  }
+}
+
+block_data_ptr doc_data_t::block_at(int line)
+{
+  int idx = 0;
+  while (line >= blocks.size()) {
+    blocks.push_back(std::make_shared<block_data_t>());
+    if (idx++ > 100) break;
+  }
+
+  if (line >= 0 && line < blocks.size()) {
+    return blocks[line];
+  }
+  return nullptr;
+}
+
+block_data_ptr doc_data_t::previous_block(int line)
+{
+  return block_at(line-1);
+}
+
+block_data_ptr doc_data_t::next_block(int line)
+{
+  return block_at(line+1);
+}
+

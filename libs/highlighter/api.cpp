@@ -216,6 +216,9 @@ void poll_requests(request_list &requests) {
       for (auto r : d->response) {
         d->message.message["message"].append(r);
       }
+      for (auto r : d->response_objects) {
+        d->message.message["message"].append(r);
+      }
       post_message(d->message);
       requests.erase(it);
     }

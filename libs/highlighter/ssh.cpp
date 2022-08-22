@@ -337,7 +337,19 @@ int sftp_run(std::string cmd, transport_t* transport)
                 // }
 
                 if (mem[0] != '.') {
-                //     transport->entries.emplace_back(entry);
+                    // Json::Value val = Json::objectValue;
+                    // if (LIBSSH2_SFTP_S_ISDIR(attrs.permissions)) {
+                    //     val["isDirectory"] = true;
+                    // } else {
+                    //     val["isDirectory"] = false;
+                    // }
+                    // std::ostringstream filePath;
+                    // filePath << sftppath;
+                    // filePath << "/";
+                    // filePath << mem;
+                    // val["path"] = filePath.str();
+                    // req->response_objects.push_back(val);
+
                     std::ostringstream filePath;
                     if (LIBSSH2_SFTP_S_ISDIR(attrs.permissions)) {
                         filePath << "dir;";

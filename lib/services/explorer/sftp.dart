@@ -10,7 +10,7 @@ class SFtpFs extends ExplorerBackend {
   List<FileSystemEntity> files = [];
   String rootPath = '';
 
-    String url = 'iceman@127.0.0.1';
+    String url = '';
     String password = '';
 
   void addListener(ExplorerListener listener) {
@@ -87,6 +87,13 @@ class SFtpFs extends ExplorerBackend {
             File f = File(ss[1]);
             files.add(f);
         }
+        // if (entry['isDirectory'] == true) {
+        //     Directory f = Directory(entry['path']);
+        //     files.add(f);
+        // } else {
+        //     File f = File(entry['path']);
+        //     files.add(f);
+        // }
         // print(entry);
     }
     _sendTheFiles();

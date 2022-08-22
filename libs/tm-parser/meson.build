@@ -1,33 +1,37 @@
-project(
-    'textmate-parser',
-    ['cpp'],
-    version : '0.1',
-    meson_version: '>=0.43.0',
-    default_options : [
-        'warning_level=3', 
-        'cpp_std=c++14'
-    ]
-)
+parser_inc = include_directories(['parser'])
+    scopes_inc
+    = include_directories(['scopes'])
+        theme_inc
+    = include_directories(['theme'])
+        extension_inc
+    = include_directories(['extensions'])
 
-add_project_arguments(
-    [
-        '-Wno-unused-parameter',
-        '-Wno-pedantic',
-        '-Wno-sign-compare',
-        '-Wno-write-strings'
-    ],
-    language: ['cpp']
-)
+        subdir('scopes')
+            subdir('parser')
+                subdir('theme')
+                    subdir('extensions')
 
-jsoncpp_dep = dependency('jsoncpp', required: true)
-onigmo_dep = dependency('onigmo', required: true)
+                        textmate_files
+    = [
+          'textmate.cpp',
+          'parser/grammar.cpp',
+          'parser/reader.cpp',
+          'parser/pattern.cpp',
+          'parser/parser.cpp',
+          'scopes/scope.cpp',
+          'scopes/types.cpp',
+          'scopes/parse.cpp',
+          'scopes/match.cpp',
+          'theme/theme.cpp',
+          'theme/util.cpp'
+      ]
 
-cmplr = meson.get_compiler('cpp')
+    textmate_lib
+    = static_library('textmate', textmate_files, include_directories
+                     : [ textmate_inc, parser_inc, scopes_inc, theme_inc, extension_inc ], dependencies
+                     : [ jsoncpp_dep, onigmo_dep ])
 
-pwd = meson.current_source_dir()
-
-textmate_inc = include_directories('textmate')
-
-subdir('textmate')
-subdir('tests')
-subdir('tests-c')
+        textmate_dep
+    = declare_dependency(include_directories
+                         : [textmate_inc], link_with
+                         : textmate_lib)
